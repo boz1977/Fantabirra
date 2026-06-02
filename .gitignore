@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+# database locale (lascia che venga creato online; rimuovi questa riga se vuoi versionare i dati)
+fantabirra.db
+fantabirra.db-wal
+fantabirra.db-shm
+# file temporanei della conversione regolamento (Windows/Word)
+Documenti/_regolamento.txt
+Documenti/_regolamento.html
+Documenti/_regolamento_file/
+Documenti/_regolamento_files/
+# il txt UTF-8 serve in produzione per "Carica dati dal Regolamento": NON ignorarlo
+!Documenti/_regolamento_utf8.txt
+.claude/

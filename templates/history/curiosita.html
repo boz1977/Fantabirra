@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Curiosità — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-stars me-2 text-warning"></i>Curiosità & Record</h4>
+    {% if session.is_admin %}
+    <a href="{{ url_for('admin_curiosita') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Gestisci</a>
+    {% endif %}
+  </div>
+
+  {% if derived %}
+  <h6 class="text-muted text-uppercase small fw-bold mb-2"><i class="bi bi-graph-up-arrow me-1"></i>Record all-time</h6>
+  <div class="row g-3 mb-4">
+    {% for titolo, valore, dettaglio in derived %}
+    <div class="col-md-4">
+      <div class="card h-100 auction-card">
+        <div class="card-body">
+          <div class="text-muted small">{{ titolo }}</div>
+          <div class="fw-bold fs-4 text-success">{{ valore }}</div>
+          <div class="text-muted small">{{ dettaglio }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h6 class="text-muted text-uppercase small fw-bold mb-2"><i class="bi bi-bookmark-star me-1"></i>Lo sapevi che...</h6>
+  {% if not items %}
+  <div class="alert alert-light border">Nessuna curiosità inserita.</div>
+  {% else %}
+  <div class="row g-3">
+    {% for c in items %}
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body d-flex align-items-start gap-3">
+          <div class="fs-2">🍺</div>
+          <div>
+            <div class="fw-semibold">{{ c.title }}</div>
+            {% if c.value %}<div class="fs-5 fw-bold text-success">{{ c.value }}</div>{% endif %}
+            {% if c.detail %}<div class="text-muted small">{{ c.detail }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

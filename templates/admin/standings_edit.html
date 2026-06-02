@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Classifica {{ s.season }} — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+    <a href="{{ url_for('admin_storico') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0">Classifica Stagione {{ s.season }}</h4>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header card-header-green"><i class="bi bi-pencil me-2"></i>Modifica Classifica</div>
+        <div class="card-body">
+          <p class="small text-muted">
+            Una squadra per riga, in ordine di classifica (1° in alto). Formato:
+            <code>Squadra | Presidente | Punti</code>. I punti sono opzionali.
+          </p>
+          <form method="POST">
+            <textarea name="standings_data" class="form-control font-monospace" rows="16"
+                      placeholder="BungaBunga | Boz | 64&#10;East Hanema | Scatto | 61">{% for r in standings %}{{ r.team }} | {{ r.presidente or '' }} | {{ r.points if r.points is not none else '' }}
+{% endfor %}</textarea>
+            <button type="submit" class="btn btn-gold mt-3"><i class="bi bi-save me-1"></i>Salva Classifica</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header card-header-gold"><i class="bi bi-eye me-2"></i>Anteprima attuale</div>
+        <div class="card-body p-0">
+          {% if not standings %}
+          <div class="text-center text-muted py-4 small">Nessuna classifica salvata.</div>
+          {% else %}
+          <table class="table table-sm mb-0 small align-middle">
+            <thead><tr><th>#</th><th>Squadra</th><th>Pres.</th><th class="text-end">Pt</th></tr></thead>
+            <tbody>
+              {% for r in standings %}
+              <tr>
+                <td>{{ r.position }}</td>
+                <td class="fw-semibold">{{ r.team }}</td>
+                <td class="text-muted">{{ r.presidente }}</td>
+                <td class="text-end">{{ r.points if r.points is not none else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

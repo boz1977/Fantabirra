@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Nuova Asta — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-success"></i>Nuova Sessione d'Asta</h4>
+  </div>
+
+  {% if not nominated %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Nessuna nomination disponibile. I manager devono prima inserire le loro nomination.
+    <a href="{{ url_for('admin_nominations') }}" class="alert-link">Vai alle nomination</a>
+  </div>
+  {% else %}
+
+  <form method="POST" action="{{ url_for('create_auction') }}" id="auctionForm">
+    <div class="row g-4">
+
+      <!-- Left: settings + selection controls -->
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-header card-header-green">
+            <i class="bi bi-gear me-2"></i>Impostazioni Asta
+          </div>
+          <div class="card-body">
+            <label class="form-label fw-semibold">Nome Sessione</label>
+            <input type="text" name="name" class="form-control mb-3"
+                   placeholder="es. Asta Round 1 — Attaccanti" required
+                   value="Asta {{ now.strftime('%d/%m/%Y') if now else '' }}">
+
+            <hr class="my-2">
+            <div class="d-grid gap-2">
+              {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+              <button type="button" class="btn btn-sm btn-outline-secondary select-role-btn" data-role="{{ role }}">
+                <span class="badge badge-role role-{{ role }} me-1">{{ role }}</span> Seleziona tutti {{ label }}
+              </button>
+              {% endfor %}
+              <button type="button" class="btn btn-sm btn-outline-primary" id="selectAll">
+                <i class="bi bi-check2-all me-1"></i>Seleziona tutti
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" id="deselectAll">
+                <i class="bi bi-x-lg me-1"></i>Deseleziona tutti
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="fw-semibold mb-1">Giocatori selezionati: <span id="selectedCount" class="text-success">0</span></div>
+            <div class="text-muted small" id="selectedByRole">—</div>
+            <hr>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="open_now" value="1" id="openNow" checked>
+              <label class="form-check-label" for="openNow">
+                <strong>Apri subito le offerte</strong>
+                <div class="text-muted small">I manager vedranno l'asta e potranno offrire immediatamente.</div>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold w-100" id="submitBtn" disabled>
+              <i class="bi bi-hammer me-2"></i>Crea Asta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: player list -->
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header card-header-gold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-person-badge me-2"></i>Giocatori Nominati ({{ nominated|length }})</span>
+            <div class="d-flex gap-1">
+              {% for r in ['P','D','C','A'] %}
+              <button type="button" class="btn btn-sm badge badge-role role-{{ r }} filter-role-btn" data-role="{{ r }}">{{ r }}</button>
+              {% endfor %}
+              <button type="button" class="btn btn-sm btn-outline-secondary filter-role-btn active" data-role="Tutti">Tutti</button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height:520px;overflow-y:auto">
+              <table class="table table-hover mb-0 small align-middle" id="playerTable">
+                <thead class="sticky-top bg-white">
+                  <tr>
+                    <th style="width:40px">
+                      <input type="checkbox" id="headerCheck" class="form-check-input">
+                    </th>
+                    <th class="sortable" data-col="1" data-type="text" style="cursor:pointer">R <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                    <th class="sortable" data-col="2" data-type="text" style="cursor:pointer">Giocatore <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                    <th class="sortable" data-col="3" data-type="text" style="cursor:pointer">Squadra <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                    <th class="sortable text-end" data-col="4" data-type="num" style="cursor:pointer">Q.A. <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                    <th class="sortable text-end" data-col="5" data-type="num" style="cursor:pointer">Nom. <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in nominated %}
+                  {% set disabled = p.id in excluded %}
+                  <tr data-role="{{ p.role }}" class="{{ 'table-secondary' if disabled else '' }}">
+                    <td>
+                      <input type="checkbox" name="player_ids" value="{{ p.id }}"
+                             class="form-check-input player-check"
+                             {% if disabled %}disabled title="Già in asta o acquistato"{% endif %}>
+                    </td>
+                    <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+                    <td class="fw-semibold {% if disabled %}text-muted{% endif %}">
+                      {{ p.name }}
+                      {% if disabled %}<span class="badge bg-secondary ms-1" style="font-size:.65rem">Non disp.</span>{% endif %}
+                    </td>
+                    <td class="text-muted">{{ p.team }}</td>
+                    <td class="text-end" data-val="{{ p.base_value }}">{{ p.base_value }}</td>
+                    <td class="text-end" data-val="{{ p.nom_count }}">
+                      <span class="badge {% if p.nom_count >= 6 %}bg-danger{% elif p.nom_count >= 3 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                        {{ p.nom_count }}
+                      </span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const roleCounts = {P:0, D:0, C:0, A:0};
+let activeFilter = 'Tutti';
+
+function updateSummary() {
+  const checks = document.querySelectorAll('.player-check:checked:not(:disabled)');
+  const count = checks.length;
+  document.getElementById('selectedCount').textContent = count;
+  document.getElementById('submitBtn').disabled = count === 0;
+
+  Object.keys(roleCounts).forEach(r => roleCounts[r] = 0);
+  checks.forEach(c => {
+    const role = c.closest('tr').dataset.role;
+    roleCounts[role] = (roleCounts[role] || 0) + 1;
+  });
+  const parts = Object.entries(roleCounts).filter(([,v]) => v > 0).map(([r,v]) => `${v} ${r}`);
+  document.getElementById('selectedByRole').textContent = parts.join(' · ') || '—';
+}
+
+document.querySelectorAll('.player-check').forEach(c => c.addEventListener('change', updateSummary));
+
+document.getElementById('selectAll').addEventListener('click', () => {
+  document.querySelectorAll('.player-check:not(:disabled)').forEach(c => {
+    if (!activeFilter || activeFilter === 'Tutti' || c.closest('tr').dataset.role === activeFilter)
+      c.checked = true;
+  });
+  updateSummary();
+});
+
+document.getElementById('deselectAll').addEventListener('click', () => {
+  document.querySelectorAll('.player-check').forEach(c => c.checked = false);
+  updateSummary();
+});
+
+document.querySelectorAll('.select-role-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const role = btn.dataset.role;
+    document.querySelectorAll(`.player-check:not(:disabled)`).forEach(c => {
+      if (c.closest('tr').dataset.role === role) c.checked = true;
+    });
+    updateSummary();
+  });
+});
+
+document.querySelectorAll('.filter-role-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    activeFilter = this.dataset.role;
+    document.querySelectorAll('.filter-role-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('#playerTable tbody tr').forEach(tr => {
+      tr.style.display = (activeFilter === 'Tutti' || tr.dataset.role === activeFilter) ? '' : 'none';
+    });
+  });
+});
+
+document.getElementById('headerCheck').addEventListener('change', function() {
+  document.querySelectorAll('.player-check:not(:disabled)').forEach(c => {
+    if (activeFilter === 'Tutti' || c.closest('tr').dataset.role === activeFilter)
+      c.checked = this.checked;
+  });
+  updateSummary();
+});
+
+updateSummary();
+
+// ordinamento colonne
+document.querySelectorAll('#playerTable th.sortable').forEach(th => {
+  th.addEventListener('click', function() {
+    const col = +this.dataset.col, type = this.dataset.type;
+    const asc = this.dataset.asc !== 'true';
+    document.querySelectorAll('#playerTable th.sortable').forEach(h => h.dataset.asc = '');
+    this.dataset.asc = asc;
+    const tbody = document.querySelector('#playerTable tbody');
+    [...tbody.querySelectorAll('tr')].sort((a, b) => {
+      let x, y;
+      if (type === 'num') { x = +(a.children[col].dataset.val || 0); y = +(b.children[col].dataset.val || 0); }
+      else { x = a.children[col].textContent.trim().toLowerCase(); y = b.children[col].textContent.trim().toLowerCase(); }
+      return (x < y ? -1 : x > y ? 1 : 0) * (asc ? 1 : -1);
+    }).forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+{% endblock %}

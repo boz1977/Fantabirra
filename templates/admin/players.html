@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Giocatori — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-success"></i>Lista Giocatori</h4>
+      <span class="text-muted small">{{ players|length }} giocatori caricati — Stagione 2025-26</span>
+    </div>
+    <div class="d-flex gap-2">
+      <form method="POST" action="{{ url_for('load_players') }}" class="d-inline">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-cloud-download me-1"></i>Carica da Excel
+        </button>
+      </form>
+      {% if players %}
+      <form method="POST" action="{{ url_for('clear_players') }}" class="d-inline"
+            onsubmit="return confirm('Cancellare tutti i giocatori e le nomination?')">
+        <button type="submit" class="btn btn-outline-danger">
+          <i class="bi bi-trash me-1"></i>Svuota
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not players %}
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <i class="bi bi-cloud-download fs-1 d-block mb-3 text-muted"></i>
+      <h5>Nessun giocatore caricato</h5>
+      <p class="text-muted">Clicca "Carica da Excel" per importare la lista dalla quotazione 2025-26.<br>
+      Il file deve trovarsi in <code>Documenti/0-Quotazioni_Fantacalcio_Stagione_2025_26.xlsx</code></p>
+      <form method="POST" action="{{ url_for('load_players') }}">
+        <button type="submit" class="btn btn-success btn-lg">
+          <i class="bi bi-cloud-download me-2"></i>Carica Giocatori
+        </button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+
+  <!-- Role summary -->
+  <div class="row g-2 mb-3">
+    {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+    {% set cnt = players | selectattr('role', 'equalto', role) | list | length %}
+    <div class="col-6 col-md-3">
+      <div class="card text-center py-2">
+        <span class="badge badge-role role-{{ role }} mx-auto mb-1" style="font-size:.85rem">{{ role }}</span>
+        <div class="fw-bold fs-5">{{ cnt }}</div>
+        <div class="text-muted small">{{ label }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Filter bar -->
+  <div class="card mb-3">
+    <div class="card-body py-2 d-flex gap-2 align-items-center flex-wrap">
+      <span class="small text-muted me-1">Filtra:</span>
+      <button class="btn btn-sm role-filter-btn active" onclick="filterRole('Tutti', this)">Tutti</button>
+      <button class="btn btn-sm role-filter-btn btn-outline-secondary" onclick="filterRole('P', this)">Portieri</button>
+      <button class="btn btn-sm role-filter-btn btn-outline-secondary" onclick="filterRole('D', this)">Difensori</button>
+      <button class="btn btn-sm role-filter-btn btn-outline-secondary" onclick="filterRole('C', this)">Centrocampisti</button>
+      <button class="btn btn-sm role-filter-btn btn-outline-secondary" onclick="filterRole('A', this)">Attaccanti</button>
+      <div class="ms-auto input-group input-group-sm" style="max-width:220px">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control" id="playerSearch" placeholder="Cerca...">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive" style="max-height:600px; overflow-y:auto">
+        <table class="table table-hover mb-0 small" id="playersTable">
+          <thead class="sticky-top bg-white">
+            <tr>
+              <th>R</th><th>Nome</th><th>Squadra</th><th class="text-end">Q.A.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in players %}
+            <tr data-role="{{ p.role }}" data-name="{{ p.name | lower }}" data-team="{{ p.team | lower }}">
+              <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end">{{ p.base_value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentRole = 'Tutti';
+function filterRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.role-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+document.getElementById('playerSearch')?.addEventListener('input', applyFilter);
+
+function applyFilter() {
+  const q = document.getElementById('playerSearch').value.toLowerCase();
+  document.querySelectorAll('#playersTable tbody tr').forEach(tr => {
+    const matchRole = currentRole === 'Tutti' || tr.dataset.role === currentRole;
+    const matchSearch = !q || tr.dataset.name.includes(q) || tr.dataset.team.includes(q);
+    tr.style.display = matchRole && matchSearch ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

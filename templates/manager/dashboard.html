@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-shield-fill text-success me-2"></i>{{ user.team_name }}</h4>
+      <span class="text-muted small">Stagione 2025-26</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if nomination_open %}
+      <a href="{{ url_for('nominations') }}" class="btn btn-success btn-sm">
+        <i class="bi bi-card-checklist me-1"></i>Inserisci Nomination
+      </a>
+      {% endif %}
+      {% if active_sessions %}
+      <a href="{{ url_for('auctions') }}" class="btn btn-warning btn-sm">
+        <i class="bi bi-hammer me-1"></i>Aste in Corso
+        <span class="badge bg-dark ms-1">{{ active_sessions|length }}</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card green">
+        <div class="stat-value">{{ user.budget }}</div>
+        <div class="stat-label"><i class="bi bi-coin me-1"></i>Crediti disponibili</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card blue">
+        <div class="stat-value">{{ my_players|length }}</div>
+        <div class="stat-label"><i class="bi bi-people me-1"></i>Giocatori acquistati</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card gold">
+        <div class="stat-value">{{ my_nominations|length }}</div>
+        <div class="stat-label"><i class="bi bi-list-check me-1"></i>Nomination totali</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card red">
+        <div class="stat-value">{{ active_sessions|length }}</div>
+        <div class="stat-label"><i class="bi bi-hammer me-1"></i>Aste attive</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Nomination summary -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header card-header-green d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-list-check me-2"></i>Le mie Nomination</span>
+          <a href="{{ url_for('nominations') }}" class="btn btn-sm btn-gold">Gestisci</a>
+        </div>
+        <div class="card-body p-0">
+          {% if not my_nominations %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            Nessuna nomination inserita
+            {% if nomination_open %}
+            <br><a href="{{ url_for('nominations') }}" class="btn btn-success btn-sm mt-2">Inizia ora</a>
+            {% endif %}
+          </div>
+          {% else %}
+          <!-- Role progress bars -->
+          <div class="p-3 border-bottom">
+            {% for role, label, icon in [('P','Portieri','bi-person-fill'),('D','Difensori','bi-shield-fill'),('C','Centrocampisti','bi-arrow-left-right'),('A','Attaccanti','bi-lightning-fill')] %}
+            {% set cnt = nom_by_role.get(role, 0) %}
+            {% set mx = settings['max_nom_' ~ role] %}
+            <div class="d-flex align-items-center mb-2">
+              <span class="badge badge-role role-{{ role }} me-2">{{ role }}</span>
+              <span class="small flex-grow-1">{{ label }}</span>
+              <span class="small {% if cnt >= mx %}nom-counter full{% else %}nom-counter ok{% endif %} me-2">{{ cnt }}/{{ mx }}</span>
+              <div class="budget-bar" style="width:80px">
+                <div class="budget-fill" style="width:{{ [cnt/mx*100, 100]|min }}%"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for p in my_nominations[:10] %}
+            <li class="list-group-item d-flex align-items-center py-2">
+              <span class="badge badge-role role-{{ p.role }} me-2">{{ p.role }}</span>
+              <span class="flex-grow-1 small fw-semibold">{{ p.name }}</span>
+              <span class="text-muted small me-2">{{ p.team }}</span>
+              <span class="badge bg-light text-dark border">{{ p.base_value }}</span>
+            </li>
+            {% endfor %}
+            {% if my_nominations|length > 10 %}
+            <li class="list-group-item text-center text-muted small py-2">
+              + altri {{ my_nominations|length - 10 }} giocatori —
+              <a href="{{ url_for('nominations') }}">vedi tutti</a>
+            </li>
+            {% endif %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Active auctions -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header card-header-gold d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-hammer me-2"></i>Aste Attive</span>
+          <a href="{{ url_for('auctions') }}" class="btn btn-sm btn-green text-white">Vai alle Aste</a>
+        </div>
+        <div class="card-body p-0">
+          {% if not active_sessions %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-hourglass fs-2 d-block mb-2"></i>
+            Nessuna asta in corso
+          </div>
+          {% else %}
+          <ul class="list-group list-group-flush">
+            {% for s in active_sessions %}
+            <li class="list-group-item py-3">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold">{{ s.name }}</div>
+                  <div class="small text-muted">{{ s.total_items }} giocatori in asta</div>
+                </div>
+                <div class="text-end">
+                  <div class="small">
+                    <span class="badge {% if s.my_bids == s.total_items %}bg-success{% elif s.my_bids > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                      {{ s.my_bids }}/{{ s.total_items }} offerte
+                    </span>
+                  </div>
+                  <a href="{{ url_for('auctions') }}#sess-{{ s.id }}" class="btn btn-sm btn-gold mt-1">Offri</a>
+                </div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- My squad preview -->
+    {% if my_players %}
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-green d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-shield-fill me-2"></i>La Mia Squadra ({{ my_players|length }} giocatori)</span>
+          <a href="{{ url_for('my_team') }}" class="btn btn-sm btn-gold">Vedi tutto</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 small">
+              <thead>
+                <tr>
+                  <th>R</th><th>Nome</th><th>Squadra</th><th class="text-end">Q.A.</th><th class="text-end">Pagato</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in my_players[:12] %}
+                <tr>
+                  <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+                  <td class="fw-semibold">{{ p.name }}</td>
+                  <td class="text-muted">{{ p.team }}</td>
+                  <td class="text-end">{{ p.base_value }}</td>
+                  <td class="text-end fw-semibold {% if p.price > p.base_value %}text-danger{% else %}text-success{% endif %}">
+                    {{ p.price }}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if my_players|length > 12 %}
+                <tr class="table-light">
+                  <td colspan="5" class="text-center text-muted">
+                    + altri {{ my_players|length - 12 }} giocatori
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

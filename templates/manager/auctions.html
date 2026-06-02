@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Aste — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4" data-fp-signature="{{ fp.signature }}">
+
+  <h4 class="fw-bold mb-4"><i class="bi bi-hammer me-2 text-warning"></i>Aste a Busta Chiusa</h4>
+
+  <!-- Budget reminder -->
+  <div class="alert alert-info py-2 mb-4 d-flex align-items-center gap-2">
+    <i class="bi bi-coin fs-5"></i>
+    <span>Budget disponibile: <strong>{{ user.budget }} crediti</strong></span>
+    <span class="ms-auto text-muted small">Le offerte sono segrete fino alla chiusura dell'asta</span>
+  </div>
+
+  {% if fp.active %}
+  {% if fp.is_my_turn %}
+  <div class="alert alert-success d-flex align-items-center gap-3 flex-wrap">
+    <i class="bi bi-megaphone-fill fs-3"></i>
+    <div class="flex-grow-1">
+      <strong>È il tuo turno!</strong> Scegli un giocatore libero da chiamare all'asta.
+    </div>
+    <a href="{{ url_for('free_phase_choose') }}" class="btn btn-success">
+      <i class="bi bi-hand-index me-1"></i>Scegli giocatore
+    </a>
+  </div>
+  {% elif fp.status == 'choosing' %}
+  <div class="alert alert-warning d-flex align-items-center gap-2">
+    <span class="spinner-border spinner-border-sm"></span>
+    <div>Fase giocatori liberi: <strong>{{ fp.turn_name }}</strong> sta scegliendo chi chiamare...</div>
+  </div>
+  {% elif fp.status == 'bidding' %}
+  <div class="alert alert-info d-flex align-items-center gap-2">
+    <i class="bi bi-megaphone fs-5"></i>
+    <div>Chiamata in corso da <strong>{{ fp.turn_name }}</strong>: punta o rinuncia qui sotto.</div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- Active sessions -->
+  {% if not sessions_data %}
+  <div class="card mb-4">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-hourglass-split fs-1 d-block mb-3 text-warning"></i>
+      <h5>Nessuna asta in corso</h5>
+      <p class="mb-0">L'amministratore aprirà le aste dopo la fase di nomination.</p>
+    </div>
+  </div>
+  {% else %}
+  {% for sd in sessions_data %}
+  {% set s = sd.session %}
+  <div class="card mb-4 auction-card status-bidding" id="sess-{{ s.id }}">
+    <div class="card-header card-header-green d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <span class="fw-bold fs-5"><i class="bi bi-hammer me-2"></i>{{ s.name }}</span>
+        <span class="badge bg-success ms-2">IN CORSO</span>
+      </div>
+      <div class="text-white-50 small">Aperta: {{ s.opened_at[:16] if s.opened_at else '' }}</div>
+    </div>
+    <div class="card-body p-0">
+      {% if not sd['items'] %}
+      <div class="text-center text-muted py-3">Nessun giocatore disponibile.</div>
+      {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead>
+            <tr>
+              <th>R</th><th>Giocatore</th><th>Squadra</th>
+              <th class="text-end">Q.A. min.</th>
+              <th class="text-end" style="width:200px">La tua offerta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in sd['items'] %}
+            {% set min_req = item.min_bid if item.min_bid else (item.base_value if item.caller_id else item.base_value + 1) %}
+            <tr id="item-row-{{ item.id }}">
+              <td><span class="badge badge-role role-{{ item.role }}">{{ item.role }}</span></td>
+              <td class="fw-semibold">{{ item.name }}
+                {% if item.min_bid %}<span class="badge bg-danger ms-1" title="Rilancio dopo pareggio">rilancio {{ item.min_bid }}+</span>{% endif %}
+                {% if item.caller_id %}<span class="badge bg-warning text-dark ms-1" title="Giocatore chiamato"><i class="bi bi-megaphone"></i> chiamato da {{ item.caller_name }}</span>{% endif %}
+                {% if item.nom_count %}<span class="badge bg-light text-dark ms-1" title="Nomination ricevute">{{ item.nom_count }} nom.</span>{% endif %}
+              </td>
+              <td class="text-muted">{{ item.team }}</td>
+              <td class="text-end text-muted">{{ min_req }}</td>
+              {% set can_bid = item.my_nominated or item.caller_id %}
+              <td class="text-end">
+                {% if not can_bid %}
+                <span class="text-muted small" title="Non hai nominato questo giocatore">
+                  <i class="bi bi-dash-circle me-1"></i>Non puoi puntare
+                </span>
+                {% else %}
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                  {% if item.my_renounce %}
+                  <span class="text-danger small fw-semibold" id="bid-label-{{ item.id }}"><i class="bi bi-x-circle-fill me-1"></i>Rinunciato</span>
+                  {% elif item.my_bid %}
+                  <span class="bid-submitted" id="bid-label-{{ item.id }}">
+                    <i class="bi bi-check-circle-fill me-1"></i>{{ item.my_bid }} cr.
+                  </span>
+                  {% else %}
+                  <span class="text-muted small" id="bid-label-{{ item.id }}">—</span>
+                  {% endif %}
+                  <div class="input-group input-group-sm bid-input-group" style="width:160px">
+                    <input type="number" class="form-control bid-input"
+                           id="bid-{{ item.id }}"
+                           min="{{ min_req }}" max="{{ user.budget }}"
+                           value="{{ item.my_bid or '' }}"
+                           placeholder="{{ min_req }}+"
+                           data-item-id="{{ item.id }}"
+                           data-min="{{ min_req }}">
+                    <button class="btn btn-gold bid-submit-btn" data-item-id="{{ item.id }}" title="Invia offerta">
+                      <i class="bi bi-send-fill"></i>
+                    </button>
+                  </div>
+                  <button class="btn btn-sm renounce-btn {% if item.my_renounce %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                          data-item-id="{{ item.id }}"
+                          title="{% if item.my_renounce %}Annulla rinuncia{% else %}Rinuncia a questo giocatore{% endif %}">
+                    <i class="bi bi-{% if item.my_renounce %}arrow-counterclockwise{% else %}flag{% endif %}"></i>
+                  </button>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center">
+        <span class="small text-muted">
+          <i class="bi bi-shield-lock me-1"></i>Le offerte sono segrete fino alla chiusura
+        </span>
+        <button class="btn btn-success btn-sm bid-all-btn" data-session="{{ s.id }}">
+          <i class="bi bi-send me-1"></i>Invia tutte le offerte
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Past sessions -->
+  {% if past_data %}
+  <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-clock-history me-2"></i>Aste Precedenti</h5>
+  {% for pd in past_data %}
+  {% set s = pd.session %}
+  <div class="card mb-3 auction-card status-revealed">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+      <span class="fw-semibold">{{ s.name }}</span>
+      <span class="text-muted small">Chiusa: {{ s.closed_at[:16] if s.closed_at else '' }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 small align-middle">
+          <thead><tr>
+            <th>R</th><th>Giocatore</th><th>Squadra</th>
+            <th class="text-end">La tua offerta</th>
+            <th class="text-end">Aggiudicato a</th>
+            <th class="text-end">Prezzo</th>
+          </tr></thead>
+          <tbody>
+            {% for item in pd['items'] %}
+            <tr class="{% if item.winner_name == session.team_name %}bid-winner{% endif %}">
+              <td><span class="badge badge-role role-{{ item.role }}">{{ item.role }}</span></td>
+              <td class="fw-semibold">{{ item.name }}</td>
+              <td class="text-muted">{{ item.team }}</td>
+              <td class="text-end">{{ item.my_bid or '—' }}</td>
+              <td class="text-end">
+                {% if item.status == 'sold' %}
+                  {% if item.winner_name == session.team_name %}
+                  <span class="text-success fw-bold"><i class="bi bi-trophy-fill me-1"></i>Tu!</span>
+                  {% else %}
+                  {{ item.winner_name }}
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">Non aggiudicato</span>
+                {% endif %}
+              </td>
+              <td class="text-end fw-semibold">{{ item.final_price or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const budget = {{ user.budget }};
+
+document.querySelectorAll('.bid-submit-btn').forEach(btn => {
+  btn.addEventListener('click', () => submitBid(btn.dataset.itemId));
+});
+
+document.querySelectorAll('.bid-input').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitBid(inp.dataset.itemId);
+  });
+});
+
+document.querySelectorAll('.bid-all-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const rows = document.querySelectorAll('.bid-input');
+    for (const inp of rows) {
+      if (inp.value) await submitBid(inp.dataset.itemId, true);
+    }
+    showToast('Tutte le offerte inviate!', 'success');
+  });
+});
+
+async function submitBid(itemId, silent = false) {
+  const inp = document.getElementById('bid-' + itemId);
+  const amount = inp.value.trim();
+  if (!amount) return;
+
+  // controllo lato client: offerta deve superare il minimo (prezzo +1)
+  const min = parseInt(inp.dataset.min || 0);
+  if (parseInt(amount) < min) {
+    showToast(`Offerta troppo bassa: minimo ${min} crediti (deve superare il prezzo).`, 'danger');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('auction_item_id', itemId);
+  fd.append('amount', amount);
+
+  const res = await fetch('/auctions/bid', { method: 'POST', body: fd });
+  const data = await res.json();
+
+  if (!res.ok) {
+    showToast(data.error || 'Errore nell\'invio', 'danger');
+    return;
+  }
+
+  const label = document.getElementById('bid-label-' + itemId);
+  label.innerHTML = `<i class="bi bi-check-circle-fill me-1 text-success"></i><strong>${data.amount} cr.</strong>`;
+  label.className = 'bid-submitted';
+  // se avevo rinunciato, ripristina il bottone rinuncia
+  const rb = document.querySelector(`.renounce-btn[data-item-id="${itemId}"]`);
+  if (rb) { rb.classList.remove('btn-danger'); rb.classList.add('btn-outline-danger'); rb.querySelector('i').className = 'bi bi-flag'; rb.title = 'Rinuncia a questo giocatore'; }
+  if (!silent) showToast(`Offerta di ${data.amount} crediti registrata!`, 'success');
+}
+
+// ── Rinuncia ──
+document.querySelectorAll('.renounce-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const itemId = this.dataset.itemId;
+    const fd = new FormData();
+    fd.append('auction_item_id', itemId);
+    const res = await fetch('/auctions/renounce', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'Errore', 'danger'); return; }
+
+    const label = document.getElementById('bid-label-' + itemId);
+    const inp = document.getElementById('bid-' + itemId);
+    if (data.action === 'renounced') {
+      this.classList.remove('btn-outline-danger'); this.classList.add('btn-danger');
+      this.querySelector('i').className = 'bi bi-arrow-counterclockwise';
+      this.title = 'Annulla rinuncia';
+      label.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Rinunciato';
+      label.className = 'text-danger small fw-semibold';
+      inp.value = '';
+      showToast('Hai rinunciato a questo giocatore.', 'info');
+    } else {
+      this.classList.remove('btn-danger'); this.classList.add('btn-outline-danger');
+      this.querySelector('i').className = 'bi bi-flag';
+      this.title = 'Rinuncia a questo giocatore';
+      label.innerHTML = '—'; label.className = 'text-muted small';
+      showToast('Rinuncia annullata: puoi tornare a offrire.', 'success');
+    }
+  });
+});
+
+function showToast(msg, type = 'info') {
+  const div = document.createElement('div');
+  div.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  div.style.cssText = 'bottom:20px;right:20px;z-index:9999;min-width:250px;max-width:380px';
+  div.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 4000);
+}
+
+// ── Polling fase liberi a turni: ricarica quando cambia lo stato ──
+(function() {
+  const cont = document.querySelector('[data-fp-signature]');
+  let sig = cont ? cont.dataset.fpSignature : 'none';
+  setInterval(async () => {
+    try {
+      const r = await fetch('/free-phase/status');
+      const d = await r.json();
+      if (d.signature !== sig) location.reload();
+    } catch (e) {}
+  }, 4000);
+})();
+</script>
+{% endblock %}

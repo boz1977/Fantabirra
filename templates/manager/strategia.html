@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Strategia — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-bullseye text-success me-2"></i>La Mia Strategia</h4>
+      <span class="text-muted small">Pianifica budget e valori d'asta per reparto</span>
+    </div>
+  </div>
+
+  <!-- Budget overview -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card stat-card gold"><div class="stat-label">Budget totale</div>
+        <div class="stat-value">{{ total_budget }}</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card"><div class="stat-label">Speso</div>
+        <div class="stat-value text-danger">{{ total_spent }}</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card green"><div class="stat-label">Disponibile</div>
+        <div class="stat-value text-success">{{ user.budget }}</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card"><div class="stat-label">Pianificato</div>
+        <div class="stat-value" id="planTotalCard">{{ total_plan }}</div></div>
+    </div>
+  </div>
+
+  <!-- Pianificazione budget per reparto -->
+  <div class="card mb-4">
+    <div class="card-header card-header-green"><i class="bi bi-sliders me-2"></i>Suddividi il budget per reparto</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('save_strategy_budget') }}" id="planForm">
+        <div class="row g-3">
+          {% for r in reparti %}
+          <div class="col-6 col-md-3">
+            <label class="form-label fw-semibold">
+              <span class="badge badge-role role-{{ r.role }} me-1">{{ r.role }}</span>{{ r.label }}
+            </label>
+            <div class="input-group input-group-sm">
+              <input type="number" name="plan_{{ r.role }}" class="form-control plan-input"
+                     value="{{ r.plan }}" min="0" data-role="{{ r.role }}">
+              <span class="input-group-text">cr.</span>
+            </div>
+            <div class="form-text">{{ r.slots }} slot</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+          <div>
+            Totale pianificato: <strong id="planSum">{{ total_plan }}</strong> / {{ total_budget }} cr.
+            <span id="planWarn" class="badge bg-danger ms-2 d-none">Supera il budget!</span>
+            <span id="planLeft" class="text-muted ms-2"></span>
+          </div>
+          <button type="submit" class="btn btn-gold"><i class="bi bi-save me-1"></i>Salva piano</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reparti: stato e valori d'asta -->
+  {% for r in reparti %}
+  {% set roleColors = {'P':'#d4af37','D':'#4caf50','C':'#2196f3','A':'#f44336'} %}
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2 flex-wrap"
+         style="background:{{ roleColors[r.role] }}18; border-left:4px solid {{ roleColors[r.role] }}">
+      <span class="badge badge-role role-{{ r.role }}">{{ r.role }}</span>
+      <span class="fw-semibold">{{ r.label }}</span>
+      <span class="badge bg-secondary">Rosa {{ r.filled }}/{{ r.slots }}</span>
+      <div class="ms-auto small d-flex gap-3 flex-wrap">
+        <span>Piano: <strong>{{ r.plan }}</strong></span>
+        <span>Speso: <strong class="text-danger">{{ r.spent }}</strong></span>
+        <span>Da spendere: <strong class="text-success">{{ r.plan_left }}</strong></span>
+        <span title="Media crediti per slot ancora libero">~{{ r.avg_left }}/slot</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% set noms = noms_by_role[r.role] %}
+      {% if not noms %}
+      <div class="text-center text-muted py-3 small">Nessuna nomination per questo reparto.</div>
+      {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 small align-middle">
+          <thead><tr>
+            <th>Giocatore</th><th>Squadra</th>
+            <th class="text-end">Q.A.</th>
+            <th class="text-end" style="width:140px">Valore stimato</th>
+          </tr></thead>
+          <tbody>
+            {% for p in noms %}
+            <tr>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end text-muted">{{ p.base_value }}</td>
+              <td class="text-end">
+                <div class="input-group input-group-sm" style="width:120px;margin-left:auto">
+                  <input type="number" class="form-control target-input"
+                         value="{{ p.target or '' }}" min="0" placeholder="—"
+                         data-pid="{{ p.id }}" data-role="{{ r.role }}">
+                  <span class="input-group-text">cr.</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-semibold">Totale valori stimati {{ r.label }}:</td>
+              <td class="text-end fw-bold">
+                <span id="targetTot-{{ r.role }}" data-plan="{{ r.plan }}">{{ target_tot[r.role] }}</span> cr.
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TOTAL_BUDGET = {{ total_budget }};
+
+// ── Somma piano budget live ──
+function updatePlanSum() {
+  let sum = 0;
+  document.querySelectorAll('.plan-input').forEach(i => sum += parseInt(i.value || 0));
+  document.getElementById('planSum').textContent = sum;
+  document.getElementById('planTotalCard').textContent = sum;
+  const warn = document.getElementById('planWarn');
+  const left = document.getElementById('planLeft');
+  warn.classList.toggle('d-none', sum <= TOTAL_BUDGET);
+  const diff = TOTAL_BUDGET - sum;
+  left.textContent = diff >= 0 ? `(${diff} cr. non allocati)` : '';
+}
+document.querySelectorAll('.plan-input').forEach(i => i.addEventListener('input', updatePlanSum));
+updatePlanSum();
+
+// ── Salvataggio valore stimato (debounce) ──
+const timers = {};
+document.querySelectorAll('.target-input').forEach(inp => {
+  inp.addEventListener('input', function() {
+    const pid = this.dataset.pid, role = this.dataset.role, val = this.value;
+    clearTimeout(timers[pid]);
+    timers[pid] = setTimeout(async () => {
+      const fd = new FormData();
+      fd.append('player_id', pid);
+      fd.append('target_price', val || '0');
+      try {
+        await fetch('/strategia/target', { method: 'POST', body: fd });
+      } catch (e) {}
+      recalcRole(role);
+    }, 500);
+  });
+});
+
+function recalcRole(role) {
+  let tot = 0;
+  document.querySelectorAll(`.target-input[data-role="${role}"]`).forEach(i => tot += parseInt(i.value || 0));
+  const el = document.getElementById('targetTot-' + role);
+  el.textContent = tot;
+  const plan = parseInt(el.dataset.plan || 0);
+  el.classList.toggle('text-danger', plan > 0 && tot > plan);
+  el.classList.toggle('text-success', plan > 0 && tot <= plan);
+}
+['P','D','C','A'].forEach(recalcRole);
+</script>
+{% endblock %}

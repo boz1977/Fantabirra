@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Nomination Singole — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+    <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-person-check me-2 text-success"></i>Giocatori nominati da un solo allenatore</h4>
+  </div>
+  <p class="text-muted small mb-4">
+    Dopo le aste del ruolo, conferma i giocatori nominati da un unico allenatore: se lo vuole, lo acquista
+    al <strong>prezzo di listino</strong>; altrimenti salta (resterà tra i giocatori liberi).
+  </p>
+
+  {% set empty = by_role.P|length + by_role.D|length + by_role.C|length + by_role.A|length == 0 %}
+  {% if empty %}
+  <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>Nessun giocatore con nomination singola disponibile.</div>
+  {% else %}
+
+  {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+  {% if by_role[role] %}
+  <div class="card mb-3">
+    <div class="card-header card-header-green">
+      <span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}
+      <span class="badge bg-light text-dark ms-1">{{ by_role[role]|length }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead><tr>
+            <th>Giocatore</th><th>Squadra</th><th class="text-end">Prezzo</th>
+            <th>Nominato da</th><th class="text-end">Azione</th>
+          </tr></thead>
+          <tbody>
+            {% for p in by_role[role] %}
+            <tr class="{% if p.bought_by %}table-success{% endif %}">
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end fw-bold">{{ p.base_value }}</td>
+              <td>{{ p.nominator_name }}</td>
+              <td class="text-end">
+                {% if p.bought_by %}
+                <span class="badge bg-success"><i class="bi bi-bag-check me-1"></i>Comprato da {{ p.bought_by }} — {{ p.bought_price }} cr.</span>
+                {% else %}
+                <div class="d-inline-flex gap-1">
+                  <form method="POST" action="{{ url_for('assign_single_nom') }}" class="d-inline"
+                        onsubmit="return confirm('{{ p.nominator_name }} compra {{ p.name }} per {{ p.base_value }} crediti?')">
+                    <input type="hidden" name="player_id" value="{{ p.id }}">
+                    <input type="hidden" name="user_id" value="{{ p.nominator_id }}">
+                    <button type="submit" class="btn btn-sm btn-green">
+                      <i class="bi bi-bag-check me-1"></i>Compra a {{ p.base_value }}
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('release_single_nom') }}" class="d-inline"
+                        onsubmit="return confirm('Lasciare {{ p.name }} libero per tutti? La nomination di {{ p.nominator_name }} verrà rimossa.')">
+                    <input type="hidden" name="player_id" value="{{ p.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Lascia libero per tutti">
+                      <i class="bi bi-box-arrow-up me-1"></i>Abbandona
+                    </button>
+                  </form>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

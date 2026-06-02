@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Gestione Utenti — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-people me-2 text-success"></i>Gestione Utenti</h4>
+    <button class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#addUserModal">
+      <i class="bi bi-plus-lg me-1"></i>Nuovo Manager
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Squadra</th><th>Username</th>
+              <th class="text-end">Budget</th>
+              <th class="text-end">Nom.</th>
+              <th class="text-end">Acq.</th>
+              <th>Ruolo</th>
+              <th class="text-center">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="fw-semibold">{{ u.team_name }}</td>
+              <td><code>{{ u.username }}</code></td>
+              <td class="text-end">
+                <span class="fw-bold {% if u.budget < 50 %}text-danger{% elif u.budget < 150 %}text-warning{% else %}text-success{% endif %}">
+                  {{ u.budget }}
+                </span>
+              </td>
+              <td class="text-end"><span class="badge bg-success">{{ u.nominations }}</span></td>
+              <td class="text-end"><span class="badge bg-primary">{{ u.players_won }}</span></td>
+              <td>
+                {% if u.is_admin %}
+                <span class="badge bg-danger">Admin</span>
+                {% else %}
+                <span class="badge bg-secondary">Manager</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if not u.is_admin %}
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                  <button class="btn btn-sm btn-outline-primary"
+                          data-bs-toggle="modal" data-bs-target="#budgetModal"
+                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}" data-budget="{{ u.budget }}">
+                    <i class="bi bi-coin"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning"
+                          data-bs-toggle="modal" data-bs-target="#resetPwModal"
+                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}">
+                    <i class="bi bi-key"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger"
+                          data-bs-toggle="modal" data-bs-target="#deleteModal"
+                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-info mt-3 small">
+    <i class="bi bi-info-circle me-2"></i>
+    Budget iniziale configurato: <strong>{{ initial_budget }} crediti</strong>.
+    Modificabile in <a href="{{ url_for('admin_settings') }}">Impostazioni</a>.
+  </div>
+</div>
+
+<!-- Modal: Nuovo utente -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('create_user') }}">
+        <div class="modal-header card-header-green text-white">
+          <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nuovo Manager</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nome Squadra</label>
+            <input type="text" name="team_name" class="form-control" placeholder="es. Lord Cavallo FC" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" name="username" class="form-control" placeholder="es. lordcavallo" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="text" name="password" class="form-control" placeholder="Password iniziale" required>
+            <div class="form-text">L'utente potrà cambiare la password dopo il primo accesso.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-green"><i class="bi bi-check-lg me-1"></i>Crea Manager</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Modifica budget -->
+<div class="modal fade" id="budgetModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="POST" id="budgetForm" action="">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-coin me-2"></i>Modifica Budget</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small mb-2">Squadra: <strong id="budget-team-name"></strong></p>
+          <label class="form-label fw-semibold">Budget (crediti)</label>
+          <input type="number" name="budget" id="budget-input" class="form-control" min="0" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-primary btn-sm">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reset password -->
+<div class="modal fade" id="resetPwModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="POST" id="resetPwForm" action="">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-key me-2"></i>Reset Password</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small mb-2">Squadra: <strong id="reset-team-name"></strong></p>
+          <label class="form-label fw-semibold">Nuova Password</label>
+          <input type="text" name="new_password" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-warning btn-sm">Aggiorna</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Elimina -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="POST" id="deleteForm" action="">
+        <div class="modal-header bg-danger text-white">
+          <h6 class="modal-title"><i class="bi bi-trash me-2"></i>Elimina Utente</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Sei sicuro di voler eliminare <strong id="delete-team-name"></strong>?<br>
+          <span class="text-danger small">Verranno eliminate anche tutte le sue nomination e offerte.</span></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('budgetModal').addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('budget-team-name').textContent = btn.dataset.team;
+  document.getElementById('budget-input').value = btn.dataset.budget;
+  document.getElementById('budgetForm').action = `/admin/users/${btn.dataset.uid}/budget`;
+});
+document.getElementById('resetPwModal').addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('reset-team-name').textContent = btn.dataset.team;
+  document.getElementById('resetPwForm').action = `/admin/users/${btn.dataset.uid}/reset-password`;
+});
+document.getElementById('deleteModal').addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('delete-team-name').textContent = btn.dataset.team;
+  document.getElementById('deleteForm').action = `/admin/users/${btn.dataset.uid}/delete`;
+});
+</script>
+{% endblock %}

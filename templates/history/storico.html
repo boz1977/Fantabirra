@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Albo d'Oro — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Albo d'Oro</h4>
+      <span class="text-muted small">La storia della Lega Fantabirra dal 2000</span>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('statistiche') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-bar-chart me-1"></i>Statistiche</a>
+      <a href="{{ url_for('curiosita') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-stars me-1"></i>Curiosità</a>
+    </div>
+  </div>
+
+  {% if not seasons %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>Nessun dato storico caricato.
+    {% if session.is_admin %}<a href="{{ url_for('admin_storico') }}" class="alert-link">Carica i dati storici</a>.{% endif %}
+  </div>
+  {% else %}
+
+  <div class="row g-4">
+    <!-- Palmarès per presidente -->
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header card-header-gold"><i class="bi bi-award me-2"></i>Palmarès per Presidente</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 small align-middle">
+              <thead><tr>
+                <th>#</th><th>Presidente</th>
+                <th class="text-center" title="FantaCampionati">🏆 Camp.</th>
+                <th class="text-center" title="FantaChampion">🥇 Champ.</th>
+                <th class="text-center">Tot.</th>
+              </tr></thead>
+              <tbody>
+                {% for a in albo %}
+                <tr>
+                  <td class="text-muted">{{ loop.index }}</td>
+                  <td class="fw-semibold">
+                    {% if loop.index == 1 %}<i class="bi bi-star-fill text-warning me-1"></i>{% endif %}
+                    {{ a.pres }}
+                  </td>
+                  <td class="text-center">{% if a.camp %}<span class="badge bg-warning text-dark">{{ a.camp }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="text-center">{% if a.cup %}<span class="badge bg-secondary">{{ a.cup }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="text-center fw-bold">{{ a.tot }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stagioni -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header card-header-green"><i class="bi bi-calendar3 me-2"></i>Stagioni</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 small align-middle">
+              <thead><tr>
+                <th>Stagione</th>
+                <th>🏆 Campione</th>
+                <th>🥇 Champion</th>
+                <th></th>
+              </tr></thead>
+              <tbody>
+                {% for s in seasons %}
+                <tr>
+                  <td class="fw-bold">{{ s.season }}</td>
+                  <td>
+                    {% if s.champion %}
+                    <span class="fw-semibold">{{ s.champion }}</span>
+                    <span class="text-muted d-block" style="font-size:.72rem">{{ s.champion_team }}</span>
+                    {% else %}
+                    <span class="text-muted">{{ s.champion_team or '—' }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if s.champion_cup %}
+                    <span class="fw-semibold">{{ s.champion_cup }}</span>
+                    <span class="text-muted d-block" style="font-size:.72rem">{{ s.champion_cup_team }}</span>
+                    {% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+                  <td class="text-end">
+                    <a href="{{ url_for('storico_stagione', season_id=s.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="Classifica completa">
+                      <i class="bi bi-list-ol"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

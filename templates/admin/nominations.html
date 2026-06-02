@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Nomination — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2 text-success"></i>Riepilogo Nomination</h4>
+    <div class="d-flex gap-2 flex-wrap">
+      <form method="POST" action="{{ url_for('toggle_nominations') }}">
+        <button type="submit" class="btn {% if nomination_open %}btn-warning{% else %}btn-success{% endif %}">
+          <i class="bi bi-{% if nomination_open %}lock{% else %}unlock{% endif %} me-1"></i>
+          {% if nomination_open %}Chiudi Nomination{% else %}Apri Nomination{% endif %}
+        </button>
+      </form>
+      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#adminImportModal">
+        <i class="bi bi-file-earmark-arrow-up me-1"></i>Importa per Manager
+      </button>
+      {% if nominated %}
+      <a href="{{ url_for('create_auction') }}" class="btn btn-gold">
+        <i class="bi bi-hammer me-1"></i>Crea Asta dalle Nomination
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Import modal (admin) -->
+  <div class="modal fade" id="adminImportModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('admin_import_nominations') }}" enctype="multipart/form-data">
+          <div class="modal-header card-header-green text-white">
+            <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up me-2"></i>Importa Nomination per Manager</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Manager</label>
+              <select name="user_id" class="form-select" required>
+                <option value="">— Seleziona —</option>
+                {% for u in users %}
+                <option value="{{ u.id }}">{{ u.team_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fw-semibold">File Excel</label>
+              <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            </div>
+            <p class="small text-muted mb-0">
+              File tipo <em>"nominations Lord Cavallo"</em>: foglio <code>Tutti</code> con una colonna manager
+              (es. <code>Allenatore</code>) valorizzata. Abbinamento per nome giocatore.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-green"><i class="bi bi-upload me-1"></i>Importa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stato per manager -->
+  <div class="card mb-4">
+    <div class="card-header card-header-green">
+      <i class="bi bi-people me-2"></i>Stato Nomination per Manager
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead>
+            <tr>
+              <th>Squadra</th>
+              <th class="text-center">Tot.</th>
+              <th class="text-center"><span class="badge badge-role role-P">P</span> /{{ settings.max_nom_P }}</th>
+              <th class="text-center"><span class="badge badge-role role-D">D</span> /{{ settings.max_nom_D }}</th>
+              <th class="text-center"><span class="badge badge-role role-C">C</span> /{{ settings.max_nom_C }}</th>
+              <th class="text-center"><span class="badge badge-role role-A">A</span> /{{ settings.max_nom_A }}</th>
+              <th class="text-center">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            {% set max_tot = settings.max_nom_P + settings.max_nom_D + settings.max_nom_C + settings.max_nom_A %}
+            <tr>
+              <td class="fw-semibold">{{ u.team_name }}</td>
+              <td class="text-center">
+                {% if nom_open %}
+                  {% if u.total > 0 %}
+                  <span class="badge bg-success" title="Ha inserito delle nomination"><i class="bi bi-check-lg"></i> Inserite</span>
+                  {% else %}
+                  <span class="badge bg-secondary">In attesa</span>
+                  {% endif %}
+                {% else %}
+                <span class="badge {% if u.total == max_tot %}bg-success{% elif u.total > 0 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                  {{ u.total }}
+                </span>
+                {% endif %}
+              </td>
+              {% for role, field in [('P','nP'),('D','nD'),('C','nC'),('A','nA')] %}
+              {% set cnt = u[field] or 0 %}
+              {% set mx = settings['max_nom_' ~ role] %}
+              <td class="text-center">
+                {% if nom_open %}
+                  <span class="text-muted" title="Nomination segrete"><i class="bi bi-lock-fill"></i></span>
+                {% else %}
+                <span class="{% if cnt >= mx %}text-success fw-bold{% elif cnt > 0 %}text-warning{% else %}text-muted{% endif %}">
+                  {{ cnt }}
+                </span>
+                {% endif %}
+              </td>
+              {% endfor %}
+              <td class="text-center">
+                {% if u.total > 0 %}
+                <form method="POST" action="{{ url_for('clear_user_nominations') }}" class="d-inline"
+                      onsubmit="return confirm('Cancellare le nomination di {{ u.team_name }}?')">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancella nomination">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if nom_open %}
+  <div class="card border-warning">
+    <div class="card-body text-center py-5">
+      <i class="bi bi-shield-lock-fill fs-1 d-block mb-3 text-warning"></i>
+      <h5>Nomination in corso — contenuto segreto</h5>
+      <p class="text-muted mb-0">
+        Finché le nomination sono aperte, <strong>nessuno (nemmeno l'amministratore)</strong> può vedere quali
+        e quanti giocatori sono stati nominati. Qui sopra vedi solo <em>chi</em> ha già inserito le proprie scelte.<br>
+        <span class="small">Chiudi le nomination per rivelare il tabellone completo.</span>
+      </p>
+    </div>
+  </div>
+  {% else %}
+  <!-- Lista giocatori nominati -->
+  <div class="card">
+    <div class="card-header card-header-gold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-person-badge me-2"></i>Giocatori Nominati ({{ nominated|length }})</span>
+      <div class="d-flex gap-1">
+        {% for r in ['P','D','C','A'] %}
+        <button class="btn btn-sm badge badge-role role-{{ r }}" onclick="filterNom('{{ r }}', this)">{{ r }}</button>
+        {% endfor %}
+        <button class="btn btn-sm btn-outline-secondary" onclick="filterNom('Tutti', this)">Tutti</button>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% if not nominated %}
+      <div class="text-center text-muted py-5">
+        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+        Nessuna nomination inserita.
+      </div>
+      {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle" id="nomTable">
+          <thead>
+            <tr>
+              <th>R</th><th>Giocatore</th><th>Squadra</th>
+              <th class="text-end">Q.A.</th>
+              <th class="text-end">Nom.</th>
+              <th>Chi ha nominato</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in nominated %}
+            <tr data-role="{{ p.role }}">
+              <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end">{{ p.base_value }}</td>
+              <td class="text-end">
+                <span class="badge {% if p.nom_count >= 6 %}bg-danger{% elif p.nom_count >= 3 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                  {{ p.nom_count }}
+                </span>
+              </td>
+              <td class="text-muted small">{{ p.nominators }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let activeRole = 'Tutti';
+function filterNom(role, btn) {
+  activeRole = role;
+  document.querySelectorAll('#nomTable tbody tr').forEach(tr => {
+    tr.style.display = (role === 'Tutti' || tr.dataset.role === role) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Gestione Storico — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2 text-success"></i>Gestione Storico</h4>
+    <div class="d-flex gap-2 flex-wrap">
+      <form method="POST" action="{{ url_for('load_history') }}"
+            onsubmit="return confirm('Caricare i dati storici dal regolamento? Sovrascrive le stagioni e curiosità esistenti.')">
+        <button type="submit" class="btn btn-success"><i class="bi bi-cloud-download me-1"></i>Carica dati dal Regolamento</button>
+      </form>
+      <button class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#seasonModal" onclick="resetSeasonForm()">
+        <i class="bi bi-plus-lg me-1"></i>Nuova Stagione
+      </button>
+    </div>
+  </div>
+
+  {% if not seasons %}
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>Nessuna stagione presente. Clicca "Carica dati dal Regolamento" per importare lo storico completo (Albo d'Oro 2000-2022, classifiche e curiosità), oppure aggiungi le stagioni manualmente.
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead><tr>
+            <th>Stagione</th><th>Campione</th><th>FantaChampion</th>
+            <th class="text-center">Squadre</th><th class="text-center">Azioni</th>
+          </tr></thead>
+          <tbody>
+            {% for s in seasons %}
+            <tr>
+              <td class="fw-bold">{{ s.season }}</td>
+              <td>{{ s.champion or '—' }} <span class="text-muted">{{ '· ' ~ s.champion_team if s.champion_team }}</span></td>
+              <td>{{ s.champion_cup or '—' }} <span class="text-muted">{{ '· ' ~ s.champion_cup_team if s.champion_cup_team }}</span></td>
+              <td class="text-center"><span class="badge bg-secondary">{{ s.n_teams }}</span></td>
+              <td class="text-center">
+                <div class="d-flex gap-1 justify-content-center">
+                  <a href="{{ url_for('edit_standings', sid=s.id) }}" class="btn btn-sm btn-outline-primary" title="Classifica">
+                    <i class="bi bi-list-ol"></i>
+                  </a>
+                  <button class="btn btn-sm btn-outline-secondary edit-season-btn"
+                          data-bs-toggle="modal" data-bs-target="#seasonModal"
+                          data-id="{{ s.id }}" data-season="{{ s.season }}"
+                          data-champion="{{ s.champion or '' }}" data-champion-team="{{ s.champion_team or '' }}"
+                          data-cup="{{ s.champion_cup or '' }}" data-cup-team="{{ s.champion_cup_team or '' }}"
+                          data-note="{{ s.note or '' }}">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <form method="POST" action="{{ url_for('delete_season', sid=s.id) }}" class="d-inline"
+                        onsubmit="return confirm('Eliminare la stagione {{ s.season }}?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal stagione -->
+<div class="modal fade" id="seasonModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('save_season') }}">
+        <div class="modal-header card-header-green text-white">
+          <h5 class="modal-title" id="seasonModalTitle">Nuova Stagione</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="season_id" id="f-season-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Stagione</label>
+            <input type="text" name="season" id="f-season" class="form-control" placeholder="es. 2025-26" required>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-7"><label class="form-label small fw-semibold">🏆 Campione (presidente)</label>
+              <input type="text" name="champion" id="f-champion" class="form-control"></div>
+            <div class="col-5"><label class="form-label small fw-semibold">Squadra</label>
+              <input type="text" name="champion_team" id="f-champion-team" class="form-control"></div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-7"><label class="form-label small fw-semibold">🥇 FantaChampion (presidente)</label>
+              <input type="text" name="champion_cup" id="f-cup" class="form-control"></div>
+            <div class="col-5"><label class="form-label small fw-semibold">Squadra</label>
+              <input type="text" name="champion_cup_team" id="f-cup-team" class="form-control"></div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">Note (opzionale)</label>
+            <input type="text" name="note" id="f-note" class="form-control">
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Ordine (per nuove stagioni)</label>
+            <input type="number" name="sort_order" class="form-control" value="999">
+            <div class="form-text">Numero più alto = mostrata per prima.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-green">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function resetSeasonForm() {
+  document.getElementById('seasonModalTitle').textContent = 'Nuova Stagione';
+  ['f-season-id','f-season','f-champion','f-champion-team','f-cup','f-cup-team','f-note'].forEach(id => document.getElementById(id).value = '');
+}
+document.querySelectorAll('.edit-season-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('seasonModalTitle').textContent = 'Modifica Stagione ' + btn.dataset.season;
+    document.getElementById('f-season-id').value = btn.dataset.id;
+    document.getElementById('f-season').value = btn.dataset.season;
+    document.getElementById('f-champion').value = btn.dataset.champion;
+    document.getElementById('f-champion-team').value = btn.dataset.championTeam;
+    document.getElementById('f-cup').value = btn.dataset.cup;
+    document.getElementById('f-cup-team').value = btn.dataset.cupTeam;
+    document.getElementById('f-note').value = btn.dataset.note;
+  });
+});
+</script>
+{% endblock %}

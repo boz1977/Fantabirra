@@ -1,0 +1,123 @@
+:root {
+  --green-dark:   #1a5c2e;
+  --green:        #28a745;
+  --green-light:  #d4edda;
+  --gold:         #f0a500;
+  --gold-dark:    #c78c00;
+  --text-dark:    #1a1a2e;
+  --sidebar-bg:   #1a2b1e;
+  --card-shadow:  0 2px 12px rgba(0,0,0,.12);
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f0f4f1;
+  color: var(--text-dark);
+  min-height: 100vh;
+}
+
+/* ── Navbar ── */
+.navbar-fantabirra {
+  background: var(--green-dark);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.navbar-fantabirra .navbar-brand img { height: 42px; border-radius: 6px; }
+.navbar-fantabirra .nav-link { color: rgba(255,255,255,.85) !important; font-weight: 500; }
+.navbar-fantabirra .nav-link:hover,
+.navbar-fantabirra .nav-link.active { color: var(--gold) !important; }
+.navbar-fantabirra .badge-gold { background: var(--gold); color: #111; }
+
+/* ── Sidebar (admin) ── */
+.sidebar { background: var(--sidebar-bg); min-height: calc(100vh - 60px); width: 220px; }
+.sidebar .nav-link { color: rgba(255,255,255,.75); border-radius: 6px; margin: 2px 8px; }
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+  background: rgba(240,165,0,.15); color: var(--gold);
+}
+.sidebar .nav-link i { width: 20px; }
+.sidebar-header {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: 1px;
+  color: rgba(255,255,255,.35); padding: 12px 16px 4px;
+}
+
+/* ── Cards ── */
+.card { border: none; border-radius: 12px; box-shadow: var(--card-shadow); }
+.card-header-green { background: var(--green-dark); color: #fff; border-radius: 12px 12px 0 0 !important; }
+.card-header-gold  { background: var(--gold); color: #111; border-radius: 12px 12px 0 0 !important; }
+
+/* ── Stat cards ── */
+.stat-card { border-radius: 12px; padding: 1.2rem 1.5rem; color: #fff; box-shadow: var(--card-shadow); }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat-card .stat-label { font-size: .8rem; opacity: .85; margin-top: 4px; }
+.stat-card.green { background: linear-gradient(135deg, var(--green-dark), #34a153); }
+.stat-card.gold  { background: linear-gradient(135deg, #b87a00, var(--gold)); color: #111; }
+.stat-card.blue  { background: linear-gradient(135deg, #1a4b8c, #2f78d4); }
+.stat-card.red   { background: linear-gradient(135deg, #8c1a1a, #d43f3f); }
+
+/* ── Buttons ── */
+.btn-green  { background: var(--green-dark); color: #fff; border: none; }
+.btn-green:hover { background: var(--green); color: #fff; }
+.btn-gold   { background: var(--gold); color: #111; border: none; font-weight: 600; }
+.btn-gold:hover { background: var(--gold-dark); color: #111; }
+
+/* ── Role badges ── */
+.badge-role { font-size: .75rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.role-P { background: #ffd700; color: #333; }
+.role-D { background: #4caf50; color: #fff; }
+.role-C { background: #2196f3; color: #fff; }
+.role-A { background: #f44336; color: #fff; }
+
+/* ── Player rows ── */
+.player-row { transition: background .15s; }
+.player-row:hover { background: #eafbee; }
+.player-row.nominated { background: #e8f5e9; }
+.player-row.acquired  { opacity: .5; }
+.player-nom-btn { transition: all .2s; }
+.player-nom-btn.active { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
+
+/* ── Auction cards ── */
+.auction-card { border-left: 4px solid var(--gold); }
+.auction-card.status-bidding { border-left-color: #28a745; }
+.auction-card.status-revealed { border-left-color: #6c757d; }
+
+.bid-input-group .form-control { max-width: 110px; }
+.bid-submitted { color: var(--green); font-weight: 600; }
+
+/* ── Budget bar ── */
+.budget-bar { height: 8px; border-radius: 4px; overflow: hidden; background: #ddd; }
+.budget-fill { height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--gold)); transition: width .3s; }
+
+/* ── Tables ── */
+.table th { background: #f8f9fa; font-size: .82rem; text-transform: uppercase;
+  letter-spacing: .5px; color: #555; }
+.table-hover tbody tr:hover { background: #f0f8f2; }
+
+/* ── Login page ── */
+.login-wrapper { min-height: 100vh; background: var(--green-dark);
+  display: flex; align-items: center; justify-content: center; }
+.login-card { width: 100%; max-width: 400px; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+.login-header { background: var(--green-dark); padding: 2rem; text-align: center; }
+.login-header img { height: 80px; border-radius: 8px; }
+.login-header h4 { color: var(--gold); margin-top: 1rem; font-weight: 700; }
+
+/* ── Toasts / alerts ── */
+.alert { border-radius: 10px; border: none; }
+
+/* ── Nomination filters ── */
+.role-filter-btn { border-radius: 20px; font-size: .82rem; font-weight: 600; }
+.role-filter-btn.active { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
+
+/* ── Counter pills ── */
+.nom-counter { font-size: .78rem; }
+.nom-counter.full { color: #dc3545; font-weight: 700; }
+.nom-counter.ok   { color: var(--green); }
+
+/* ── Bid result rows ── */
+.bid-winner { background: #fff9e6 !important; font-weight: 700; }
+.bid-loser  { opacity: .65; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .stat-card .stat-value { font-size: 1.5rem; }
+}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Modifica Regolamento — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2 text-success"></i>Modifica Regolamento</h4>
+    <a href="{{ url_for('regolamento') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i>Anteprima</a>
+  </div>
+
+  <form method="POST">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Versione</label>
+            <input type="text" name="regolamento_version" class="form-control" value="{{ version }}" placeholder="es. 2025-26">
+          </div>
+          <div class="col-md-8 text-md-end">
+            <button type="submit" class="btn btn-gold"><i class="bi bi-save me-1"></i>Salva Regolamento</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header card-header-green d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-code-slash me-2"></i>Contenuto (HTML)</span>
+        <span class="small text-white-50">Puoi usare tag HTML: &lt;h4&gt; titoli, &lt;p&gt; paragrafi, &lt;ul&gt;&lt;li&gt; elenchi, &lt;b&gt; grassetto</span>
+      </div>
+      <div class="card-body">
+        <textarea name="regolamento_html" class="form-control font-monospace" rows="24"
+                  style="font-size:.85rem">{{ regolamento_html }}</textarea>
+        <div class="form-text mt-2">
+          <i class="bi bi-info-circle me-1"></i>
+          Per i titoli di sezione usa <code>&lt;h4 class="reg-heading"&gt;Titolo&lt;/h4&gt;</code> per avere lo stile coordinato.
+          Quando avrai il regolamento aggiornato, incollalo qui (anche da Word: copia-incolla il testo e racchiudi i paragrafi in tag &lt;p&gt;).
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

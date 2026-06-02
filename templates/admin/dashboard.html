@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Admin — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-speedometer2 me-2 text-success"></i>Pannello Amministratore</h4>
+    <div class="d-flex gap-2 flex-wrap">
+      <form method="POST" action="{{ url_for('toggle_nominations') }}" class="d-inline">
+        <button type="submit" class="btn btn-sm {% if nomination_open %}btn-warning{% else %}btn-success{% endif %}">
+          <i class="bi bi-{% if nomination_open %}lock{% else %}unlock{% endif %} me-1"></i>
+          {% if nomination_open %}Chiudi Nomination{% else %}Apri Nomination{% endif %}
+        </button>
+      </form>
+      <a href="{{ url_for('create_auction') }}" class="btn btn-sm btn-gold">
+        <i class="bi bi-plus-lg me-1"></i>Nuova Asta
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+      <div class="stat-card green">
+        <div class="stat-value">{{ stats.users }}</div>
+        <div class="stat-label"><i class="bi bi-people me-1"></i>Manager</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card blue">
+        <div class="stat-value">{{ stats.players }}</div>
+        <div class="stat-label"><i class="bi bi-person-badge me-1"></i>Giocatori</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card gold">
+        <div class="stat-value">{{ stats.nominations }}</div>
+        <div class="stat-label"><i class="bi bi-list-check me-1"></i>Nomination</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card red">
+        <div class="stat-value">{{ stats.active }}</div>
+        <div class="stat-label"><i class="bi bi-hammer me-1"></i>Aste attive</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card green">
+        <div class="stat-value">{{ stats.acquisitions }}</div>
+        <div class="stat-label"><i class="bi bi-trophy me-1"></i>Acquisti totali</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="d-flex align-items-center justify-content-center h-100">
+        {% if nomination_open %}
+        <span class="badge bg-success p-3 fs-6 text-center"><i class="bi bi-unlock d-block mb-1 fs-4"></i>Nomination<br>APERTE</span>
+        {% else %}
+        <span class="badge bg-secondary p-3 fs-6 text-center"><i class="bi bi-lock d-block mb-1 fs-4"></i>Nomination<br>CHIUSE</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Manager overview -->
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header card-header-green d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-people me-2"></i>Stato Manager</span>
+          <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-gold">Gestisci</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 small align-middle">
+              <thead>
+                <tr>
+                  <th>Squadra</th><th>Username</th>
+                  <th class="text-end">Budget</th>
+                  <th class="text-end">Nom.</th>
+                  <th class="text-end">Acquisti</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for u in users %}
+                <tr>
+                  <td class="fw-semibold">{{ u.team_name }}</td>
+                  <td class="text-muted">{{ u.username }}</td>
+                  <td class="text-end fw-bold {% if u.budget < 50 %}text-danger{% elif u.budget < 150 %}text-warning{% else %}text-success{% endif %}">
+                    {{ u.budget }}
+                  </td>
+                  <td class="text-end">
+                    <span class="badge {% if u.nominations > 0 %}bg-success{% else %}bg-secondary{% endif %}">{{ u.nominations }}</span>
+                  </td>
+                  <td class="text-end">
+                    <span class="badge bg-primary">{{ u.players_won }}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent auctions -->
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header card-header-gold d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-hammer me-2"></i>Sessioni di Asta</span>
+          <a href="{{ url_for('admin_auctions') }}" class="btn btn-sm btn-green text-white">Tutte</a>
+        </div>
+        <div class="card-body p-0">
+          {% if not sessions %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox d-block fs-2 mb-2"></i>Nessuna asta ancora creata
+            <br><a href="{{ url_for('create_auction') }}" class="btn btn-sm btn-gold mt-2">Crea la prima asta</a>
+          </div>
+          {% else %}
+          <ul class="list-group list-group-flush">
+            {% for s in sessions %}
+            <li class="list-group-item d-flex align-items-center py-3">
+              <div class="flex-grow-1">
+                <div class="fw-semibold small">{{ s.name }}</div>
+                <div class="text-muted" style="font-size:.75rem">{{ s.created_at[:10] }}</div>
+              </div>
+              <div class="me-2">
+                {% if s.status == 'pending' %}
+                <span class="badge bg-secondary">In attesa</span>
+                {% elif s.status == 'bidding' %}
+                <span class="badge bg-success">In corso</span>
+                {% elif s.status == 'revealed' %}
+                <span class="badge bg-primary">Completata</span>
+                {% endif %}
+              </div>
+              <a href="{{ url_for('manage_auction', session_id=s.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

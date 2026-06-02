@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Gestione Curiosità — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <h4 class="fw-bold mb-4"><i class="bi bi-stars me-2 text-warning"></i>Gestione Curiosità</h4>
+
+  <div class="row g-4">
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-header card-header-gold"><i class="bi bi-plus-lg me-2"></i>Nuova Curiosità</div>
+        <div class="card-body">
+          <form method="POST">
+            <input type="hidden" name="action" value="add">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Titolo</label>
+              <input type="text" name="title" class="form-control" placeholder="es. Punteggio massimo" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Valore</label>
+              <input type="text" name="value" class="form-control" placeholder="es. 99 punti">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Dettaglio</label>
+              <textarea name="detail" class="form-control" rows="3" placeholder="Descrizione opzionale"></textarea>
+            </div>
+            <button type="submit" class="btn btn-green w-100"><i class="bi bi-check-lg me-1"></i>Aggiungi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card">
+        <div class="card-header card-header-green"><i class="bi bi-list me-2"></i>Curiosità inserite</div>
+        <div class="card-body p-0">
+          {% if not items %}
+          <div class="text-center text-muted py-4">Nessuna curiosità inserita.</div>
+          {% else %}
+          <ul class="list-group list-group-flush">
+            {% for c in items %}
+            <li class="list-group-item d-flex align-items-start gap-2">
+              <div class="flex-grow-1">
+                <div class="fw-semibold">{{ c.title }}
+                  {% if c.value %}<span class="text-success">— {{ c.value }}</span>{% endif %}
+                </div>
+                {% if c.detail %}<div class="text-muted small">{{ c.detail }}</div>{% endif %}
+              </div>
+              <form method="POST" onsubmit="return confirm('Eliminare questa curiosità?')">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ c.id }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

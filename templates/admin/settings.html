@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Impostazioni — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <h4 class="fw-bold mb-4"><i class="bi bi-gear me-2 text-success"></i>Impostazioni Lega</h4>
+
+  <form method="POST" action="{{ url_for('admin_settings') }}">
+    <div class="row g-4">
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-green">
+            <i class="bi bi-trophy me-2"></i>Informazioni Lega
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Nome della Lega</label>
+              <input type="text" name="league_name" class="form-control"
+                     value="{{ settings.league_name }}" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Budget iniziale per manager (crediti)</label>
+              <input type="number" name="initial_budget" class="form-control"
+                     value="{{ settings.initial_budget }}" min="1" required>
+              <div class="form-text">Usato quando si crea un nuovo utente.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Max giocatori per squadra</label>
+              <input type="number" name="max_players" class="form-control"
+                     value="{{ settings.max_players }}" min="1" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-gold">
+            <i class="bi bi-list-check me-2"></i>Limiti Nomination per Ruolo
+          </div>
+          <div class="card-body">
+            {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+            <div class="mb-3 d-flex align-items-center gap-3">
+              <span class="badge badge-role role-{{ role }}" style="font-size:.9rem;width:32px">{{ role }}</span>
+              <label class="form-label mb-0 flex-grow-1 fw-semibold">Max {{ label }}</label>
+              <input type="number" name="max_nom_{{ role }}" class="form-control"
+                     style="width:80px" value="{{ settings['max_nom_' ~ role] }}" min="0" max="25" required>
+            </div>
+            {% endfor %}
+            <div class="alert alert-info py-2 small mt-2 mb-0">
+              <i class="bi bi-info-circle me-1"></i>
+              Totale nomination: <strong>{{ settings.max_nom_P|int + settings.max_nom_D|int + settings.max_nom_C|int + settings.max_nom_A|int }}</strong> per manager
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-green">
+            <i class="bi bi-diagram-3 me-2"></i>Composizione Rosa (slot per ruolo)
+          </div>
+          <div class="card-body">
+            {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+            <div class="mb-3 d-flex align-items-center gap-3">
+              <span class="badge badge-role role-{{ role }}" style="font-size:.9rem;width:32px">{{ role }}</span>
+              <label class="form-label mb-0 flex-grow-1 fw-semibold">{{ label }} in rosa</label>
+              <input type="number" name="slots_{{ role }}" class="form-control"
+                     style="width:80px" value="{{ settings['slots_' ~ role] }}" min="0" max="25" required>
+            </div>
+            {% endfor %}
+            <div class="alert alert-info py-2 small mt-2 mb-0">
+              <i class="bi bi-info-circle me-1"></i>
+              Rosa totale: <strong>{{ settings.slots_P|int + settings.slots_D|int + settings.slots_C|int + settings.slots_A|int }}</strong> giocatori.
+              Usato dai manager nella pagina <strong>Strategia</strong> per pianificare il budget.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-green">
+            <i class="bi bi-hammer me-2"></i>Regole Asta
+          </div>
+          <div class="card-body">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-coin fs-4 text-warning"></i>
+              <div>
+                <strong>Gestione dei pareggi: Monetina o Rilancio</strong>
+                <p class="text-muted small mb-0">
+                  Quando due o più manager fanno la stessa offerta massima, l'amministratore sceglie se
+                  effettuare la <strong>monetina</strong> (sorteggio: il vincitore paga l'offerta +1) oppure
+                  <strong>continuare l'asta</strong> con un rilancio di almeno +1 crediti.
+                </p>
+              </div>
+            </div>
+            <input type="hidden" name="tie_rule" value="{{ settings.tie_rule }}">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-gold px-4">
+        <i class="bi bi-save me-2"></i>Salva Impostazioni
+      </button>
+    </div>
+  </form>
+
+  <!-- Zona pericolosa: reset stagione -->
+  <div class="card mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+      <i class="bi bi-exclamation-octagon me-2"></i>Zona Pericolosa
+    </div>
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h6 class="fw-bold mb-1">Reset Stagione</h6>
+          <p class="text-muted small mb-0">
+            Azzera <strong>aste, offerte, acquisti, nomination e strategie</strong> e ripristina i budget iniziali.<br>
+            Vengono <strong>mantenuti</strong>: utenti, lista giocatori, storico/albo d'oro, curiosità e regolamento.
+          </p>
+        </div>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#resetModal">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Stagione
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="resetModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('reset_season') }}">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Conferma Reset Stagione</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Questa azione è <strong>irreversibile</strong>. Verranno cancellati tutti i dati di gioco della stagione corrente.</p>
+            <label class="form-label fw-semibold">Per confermare, digita <code>RESET</code>:</label>
+            <input type="text" name="confirm" class="form-control" placeholder="RESET" autocomplete="off" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Resetta la stagione</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

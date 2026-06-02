@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+{% block title %}{{ s.name }} — {{ league_name }}{% endblock %}
+{% block head %}
+<style>
+  .bid-tie { background: #fff3cd !important; }
+  .coin {
+    width: 120px; height: 120px; margin: 0 auto; position: relative;
+    transform-style: preserve-3d;
+  }
+  .coin.flipping { animation: coinflip 2.2s ease-out forwards; }
+  .coin-face {
+    position: absolute; inset: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; backface-visibility: hidden;
+    box-shadow: inset 0 0 0 6px rgba(0,0,0,.15), 0 6px 14px rgba(0,0,0,.3);
+  }
+  .coin-front { background: radial-gradient(circle at 35% 30%, #ffe082, #d4af37); color: #7a5c00; }
+  .coin-back { background: radial-gradient(circle at 35% 30%, #c8e6c9, #2e7d32); color: #fff; transform: rotateY(180deg); }
+  @keyframes coinflip {
+    0%   { transform: rotateY(0) translateY(0); }
+    50%  { transform: rotateY(1080deg) translateY(-40px); }
+    100% { transform: rotateY(2160deg) translateY(0); }
+  }
+  .reveal-content {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32 60%, #d4af37);
+    border: none; overflow: hidden;
+  }
+  .reveal-player { font-size: 1.6rem; font-weight: 600; opacity: .95; }
+  .reveal-winner {
+    font-size: 2.8rem; font-weight: 800; line-height: 1.1;
+    animation: pop .6s cubic-bezier(.2,1.4,.4,1);
+    text-shadow: 0 2px 12px rgba(0,0,0,.35);
+  }
+  .reveal-price { font-size: 1.4rem; font-weight: 700; color: #ffe082; }
+  @keyframes pop { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+  .confetti {
+    position: fixed; width: 10px; height: 14px; top: -20px; z-index: 2000;
+    animation: fall linear forwards; pointer-events: none;
+  }
+  @keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: .9; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="flex-grow-1">
+      <h4 class="fw-bold mb-0">{{ s.name }}</h4>
+      <span class="text-muted small">
+        Creata: {{ s.created_at[:16] }}
+        {% if s.opened_at %} &bull; Aperta: {{ s.opened_at[:16] }}{% endif %}
+        {% if s.closed_at %} &bull; Chiusa: {{ s.closed_at[:16] }}{% endif %}
+      </span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if s.status == 'pending' %}
+      <form method="POST" action="{{ url_for('open_auction', session_id=s.id) }}">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-unlock me-1"></i>Apri Offerte
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('delete_auction', session_id=s.id) }}"
+            onsubmit="return confirm('Eliminare questa sessione?')">
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-trash me-1"></i>Elimina
+        </button>
+      </form>
+      {% elif s.status == 'bidding' %}
+      <span class="badge bg-success fs-6 px-3 py-2 align-self-center">
+        <i class="bi bi-circle-fill me-1" style="font-size:.6rem"></i>OFFERTE APERTE
+      </span>
+      <form method="POST" action="{{ url_for('close_auction', session_id=s.id) }}"
+            onsubmit="return confirm('Chiudere le offerte e rivelare i risultati? Questa azione è irreversibile.')">
+        <button type="submit" class="btn btn-danger" {% if not all_acted %}disabled{% endif %}
+                title="{% if not all_acted %}Attendi che tutti i manager abbiano offerto o rinunciato{% endif %}">
+          <i class="bi bi-lock me-1"></i>Chiudi e Rivela Risultati
+        </button>
+      </form>
+      {% if not all_acted %}
+      <form method="POST" action="{{ url_for('close_auction', session_id=s.id) }}"
+            onsubmit="return confirm('Forzare la chiusura anche se non tutti hanno agito? Chi non ha offerto verrà considerato come rinunciatario.')">
+        <button type="submit" class="btn btn-outline-danger btn-sm align-self-center" title="Forza chiusura">
+          <i class="bi bi-lock"></i> Forza
+        </button>
+      </form>
+      {% endif %}
+      {% elif s.status == 'resolving' %}
+      <span class="badge bg-warning text-dark fs-6 px-3 py-2 align-self-center">
+        <i class="bi bi-exclamation-triangle me-1"></i>PAREGGI DA RISOLVERE
+      </span>
+      {% elif s.status == 'revealed' %}
+      <button class="btn btn-gold" id="revealWinnersBtn">
+        <i class="bi bi-stars me-1"></i>Rivela Vincitori
+      </button>
+      <span class="badge bg-primary fs-6 px-3 py-2 align-self-center">
+        <i class="bi bi-check-circle me-1"></i>COMPLETATA
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if s.status == 'pending' %}
+  <div class="alert alert-warning d-flex align-items-center gap-2">
+    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+    <div><strong>Le offerte non sono ancora aperte.</strong> I manager <u>non vedono</u> questa asta finché non clicchi
+    <strong>"Apri Offerte"</strong> qui sopra.</div>
+  </div>
+  {% endif %}
+
+  {% if s.status == 'resolving' %}
+  <div class="alert alert-warning d-flex align-items-center gap-2">
+    <i class="bi bi-coin fs-4"></i>
+    <div>Ci sono <strong>pareggi</strong> da risolvere. Per ogni giocatore in pareggio scegli
+    <strong>la monetina</strong> (sorteggio, il vincitore paga l'offerta +1) oppure <strong>continua l'asta</strong>
+    (riapre il giocatore, rilancio di almeno +1 crediti).</div>
+  </div>
+  {% endif %}
+
+  <!-- Bid status per manager -->
+  {% if s.status == 'bidding' %}
+  {% if all_acted %}
+  <div class="alert alert-success d-flex align-items-center gap-2">
+    <i class="bi bi-check-circle-fill fs-4"></i>
+    <div><strong>Tutti i manager hanno agito</strong> (offerta o rinuncia) su tutti i giocatori.
+    Puoi <strong>chiudere l'asta</strong>.</div>
+  </div>
+  {% else %}
+  <div class="alert alert-info d-flex align-items-center gap-2">
+    <i class="bi bi-hourglass-split fs-4"></i>
+    <div>In attesa di: <strong>{{ waiting | join(', ') }}</strong>.
+    Il pulsante di chiusura si abilita quando tutti avranno offerto o rinunciato.</div>
+  </div>
+  {% endif %}
+  <div class="card mb-3">
+    <div class="card-header card-header-green py-2 d-flex justify-content-between">
+      <span><i class="bi bi-people me-2"></i>Manager che possono puntare</span>
+      <span class="small">{{ users | selectattr('complete') | list | length }}/{{ users | length }} pronti</span>
+    </div>
+    <div class="card-body p-0">
+      {% if not users %}
+      <div class="text-center text-muted py-3 small">Nessun manager può puntare sui giocatori in asta (nessun nominatore).</div>
+      {% else %}
+      <div class="d-flex flex-wrap gap-2 p-3">
+        {% for u in users %}
+        <div class="card px-3 py-2 text-center {% if u.complete %}border-success{% endif %}" style="min-width:130px">
+          <div class="small fw-semibold">{{ u.team_name }}</div>
+          {% if u.complete %}
+          <div class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Pronto</div>
+          {% else %}
+          <div class="text-warning fw-bold"><i class="bi bi-hourglass"></i> {{ u.acted }}/{{ u.eligible }}</div>
+          {% endif %}
+          <div class="text-muted" style="font-size:.7rem">
+            può puntare su {{ u.eligible }} · {{ u.n_bids }} offert{{ 'a' if u.n_bids == 1 else 'e' }} · {{ u.n_renounces }} rinunc{{ 'ia' if u.n_renounces == 1 else 'e' }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filter bar -->
+  <div class="mb-3 d-flex gap-1 flex-wrap align-items-center">
+    <span class="small text-muted me-1">Filtra:</span>
+    {% for r, lbl in [('Tutti','Tutti'),('P','P'),('D','D'),('C','C'),('A','A')] %}
+    <button class="btn btn-sm role-filter-btn {% if loop.first %}active{% else %}btn-outline-secondary{% endif %}"
+            onclick="filterItems('{{ r }}', this)">{{ lbl }}</button>
+    {% endfor %}
+    <span class="ms-auto text-muted small">
+      {{ items_with_bids | length }} giocatori in questa sessione
+    </span>
+  </div>
+
+  <!-- Items -->
+  <div id="itemsContainer">
+    {% for ib in items_with_bids %}
+    {% set item = ib.item %}
+    {% set bids = ib.bids %}
+    <div class="card mb-2 item-card {% if item.status == 'sold' %}border-success{% elif item.status == 'unsold' %}border-secondary{% endif %}"
+         data-role="{{ item.role }}">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <!-- Player info -->
+          <div style="min-width:180px">
+            <span class="badge badge-role role-{{ item.role }} me-1">{{ item.role }}</span>
+            <span class="fw-bold">{{ item.name }}</span>
+            <span class="text-muted small ms-1">{{ item.team }}</span>
+            {% if item.caller_id %}<span class="badge bg-warning text-dark ms-1"><i class="bi bi-megaphone"></i> {{ item.caller_name }}</span>{% endif %}
+            <div class="text-muted small">
+              Q.A.: {{ item.base_value }} &bull; {{ item.nom_count }} nom. &bull;
+              {{ item.bid_count }} offert{{ 'a' if item.bid_count == 1 else 'e' }}
+            </div>
+          </div>
+
+          <!-- Status badge -->
+          <div class="ms-auto d-flex align-items-center gap-2">
+            {% if item.status == 'pending' %}
+            <span class="badge bg-warning text-dark">In attesa</span>
+            {% elif item.status == 'sold' %}
+            <span class="badge bg-success">
+              <i class="bi bi-trophy-fill me-1"></i>{{ item.winner_name }} — {{ item.final_price }} cr.
+            </span>
+            {% elif item.status == 'unsold' %}
+            <span class="badge bg-secondary">Non aggiudicato</span>
+            {% elif item.status == 'tie' %}
+            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>PAREGGIO a {{ item.final_price }} cr.</span>
+            <button class="btn btn-sm btn-gold resolve-tie-btn"
+                    data-item-id="{{ item.id }}"
+                    data-player="{{ item.name }}"
+                    data-amount="{{ item.final_price }}"
+                    data-participants="{{ bids | selectattr('amount','equalto',item.final_price) | map(attribute='team_name') | join('||') }}">
+              <i class="bi bi-coin me-1"></i>Risolvi
+            </button>
+            {% endif %}
+          </div>
+
+          <!-- Toggle bids -->
+          {% if bids %}
+          <button class="btn btn-sm btn-outline-secondary toggle-bids"
+                  data-target="bids-{{ item.id }}">
+            <i class="bi bi-chevron-down"></i> Offerte
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Bids detail (collapsible) -->
+        {% if bids %}
+        <div id="bids-{{ item.id }}" class="mt-2 collapse">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0 small">
+              <thead><tr>
+                <th>#</th><th>Manager</th><th class="text-end">Offerta</th>
+                <th class="text-end">Orario</th>
+              </tr></thead>
+              <tbody>
+                {% for b in bids %}
+                <tr class="{% if item.status == 'sold' and b.amount == item.final_price %}bid-winner
+                           {% elif item.status == 'tie' and b.amount == item.final_price %}bid-tie
+                           {% elif item.status == 'bidding' and loop.first %}bid-winner{% else %}bid-loser{% endif %}">
+                  <td>
+                    {% if item.status == 'sold' and b.amount == item.final_price %}
+                    <i class="bi bi-trophy-fill text-warning"></i>
+                    {% elif item.status == 'tie' and b.amount == item.final_price %}
+                    <i class="bi bi-coin text-danger"></i>
+                    {% else %}
+                    {{ loop.index }}
+                    {% endif %}
+                  </td>
+                  <td class="fw-semibold">{{ b.team_name }}</td>
+                  <td class="text-end fw-bold">{{ b.amount }}</td>
+                  <td class="text-end text-muted">{{ b.submitted_at[11:16] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="text-muted small mt-1">
+            <i class="bi bi-info-circle me-1"></i>
+            In caso di parità si usa la <strong>monetina</strong> (sorteggio) oppure si <strong>continua l'asta</strong> con rilancio.
+          </div>
+        </div>
+        {% elif s.status == 'bidding' %}
+        <div class="text-muted small mt-1">
+          <i class="bi bi-clock me-1"></i>Nessuna offerta ricevuta per questo giocatore.
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- Monetina modal -->
+<div class="modal fade" id="tieModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-header-gold">
+        <h5 class="modal-title"><i class="bi bi-coin me-2"></i>Pareggio: <span id="tiePlayer"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="text-muted mb-2">Offerta in pareggio: <strong id="tieAmount"></strong> crediti</p>
+        <div id="tieParticipants" class="d-flex flex-wrap justify-content-center gap-2 mb-3"></div>
+
+        <!-- scelta -->
+        <div id="tieChoice">
+          <p class="small text-muted">Scegli come risolvere il pareggio:</p>
+          <div class="d-grid gap-2 col-10 mx-auto">
+            <button class="btn btn-gold btn-lg" id="doCoinflip">
+              <i class="bi bi-coin me-2"></i>Fai la Monetina <span class="small d-block">il vincitore paga +1 crediti</span>
+            </button>
+            <form method="POST" id="continueForm">
+              <button type="submit" class="btn btn-outline-success btn-lg w-100">
+                <i class="bi bi-arrow-repeat me-2"></i>Continua l'Asta <span class="small d-block">rilancio di almeno +1</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- animazione -->
+        <div id="tieAnimation" class="d-none py-3">
+          <div class="coin" id="coin">
+            <div class="coin-face coin-front"><i class="bi bi-trophy-fill"></i></div>
+            <div class="coin-face coin-back">🍺</div>
+          </div>
+          <p class="mt-3 mb-0 fw-semibold" id="coinStatus">Sorteggio in corso...</p>
+        </div>
+
+        <!-- risultato -->
+        <div id="tieResult" class="d-none py-2">
+          <div class="display-6 mb-2">🎉</div>
+          <p class="mb-1">Il giocatore va a:</p>
+          <h3 class="fw-bold text-success" id="tieWinner"></h3>
+          <p class="text-muted">al prezzo di <strong id="tieFinal"></strong> crediti</p>
+          <button class="btn btn-green mt-2" onclick="location.reload()"><i class="bi bi-check-lg me-1"></i>Conferma e continua</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reveal vincitori modal -->
+<div class="modal fade" id="revealModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content reveal-content">
+      <div class="modal-body text-center text-white py-5 position-relative">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+        <div class="text-uppercase small fw-bold mb-2" style="letter-spacing:3px;opacity:.8" id="revealRole"></div>
+        <div class="reveal-player mb-1" id="revealPlayer"></div>
+        <div style="opacity:.85" class="mb-4">aggiudicato a</div>
+        <div class="reveal-winner mb-2" id="revealWinner"></div>
+        <div class="reveal-price" id="revealPrice"></div>
+        <div class="mt-4 small" style="opacity:.7"><span id="revealProgress"></span></div>
+        <div class="mt-3">
+          <button class="btn btn-light btn-sm" id="revealNext"><i class="bi bi-arrow-right me-1"></i>Avanti</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.toggle-bids').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const target = document.getElementById(this.dataset.target);
+    target.classList.toggle('show');
+    const icon = this.querySelector('i');
+    icon.className = target.classList.contains('show') ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+  });
+});
+
+// Auto-expand bids for revealed auctions
+{% if s.status == 'revealed' %}
+document.querySelectorAll('[id^="bids-"]').forEach(el => el.classList.add('show'));
+document.querySelectorAll('.toggle-bids i').forEach(i => i.className = 'bi bi-chevron-up');
+{% endif %}
+
+function filterItems(role, btn) {
+  document.querySelectorAll('.role-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.item-card').forEach(c => {
+    c.style.display = (role === 'Tutti' || c.dataset.role === role) ? '' : 'none';
+  });
+}
+
+// ── Monetina / risoluzione pareggio ──
+const tieModal = document.getElementById('tieModal') ? new bootstrap.Modal(document.getElementById('tieModal')) : null;
+let currentItemId = null;
+
+document.querySelectorAll('.resolve-tie-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    currentItemId = this.dataset.itemId;
+    document.getElementById('tiePlayer').textContent = this.dataset.player;
+    document.getElementById('tieAmount').textContent = this.dataset.amount;
+    const parts = (this.dataset.participants || '').split('||').filter(Boolean);
+    document.getElementById('tieParticipants').innerHTML = parts.map(p =>
+      `<span class="badge bg-secondary fs-6">${p}</span>`).join('');
+    // reset stati
+    document.getElementById('tieChoice').classList.remove('d-none');
+    document.getElementById('tieAnimation').classList.add('d-none');
+    document.getElementById('tieResult').classList.add('d-none');
+    document.getElementById('coin').classList.remove('flipping');
+    document.getElementById('continueForm').action = `/admin/auctions/item/${currentItemId}/continue`;
+    tieModal.show();
+  });
+});
+
+// ── Suono sintetizzato (Web Audio, nessun file esterno) ──
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, start, dur, vol = 0.18, type = 'square') {
+  const ctx = getAudio();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.value = freq;
+  o.connect(g); g.connect(ctx.destination);
+  const t = ctx.currentTime + start;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function playSpinSound() {
+  // ticchettio accelerato della moneta che gira (~2.2s)
+  let t = 0, gap = 0.13;
+  for (let i = 0; i < 20 && t < 2.1; i++) {
+    beep(900 + i * 25, t, 0.05, 0.10, 'triangle');
+    gap = Math.max(0.04, gap * 0.92);
+    t += gap;
+  }
+}
+function playWinSound() {
+  // fanfara di vittoria
+  beep(523, 0, 0.16, 0.22);   // Do
+  beep(659, 0.16, 0.16, 0.22); // Mi
+  beep(784, 0.32, 0.16, 0.22); // Sol
+  beep(1047, 0.48, 0.40, 0.26); // Do alto
+}
+
+document.getElementById('doCoinflip')?.addEventListener('click', async function() {
+  document.getElementById('tieChoice').classList.add('d-none');
+  document.getElementById('tieAnimation').classList.remove('d-none');
+  const coin = document.getElementById('coin');
+  // riavvia animazione
+  coin.classList.remove('flipping');
+  void coin.offsetWidth;
+  coin.classList.add('flipping');
+  try { getAudio().resume(); playSpinSound(); } catch (e) {}
+
+  // chiamata server in parallelo all'animazione
+  const fd = new FormData();
+  const [res] = await Promise.all([
+    fetch(`/admin/auctions/item/${currentItemId}/coinflip`, { method: 'POST', body: fd }).then(r => r.json()),
+    new Promise(r => setTimeout(r, 2300))
+  ]);
+
+  if (res.error) {
+    document.getElementById('coinStatus').textContent = res.error;
+    return;
+  }
+  document.getElementById('tieAnimation').classList.add('d-none');
+  document.getElementById('tieResult').classList.remove('d-none');
+  document.getElementById('tieWinner').textContent = res.winner;
+  document.getElementById('tieFinal').textContent = res.amount;
+  try { playWinSound(); } catch (e) {}
+});
+
+// ── Rivelazione vincitori (animazione) ──
+const SOLD = [
+  {% for ib in items_with_bids if ib.item.status == 'sold' %}
+  {role: "{{ ib.item.role }}", player: {{ ib.item.name | tojson }}, winner: {{ (ib.item.winner_name or '—') | tojson }}, price: {{ ib.item.final_price or 0 }}},
+  {% endfor %}
+];
+const ROLE_LABEL = {P:'Portiere', D:'Difensore', C:'Centrocampista', A:'Attaccante'};
+
+function confettiBurst() {
+  const colors = ['#d4af37','#2e7d32','#ffffff','#ffe082','#4caf50'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (1.8 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.4) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+
+const revealModalEl = document.getElementById('revealModal');
+const revealModal = revealModalEl ? new bootstrap.Modal(revealModalEl) : null;
+let revealIdx = 0;
+
+function showReveal(i) {
+  const it = SOLD[i];
+  document.getElementById('revealRole').textContent = ROLE_LABEL[it.role] || it.role;
+  document.getElementById('revealPlayer').textContent = it.player;
+  document.getElementById('revealWinner').textContent = it.winner;
+  document.getElementById('revealPrice').textContent = it.price + ' crediti';
+  document.getElementById('revealProgress').textContent = (i + 1) + ' / ' + SOLD.length;
+  document.getElementById('revealNext').innerHTML = (i + 1 < SOLD.length)
+    ? '<i class="bi bi-arrow-right me-1"></i>Avanti'
+    : '<i class="bi bi-check-lg me-1"></i>Fine';
+  // restart pop animation
+  const w = document.getElementById('revealWinner');
+  w.style.animation = 'none'; void w.offsetWidth; w.style.animation = '';
+  confettiBurst();
+  try { getAudio().resume(); playWinSound(); } catch (e) {}
+}
+
+document.getElementById('revealWinnersBtn')?.addEventListener('click', () => {
+  if (!SOLD.length) { alert('Nessun giocatore aggiudicato in questa asta.'); return; }
+  revealIdx = 0;
+  revealModal.show();
+  showReveal(0);
+});
+
+document.getElementById('revealNext')?.addEventListener('click', () => {
+  revealIdx++;
+  if (revealIdx >= SOLD.length) { revealModal.hide(); return; }
+  showReveal(revealIdx);
+});
+
+// auto-apertura subito dopo "Chiudi e Rivela Risultati"
+if (new URLSearchParams(location.search).get('reveal') === '1' && SOLD.length) {
+  window.addEventListener('load', () => {
+    revealIdx = 0;
+    revealModal.show();
+    showReveal(0);
+  });
+}
+</script>
+{% endblock %}

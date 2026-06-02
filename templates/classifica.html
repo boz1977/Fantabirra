@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Classifica — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <h4 class="fw-bold mb-4"><i class="bi bi-trophy me-2 text-warning"></i>Classifica Acquisti</h4>
+
+  {% if not users %}
+  <div class="card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-trophy fs-1 d-block mb-3"></i>
+      Nessun dato ancora disponibile.
+    </div>
+  </div>
+  {% else %}
+  <div class="row g-3 mb-4">
+    {% for u in users[:3] %}
+    <div class="col-md-4">
+      <div class="card stat-card {% if loop.index == 1 %}gold{% elif loop.index == 2 %}blue{% else %}green{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-1 fw-black">
+            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else %}🥉{% endif %}
+          </div>
+          <div>
+            <div class="stat-value" style="font-size:1.2rem">{{ u.team_name }}</div>
+            <div class="stat-label">{{ u.players_won }} giocatori — {{ u.spent }} crediti spesi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header card-header-green">
+      <i class="bi bi-list-ol me-2"></i>Classifica Completa
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th style="width:50px">#</th>
+              <th>Squadra</th>
+              <th class="text-end">Giocatori</th>
+              <th class="text-end">Speso</th>
+              <th class="text-end">Budget rimasto</th>
+              <th class="text-end">Speso %</th>
+              <th style="width:150px">Budget usato</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            {% set pct = (u.spent / initial_budget * 100) | round(1) if initial_budget > 0 else 0 %}
+            <tr {% if loop.index <= 3 %}class="fw-semibold"{% endif %}>
+              <td>
+                <span class="badge {% if loop.index == 1 %}bg-warning text-dark{% elif loop.index == 2 %}bg-secondary{% elif loop.index == 3 %}bg-danger{% else %}bg-light text-dark{% endif %}">
+                  {{ loop.index }}
+                </span>
+              </td>
+              <td>
+                {% if loop.index == 1 %}<i class="bi bi-trophy-fill text-warning me-1"></i>{% endif %}
+                {{ u.team_name }}
+              </td>
+              <td class="text-end">
+                <span class="badge bg-primary">{{ u.players_won }}</span>
+              </td>
+              <td class="text-end fw-bold">{{ u.spent }}</td>
+              <td class="text-end {% if u.budget < 50 %}text-danger{% elif u.budget < 150 %}text-warning{% else %}text-success{% endif %}">
+                {{ u.budget }}
+              </td>
+              <td class="text-end text-muted">{{ pct }}%</td>
+              <td>
+                <div class="budget-bar">
+                  <div class="budget-fill" style="width:{{ [pct, 100]|min }}%"></div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

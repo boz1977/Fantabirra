@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}La Mia Squadra — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-shield-fill text-success me-2"></i>{{ user.team_name }}</h4>
+      <span class="text-muted small">{{ total_players }} giocatori — {{ total_spent }} crediti spesi</span>
+    </div>
+    <div class="text-end d-flex align-items-center gap-3">
+      <a href="{{ url_for('strategia') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-bullseye me-1"></i>Strategia</a>
+      <div class="fw-bold fs-5 text-success">{{ user.budget }} <small class="text-muted fw-normal fs-6">crediti rimasti</small></div>
+    </div>
+  </div>
+
+  {% if total_players == 0 %}
+  <div class="card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-shield fs-1 d-block mb-3"></i>
+      <h5>Nessun giocatore ancora acquistato</h5>
+      <p>Partecipa alle aste per formare la tua squadra!</p>
+      <a href="{{ url_for('auctions') }}" class="btn btn-gold">Vai alle Aste</a>
+    </div>
+  </div>
+  {% else %}
+
+  {% for role, label, icon, color in [
+    ('P','Portieri','bi-person-fill','#ffd700'),
+    ('D','Difensori','bi-shield-fill','#4caf50'),
+    ('C','Centrocampisti','bi-arrow-left-right','#2196f3'),
+    ('A','Attaccanti','bi-lightning-fill','#f44336')
+  ] %}
+  {% if by_role[role] %}
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2" style="background:{{ color }}20; border-left:4px solid {{ color }}">
+      <i class="bi {{ icon }}" style="color:{{ color }}"></i>
+      <span class="fw-semibold">{{ label }}</span>
+      <span class="badge ms-1" style="background:{{ color }}; color:{% if role=='P' %}#333{% else %}#fff{% endif %}">{{ by_role[role]|length }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead>
+            <tr>
+              <th>Nome</th><th>Squadra</th>
+              <th class="text-end">Q.A.</th>
+              <th class="text-end">Pagato</th>
+              <th class="text-end">+/-</th>
+              <th class="text-muted small">Asta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in by_role[role] %}
+            {% set diff = p.price - p.base_value %}
+            <tr>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end">{{ p.base_value }}</td>
+              <td class="text-end fw-bold">{{ p.price }}</td>
+              <td class="text-end small {% if diff > 0 %}text-danger{% elif diff < 0 %}text-success{% else %}text-muted{% endif %}">
+                {% if diff > 0 %}+{% endif %}{{ diff }}
+              </td>
+              <td class="text-muted small">{{ p.session_name or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-semibold small text-muted">Totale ruolo:</td>
+              <td class="text-end fw-bold">{{ by_role[role] | sum(attribute='price') }}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <div class="card">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Totale speso</span>
+      <span class="fw-bold fs-5">{{ total_spent }} / {{ user.budget + total_spent }} crediti</span>
+    </div>
+    <div class="card-footer p-2">
+      <div class="budget-bar" style="height:12px">
+        <div class="budget-fill" style="width:{{ [total_spent / (user.budget + total_spent) * 100, 100]|min }}%"></div>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}

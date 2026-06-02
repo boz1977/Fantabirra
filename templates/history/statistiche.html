@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Statistiche — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart me-2 text-success"></i>Statistiche FantaAllenatori</h4>
+      <span class="text-muted small">Dati aggregati su {{ n_stagioni }} stagioni di storia</span>
+    </div>
+    <a href="{{ url_for('storico') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trophy me-1"></i>Albo d'Oro</a>
+  </div>
+
+  {% if not rows %}
+  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Nessun dato statistico disponibile.</div>
+  {% else %}
+  <div class="card">
+    <div class="card-header card-header-green"><i class="bi bi-people me-2"></i>Classifica all-time</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead>
+            <tr>
+              <th>#</th><th>Presidente</th>
+              <th class="text-center" title="Trofei totali">Trofei</th>
+              <th class="text-center" title="FantaCampionati">🏆</th>
+              <th class="text-center" title="FantaChampion">🥇</th>
+              <th class="text-center" title="Presenze (stagioni con classifica)">Pres.</th>
+              <th class="text-center" title="Podi (top 3)">Podi</th>
+              <th class="text-center" title="Miglior piazzamento">Best</th>
+              <th class="text-center" title="Posizione media">Pos. media</th>
+              <th class="text-center" title="Media punti a stagione">Punti medi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td class="text-muted">{{ loop.index }}</td>
+              <td class="fw-semibold">
+                {% if r.trofei >= 3 %}<i class="bi bi-star-fill text-warning me-1"></i>{% endif %}{{ r.pres }}
+              </td>
+              <td class="text-center fw-bold">
+                {% if r.trofei %}<span class="badge bg-success">{{ r.trofei }}</span>{% else %}<span class="text-muted">0</span>{% endif %}
+              </td>
+              <td class="text-center">{% if r.camp %}<span class="badge bg-warning text-dark">{{ r.camp }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              <td class="text-center">{% if r.cup %}<span class="badge bg-secondary">{{ r.cup }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              <td class="text-center">{{ r.presenze or '—' }}</td>
+              <td class="text-center">{{ r.podi or '—' }}</td>
+              <td class="text-center">
+                {% if r.best %}<span class="badge {% if r.best == 1 %}bg-warning text-dark{% else %}bg-light text-dark{% endif %}">{{ r.best }}°</span>{% else %}—{% endif %}
+              </td>
+              <td class="text-center text-muted">{{ r.pos_media if r.pos_media is not none else '—' }}</td>
+              <td class="text-center text-muted">{{ r.punti_media if r.punti_media is not none else '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="text-muted small mt-2">
+    <i class="bi bi-info-circle me-1"></i>
+    Trofei = FantaCampionati + FantaChampion. Presenze, podi e punti sono calcolati sulle stagioni con classifica disponibile.
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

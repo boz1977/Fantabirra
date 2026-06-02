@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Nomination — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h4 class="mb-0 fw-bold"><i class="bi bi-card-checklist me-2 text-success"></i>Le mie Nomination</h4>
+    <div class="d-flex align-items-center gap-2">
+      {% if nomination_open %}
+      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal">
+        <i class="bi bi-file-earmark-arrow-up me-1"></i>Importa da Excel
+      </button>
+      <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-unlock me-1"></i>Nomination aperte</span>
+      {% else %}
+      <span class="badge bg-secondary fs-6 px-3 py-2"><i class="bi bi-lock me-1"></i>Nomination chiuse</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Role counters -->
+  <div class="row g-2 mb-3">
+    {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+    {% set cnt = nom_by_role.get(role, 0) %}
+    {% set mx = settings['max_nom_' ~ role] %}
+    <div class="col-6 col-md-3">
+      <div class="card py-2 px-3 d-flex flex-row align-items-center gap-2">
+        <span class="badge badge-role role-{{ role }} fs-6">{{ role }}</span>
+        <div>
+          <div class="fw-bold {% if cnt >= mx %}text-danger{% else %}text-success{% endif %}"
+               id="counter-{{ role }}" data-max="{{ mx }}">{{ cnt }}/{{ mx }}</div>
+          <div class="text-muted" style="font-size:.75rem">{{ label }}</div>
+        </div>
+        <div class="ms-auto" style="width:50px">
+          <div class="budget-bar">
+            <div class="budget-fill" id="bar-{{ role }}" style="width:{{ [cnt/mx*100, 100]|min }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if nomination_open %}
+  <div class="alert alert-info py-2 small d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-shield-lock-fill"></i>
+    <span>Le nomination sono <strong>segrete</strong>: vedrai quanti manager hanno scelto ogni giocatore solo dopo la chiusura da parte dell'amministratore.</span>
+  </div>
+
+  <!-- Import modal -->
+  <div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('import_nominations') }}" enctype="multipart/form-data">
+          <div class="modal-header card-header-green text-white">
+            <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up me-2"></i>Importa Nomination</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">
+              Carica un file Excel in stile <em>"nominations Lord Cavallo"</em>: foglio <code>Tutti</code>
+              con i giocatori e una colonna manager (es. <code>Allenatore</code>) valorizzata per i giocatori scelti.
+              I giocatori vengono abbinati per nome; quelli oltre il limite di ruolo o non presenti in lista vengono saltati.
+            </p>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-green"><i class="bi bi-upload me-1"></i>Importa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Search & filter -->
+  <div class="card mb-3">
+    <div class="card-body py-2">
+      <form method="GET" class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex gap-1 flex-wrap">
+          {% for r, lbl in [('Tutti','Tutti'),('P','P'),('D','D'),('C','C'),('A','A')] %}
+          <button type="submit" name="role" value="{{ r }}"
+            class="btn btn-sm role-filter-btn {% if role_filter == r %}active{% else %}btn-outline-secondary{% endif %}">
+            {{ lbl }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="input-group input-group-sm flex-grow-1" style="max-width:300px">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" class="form-control" placeholder="Cerca giocatore o squadra..."
+                 value="{{ search }}"
+                 {% if role_filter != 'Tutti' %}<input type="hidden" name="role" value="{{ role_filter }}">{% endif %}>
+          {% if search %}<a href="{{ url_for('nominations', role=role_filter) }}" class="btn btn-outline-secondary">×</a>{% endif %}
+        </div>
+        <input type="hidden" name="role" value="{{ role_filter }}">
+      </form>
+    </div>
+  </div>
+
+  {% if not players %}
+  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Nessun giocatore trovato. L'amministratore deve prima caricare la lista giocatori.</div>
+  {% else %}
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small" id="players-table">
+          <thead>
+            <tr>
+              <th style="width:50px">R</th>
+              <th>Nome</th>
+              <th>Squadra</th>
+              <th class="text-end">Q.A.</th>
+              <th class="text-end" style="width:90px" title="{% if nomination_open %}Segrete fino alla chiusura{% else %}Quanti manager hanno nominato{% endif %}">
+                Nom. {% if nomination_open %}<i class="bi bi-lock-fill text-muted"></i>{% endif %}
+              </th>
+              <th class="text-center" style="width:80px">
+                {% if nomination_open %}Aggiungi{% else %}Stato{% endif %}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in players %}
+            {% set is_nom = p.id in my_nom_ids %}
+            {% set is_acq = p.id in acquired_ids %}
+            {% set in_sess = p.id in in_session_ids %}
+            <tr class="player-row {% if is_nom %}nominated{% endif %} {% if is_acq or in_sess %}acquired{% endif %}"
+                id="row-{{ p.id }}">
+              <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td class="text-muted">{{ p.team }}</td>
+              <td class="text-end">{{ p.base_value }}</td>
+              <td class="text-end">
+                {% if nomination_open %}
+                  <span class="text-muted" title="Le nomination sono segrete fino alla chiusura"><i class="bi bi-lock-fill"></i></span>
+                {% elif p.nom_count > 0 %}
+                  <span class="badge bg-secondary">{{ p.nom_count }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if is_acq %}
+                  <span class="badge bg-secondary" title="Già acquistato">Acq.</span>
+                {% elif in_sess %}
+                  <span class="badge bg-warning text-dark" title="In asta">Asta</span>
+                {% elif nomination_open %}
+                  {% set role_full = nom_by_role.get(p.role, 0) >= settings['max_nom_' ~ p.role] %}
+                  <button class="btn btn-sm player-nom-btn {% if is_nom %}btn-success active{% else %}btn-outline-success{% endif %}"
+                          data-pid="{{ p.id }}"
+                          data-role="{{ p.role }}"
+                          {% if role_full and not is_nom %}disabled title="Limite raggiunto per il ruolo {{ p.role }}"{% endif %}>
+                    <i class="bi {% if is_nom %}bi-check-lg{% else %}bi-plus-lg{% endif %}"></i>
+                  </button>
+                {% else %}
+                  {% if is_nom %}
+                  <span class="badge bg-success"><i class="bi bi-check"></i> Nom.</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const nomByRole = {{ nom_by_role | tojson }};
+const maxByRole = {
+  P: {{ settings.max_nom_P }},
+  D: {{ settings.max_nom_D }},
+  C: {{ settings.max_nom_C }},
+  A: {{ settings.max_nom_A }}
+};
+
+document.querySelectorAll('.player-nom-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const pid = this.dataset.pid;
+    const role = this.dataset.role;
+    const row = document.getElementById('row-' + pid);
+
+    const fd = new FormData();
+    fd.append('player_id', pid);
+
+    const res = await fetch('/nominations/toggle', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.error || 'Errore', 'danger');
+      return;
+    }
+
+    if (data.action === 'added') {
+      this.classList.add('active', 'btn-success');
+      this.classList.remove('btn-outline-success');
+      this.innerHTML = '<i class="bi bi-check-lg"></i>';
+      row.classList.add('nominated');
+    } else {
+      this.classList.remove('active', 'btn-success');
+      this.classList.add('btn-outline-success');
+      this.innerHTML = '<i class="bi bi-plus-lg"></i>';
+      row.classList.remove('nominated');
+    }
+
+    // conteggi autorevoli dal server
+    if (data.counts) {
+      ['P','D','C','A'].forEach(r => { nomByRole[r] = data.counts[r] || 0; });
+    }
+
+    updateCounters();
+    ['P','D','C','A'].forEach(updateDisabledButtons);
+  });
+});
+
+function updateCounters() {
+  ['P','D','C','A'].forEach(role => {
+    const cnt = nomByRole[role] || 0;
+    const mx = maxByRole[role];
+    const el = document.getElementById('counter-' + role);
+    const bar = document.getElementById('bar-' + role);
+    if (el) {
+      el.textContent = cnt + '/' + mx;
+      el.classList.toggle('text-danger', cnt >= mx);
+      el.classList.toggle('text-success', cnt < mx);
+    }
+    if (bar) bar.style.width = Math.min(cnt / mx * 100, 100) + '%';
+  });
+}
+
+function updateDisabledButtons(role) {
+  const full = (nomByRole[role] || 0) >= maxByRole[role];
+  document.querySelectorAll(`.player-nom-btn[data-role="${role}"]`).forEach(btn => {
+    if (!btn.classList.contains('active')) {
+      btn.disabled = full;
+      if (full) btn.title = `Limite raggiunto per il ruolo ${role}`;
+      else btn.title = '';
+    }
+  });
+}
+
+function showToast(msg, type = 'info') {
+  const div = document.createElement('div');
+  div.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  div.style.cssText = 'bottom:20px;right:20px;z-index:9999;min-width:250px;max-width:350px';
+  div.innerHTML = msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+</script>
+{% endblock %}

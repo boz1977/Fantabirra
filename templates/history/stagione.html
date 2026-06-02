@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Stagione {{ s.season }} — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+    <a href="{{ url_for('storico') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <div class="flex-grow-1">
+      <h4 class="fw-bold mb-0">Stagione {{ s.season }}</h4>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card stat-card gold">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-1">🏆</div>
+          <div>
+            <div class="stat-label">Campione</div>
+            <div class="stat-value" style="font-size:1.3rem">{{ s.champion or '—' }}</div>
+            <div class="stat-label">{{ s.champion_team or '' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card stat-card green">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-1">🥇</div>
+          <div>
+            <div class="stat-label">FantaChampion</div>
+            <div class="stat-value" style="font-size:1.3rem">{{ s.champion_cup or '—' }}</div>
+            <div class="stat-label">{{ s.champion_cup_team or '' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if s.note %}
+  <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>{{ s.note }}</div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header card-header-green"><i class="bi bi-list-ol me-2"></i>Classifica FantaCampionato</div>
+    <div class="card-body p-0">
+      {% if not standings %}
+      <div class="text-center text-muted py-4">Classifica non disponibile per questa stagione.</div>
+      {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead><tr>
+            <th style="width:60px">Pos.</th><th>Squadra</th><th>Presidente</th><th class="text-end">Punti</th>
+          </tr></thead>
+          <tbody>
+            {% for r in standings %}
+            <tr {% if r.position <= 3 %}class="fw-semibold"{% endif %}>
+              <td>
+                <span class="badge {% if r.position == 1 %}bg-warning text-dark{% elif r.position == 2 %}bg-secondary{% elif r.position == 3 %}bg-danger{% else %}bg-light text-dark{% endif %}">
+                  {{ r.position }}
+                </span>
+              </td>
+              <td>{% if r.position == 1 %}<i class="bi bi-trophy-fill text-warning me-1"></i>{% endif %}{{ r.team }}</td>
+              <td class="text-muted">{{ r.presidente }}</td>
+              <td class="text-end fw-bold">{{ r.points if r.points is not none else '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

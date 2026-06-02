@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Giocatori Liberi — {{ league_name }}{% endblock %}
+{% block head %}
+<style>
+  .dice { width:110px;height:110px;margin:0 auto;border-radius:18px;
+    background:radial-gradient(circle at 35% 30%,#ffe082,#d4af37);
+    display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#5a4500;
+    box-shadow:0 6px 16px rgba(0,0,0,.3);}
+  .dice.rolling{animation:shake .5s ease-in-out infinite;}
+  @keyframes shake{0%,100%{transform:translate(0,0) rotate(0);}25%{transform:translate(-6px,-4px) rotate(-8deg);}75%{transform:translate(6px,4px) rotate(8deg);}}
+  .reveal-content{background:linear-gradient(135deg,#1b5e20,#2e7d32 60%,#d4af37);border:none;}
+  .reveal-winner{font-size:2.6rem;font-weight:800;text-shadow:0 2px 12px rgba(0,0,0,.35);animation:pop .6s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes pop{0%{transform:scale(.2);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+  .confetti{position:fixed;width:10px;height:14px;top:-20px;z-index:2000;animation:fall linear forwards;pointer-events:none;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9;}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4" data-fp-signature="{{ phase.signature if phase else 'none' }}">
+
+  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+    <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-megaphone me-2 text-success"></i>Fase Giocatori Liberi (a turni)</h4>
+  </div>
+  <p class="text-muted small mb-4">
+    Scegli il reparto e lancia il dado per stabilire l'ordine. A turno, ogni allenatore sceglie dal proprio
+    dispositivo un giocatore libero di quel reparto; gli altri puntano o rinunciano. Offerta unica → prezzo di
+    mercato; parità → vince il chiamante. La fase continua finché tutti completano il reparto.
+  </p>
+
+  {% if not phase %}
+  <!-- Avvio fase: scelta reparto + dado -->
+  <div class="card">
+    <div class="card-header card-header-gold"><i class="bi bi-dice-5 me-2"></i>Avvia la fase</div>
+    <div class="card-body text-center">
+      <div class="mb-3">
+        <div class="small text-muted mb-1">Reparto da assegnare:</div>
+        <div class="btn-group" role="group" id="roleGroup">
+          {% for r, lbl in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+          <input type="radio" class="btn-check" name="roleSel" id="role{{ r }}" value="{{ r }}" {% if loop.first %}checked{% endif %}>
+          <label class="btn btn-outline-success" for="role{{ r }}">{{ lbl }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="dice" id="dice"><span id="diceText">🎲</span></div>
+      <button class="btn btn-gold mt-3" id="rollBtn"><i class="bi bi-shuffle me-1"></i>Lancia il dado e avvia</button>
+      <ol class="list-group list-group-numbered mt-3 text-start d-none mx-auto" id="orderList" style="max-width:400px"></ol>
+      <p class="text-muted small mt-2 mb-0" id="afterRoll"></p>
+    </div>
+  </div>
+  {% else %}
+  <!-- Fase in corso -->
+  <div class="card mb-3">
+    <div class="card-header card-header-green d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-list-ol me-2"></i>Fase in corso — reparto
+        <span class="badge badge-role role-{{ phase.role }} ms-1">{{ phase.role }}</span> {{ phase.role_label }}</span>
+      <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('free_phase_advance') }}" onsubmit="return confirm('Saltare al prossimo allenatore?')">
+          <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-skip-forward me-1"></i>Prossimo turno</button>
+        </form>
+        <form method="POST" action="{{ url_for('free_phase_stop') }}" onsubmit="return confirm('Terminare la fase?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-stop-circle me-1"></i>Termina fase</button>
+        </form>
+      </div>
+    </div>
+    <div class="card-body">
+
+      {% if phase.status == 'choosing' %}
+      <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
+        <span class="spinner-border spinner-border-sm"></span>
+        <div>Turno di <strong>{{ phase.turn_name }}</strong>: sta scegliendo il giocatore da chiamare (dal suo dispositivo).</div>
+      </div>
+
+      {% elif phase.status == 'bidding' and phase.call %}
+      <div class="row g-3 align-items-stretch">
+        <div class="col-md-4">
+          <div class="card h-100 border-success">
+            <div class="card-body text-center">
+              <div class="small text-muted">Chiamato da {{ phase.turn_name }}</div>
+              <div class="fs-4 fw-bold mt-1">{{ phase.call.item.name }}</div>
+              <div class="text-muted">{{ phase.call.item.team }}</div>
+              <div class="mt-2"><span class="badge bg-secondary">Mercato: {{ phase.call.item.base_value }} cr.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold">Hanno risposto?</span>
+            {% if phase.call.all_responded %}
+            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Tutti hanno risposto</span>
+            {% else %}
+            <span class="badge bg-warning text-dark">In attesa: {{ phase.call.waiting | join(', ') }}</span>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% for m in phase.call.managers %}
+            <span class="badge {% if m.status=='offerta' %}bg-success{% elif m.status=='rinuncia' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+              {% if m.is_caller %}<i class="bi bi-megaphone me-1"></i>{% endif %}{{ m.team_name }}:
+              {% if m.status=='offerta' %}<i class="bi bi-check-lg"></i> offerta{% elif m.status=='rinuncia' %}<i class="bi bi-x-lg"></i> rinuncia{% else %}<i class="bi bi-hourglass"></i> attesa{% endif %}
+            </span>
+            {% endfor %}
+          </div>
+          <form method="POST" action="{{ url_for('free_phase_close') }}"
+                onsubmit="return confirm('Chiudere l\'asta e rivelare il vincitore?')">
+            <button class="btn btn-danger" {% if not phase.call.all_responded %}disabled title="Attendi che tutti rispondano"{% endif %}>
+              <i class="bi bi-lock me-1"></i>Chiudi asta e Rivela vincitore
+            </button>
+            {% if not phase.call.all_responded %}
+            <button class="btn btn-outline-danger btn-sm ms-1" formnovalidate
+                    onclick="return confirm('Forzare la chiusura? Chi non ha risposto sarà considerato rinunciatario.')">
+              Forza chiusura
+            </button>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+
+      {% elif phase.status == 'bidding' %}
+      <div class="alert alert-info mb-0">Chiamata in corso (turno di {{ phase.turn_name }}).</div>
+      {% endif %}
+
+      <hr>
+      <div class="small text-muted mb-1">Ordine di chiamata — ancora da completare il reparto: {{ phase.remaining | length }}</div>
+      <ol class="mb-0">
+        {% for nm in phase.order %}
+        <li class="{% if nm == phase.turn_name %}fw-bold text-success{% endif %}">{{ nm }}{% if nm == phase.turn_name %} <i class="bi bi-arrow-left-short"></i> turno attuale{% endif %}</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Reveal modal -->
+<div class="modal fade" id="revealModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content reveal-content text-white text-center">
+      <div class="modal-body py-5">
+        <div class="text-uppercase small fw-bold mb-2" style="letter-spacing:3px;opacity:.85" id="rvPlayer"></div>
+        <div class="mb-3" style="opacity:.85">si aggiudica a</div>
+        <div class="reveal-winner mb-2" id="rvWinner"></div>
+        <div class="fs-4 fw-bold" style="color:#ffe082" id="rvPrice"></div>
+        <button class="btn btn-light mt-4" data-bs-dismiss="modal"><i class="bi bi-check-lg me-1"></i>Continua</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const rollBtn = document.getElementById('rollBtn');
+if (rollBtn) {
+  let ac=null;
+  function beep(f,s,d,v=0.15,t='triangle'){ if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain();o.type=t;o.frequency.value=f;o.connect(g);g.connect(ac.destination);
+    const tt=ac.currentTime+s;g.gain.setValueAtTime(0,tt);g.gain.linearRampToValueAtTime(v,tt+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,tt+d);o.start(tt);o.stop(tt+d+0.02);}
+  rollBtn.addEventListener('click', async function(){
+    const role=document.querySelector('input[name=roleSel]:checked').value;
+    const dice=document.getElementById('dice'),txt=document.getElementById('diceText'),list=document.getElementById('orderList');
+    this.disabled=true;list.classList.add('d-none');list.innerHTML='';dice.classList.add('rolling');
+    try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();for(let i=0;i<8;i++)beep(500+i*40,i*0.12,0.06);}catch(e){}
+    const fd=new FormData();fd.append('role',role);
+    let res;
+    try{const [r]=await Promise.all([fetch('{{ url_for("free_phase_start") }}',{method:'POST',body:fd}).then(r=>r.json()),new Promise(r=>setTimeout(r,1300))]);res=r;}
+    catch(e){res={error:'Errore di rete'};}
+    dice.classList.remove('rolling');
+    if(res.error){txt.textContent='✗';document.getElementById('afterRoll').textContent=res.error;this.disabled=false;return;}
+    txt.textContent='✓';try{beep(660,0,0.15,0.2,'square');beep(880,0.15,0.25,0.2,'square');}catch(e){}
+    (res.order||[]).forEach(c=>{const li=document.createElement('li');li.className='list-group-item';li.textContent=c.team_name;list.appendChild(li);});
+    list.classList.remove('d-none');
+    document.getElementById('afterRoll').textContent='Ordine stabilito! Il primo allenatore sceglie dal suo dispositivo. Ricarico...';
+    setTimeout(()=>location.reload(),2000);
+  });
+}
+
+// reveal animazione dopo chiusura
+(function(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('rv_player')){
+    document.getElementById('rvPlayer').textContent=q.get('rv_player');
+    document.getElementById('rvWinner').textContent=q.get('rv_winner');
+    document.getElementById('rvPrice').textContent=q.get('rv_price')+' crediti';
+    const m=new bootstrap.Modal(document.getElementById('revealModal'));
+    window.addEventListener('load',()=>{ m.show(); confetti();
+      try{const ac=new (window.AudioContext||window.webkitAudioContext)();
+        [523,659,784,1047].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+i*0.16;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.4);o.start(t);o.stop(t+.42);});}catch(e){}
+      history.replaceState({},'',location.pathname);
+    });
+  }
+  function confetti(){const cols=['#d4af37','#2e7d32','#fff','#ffe082'];for(let i=0;i<50;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=cols[i%cols.length];c.style.animationDuration=(1.8+Math.random()*1.6)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),3600);}}
+})();
+
+// auto-refresh stato fase
+(function(){
+  const cont=document.querySelector('[data-fp-signature]'); if(!cont) return;
+  const sig=cont.dataset.fpSignature;
+  // non ricaricare durante l'animazione di reveal
+  if(new URLSearchParams(location.search).get('rv_player')) return;
+  setInterval(async()=>{try{const d=await (await fetch('/free-phase/status')).json();if(d.signature!==sig)location.reload();}catch(e){}},4000);
+})();
+</script>
+{% endblock %}
