@@ -29,13 +29,13 @@
     </div>
     <div class="card-body p-0">
       <div class="table-responsive" style="max-height:540px;overflow-y:auto">
-        <table class="table table-hover mb-0 small align-middle" id="freeTable">
+        <table class="table table-hover mb-0 small align-middle js-sortable" id="freeTable">
           <thead class="sticky-top bg-white">
             <tr>
-              <th class="sortable" data-col="0" data-type="text" style="cursor:pointer">Giocatore <i class="bi bi-arrow-down-up text-muted small"></i></th>
-              <th class="sortable" data-col="1" data-type="text" style="cursor:pointer">Squadra <i class="bi bi-arrow-down-up text-muted small"></i></th>
-              <th class="sortable text-end" data-col="2" data-type="num" style="cursor:pointer">Prezzo <i class="bi bi-arrow-down-up text-muted small"></i></th>
-              <th class="text-end">Azione</th>
+              <th>Giocatore</th>
+              <th>Squadra</th>
+              <th class="text-end">Prezzo</th>
+              <th class="text-end no-sort">Azione</th>
             </tr>
           </thead>
           <tbody>
@@ -75,29 +75,6 @@ if (search) search.addEventListener('input', function() {
     if (show) n++;
   });
   document.getElementById('visCount').textContent = n;
-});
-
-// ordinamento colonne
-document.querySelectorAll('#freeTable th.sortable').forEach(th => {
-  th.addEventListener('click', function() {
-    const col = +this.dataset.col, type = this.dataset.type;
-    const asc = this.dataset.asc !== 'true';
-    document.querySelectorAll('#freeTable th.sortable').forEach(h => h.dataset.asc = '');
-    this.dataset.asc = asc;
-    const tbody = document.querySelector('#freeTable tbody');
-    const rows = [...tbody.querySelectorAll('tr')];
-    rows.sort((a, b) => {
-      let x, y;
-      if (type === 'num') {
-        x = +a.children[col].dataset.val; y = +b.children[col].dataset.val;
-      } else {
-        x = a.children[col].textContent.trim().toLowerCase();
-        y = b.children[col].textContent.trim().toLowerCase();
-      }
-      return (x < y ? -1 : x > y ? 1 : 0) * (asc ? 1 : -1);
-    });
-    rows.forEach(r => tbody.appendChild(r));
-  });
 });
 </script>
 {% endblock %}

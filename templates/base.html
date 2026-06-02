@@ -118,6 +118,64 @@
 {% block content %}{% endblock %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Utility globale: tabelle ordinabili e filtrabili ──
+document.addEventListener('DOMContentLoaded', function () {
+  // Ordinamento: <table class="js-sortable">; intestazioni con classe "no-sort" escluse.
+  document.querySelectorAll('table.js-sortable').forEach(function (table) {
+    const ths = table.tHead ? table.tHead.rows[0].cells : [];
+    Array.from(ths).forEach(function (th, idx) {
+      if (th.classList.contains('no-sort')) return;
+      th.style.cursor = 'pointer';
+      if (!th.querySelector('.sort-ind')) {
+        const s = document.createElement('i');
+        s.className = 'bi bi-arrow-down-up text-muted small ms-1 sort-ind';
+        th.appendChild(s);
+      }
+      th.addEventListener('click', function () {
+        const tbody = table.tBodies[0];
+        if (!tbody) return;
+        const rows = Array.from(tbody.rows).filter(r => !r.dataset.nosort);
+        const asc = th.dataset.asc !== 'true';
+        Array.from(ths).forEach(function (h) {
+          h.dataset.asc = '';
+          const i = h.querySelector('.sort-ind');
+          if (i) i.className = 'bi bi-arrow-down-up text-muted small ms-1 sort-ind';
+        });
+        th.dataset.asc = asc;
+        const ind = th.querySelector('.sort-ind');
+        if (ind) ind.className = 'bi bi-caret-' + (asc ? 'up' : 'down') + '-fill small ms-1 sort-ind';
+        const val = function (row) {
+          const cell = row.cells[idx];
+          if (!cell) return '';
+          if (cell.dataset.val !== undefined) return cell.dataset.val;
+          return cell.textContent.trim();
+        };
+        const numeric = rows.length > 0 && rows.every(function (r) {
+          const v = val(r); return v !== '' && !isNaN(Number(v));
+        });
+        rows.sort(function (a, b) {
+          let x = val(a), y = val(b);
+          if (numeric) return (Number(x) - Number(y)) * (asc ? 1 : -1);
+          return x.localeCompare(y, 'it', { sensitivity: 'base' }) * (asc ? 1 : -1);
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  });
+  // Filtro testo: <input data-table-filter="#idtabella"> filtra le righe del tbody.
+  document.querySelectorAll('[data-table-filter]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      const table = document.querySelector(inp.dataset.tableFilter);
+      if (!table || !table.tBodies[0]) return;
+      const q = inp.value.toLowerCase();
+      Array.from(table.tBodies[0].rows).forEach(function (r) {
+        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+});
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

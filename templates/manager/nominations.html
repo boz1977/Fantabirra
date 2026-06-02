@@ -103,17 +103,17 @@
   <div class="card">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0 small" id="players-table">
+        <table class="table table-hover mb-0 small js-sortable" id="players-table">
           <thead>
             <tr>
               <th style="width:50px">R</th>
               <th>Nome</th>
               <th>Squadra</th>
               <th class="text-end">Q.A.</th>
-              <th class="text-end" style="width:90px" title="{% if nomination_open %}Segrete fino alla chiusura{% else %}Quanti manager hanno nominato{% endif %}">
+              <th class="text-end no-sort" style="width:90px" title="{% if nomination_open %}Segrete fino alla chiusura{% else %}Quanti manager hanno nominato{% endif %}">
                 Nom. {% if nomination_open %}<i class="bi bi-lock-fill text-muted"></i>{% endif %}
               </th>
-              <th class="text-center" style="width:80px">
+              <th class="text-center no-sort" style="width:80px">
                 {% if nomination_open %}Aggiungi{% else %}Stato{% endif %}
               </th>
             </tr>

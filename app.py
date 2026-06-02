@@ -644,11 +644,10 @@ def place_bid():
         return jsonify({'error': 'Asta non trovata o già chiusa'}), 404
     if item['sess_status'] != 'bidding':
         return jsonify({'error': 'La fase di offerte è chiusa'}), 403
-    if item['caller_id']:
-        # Chiamata (libero): può puntare solo chi non ha completato quel reparto
-        if not _can_take_role(uid, item['role']):
-            return jsonify({'error': 'Hai già completato questo reparto: non puoi puntare.'}), 403
-    else:
+    # Limite di reparto: non si può puntare su un ruolo già completato in rosa
+    if not _can_take_role(uid, item['role']):
+        return jsonify({'error': f'Hai già completato il reparto {item["role"]}: non puoi puntare.'}), 403
+    if not item['caller_id']:
         # Solo chi ha nominato il giocatore può offrire
         nominated = query_db("SELECT 1 FROM nominations WHERE player_id=? AND user_id=?",
                              [item['player_id'], uid], one=True)
@@ -1426,6 +1425,16 @@ def assign_single_nom():
         return redirect(url_for('single_noms'))
     if pid in _free_player_filter():
         flash(f'{player["name"]} non è più disponibile.', 'warning')
+        return redirect(url_for('single_noms'))
+    # limite di reparto (es. max 3 portieri): non assegnare se la rosa del ruolo è già piena
+    if not _can_take_role(uid, player['role']):
+        slots = _roster_slots()
+        rc = _roster_counts(uid)
+        if rc.get('total', 0) >= sum(slots.values()):
+            flash(f'{user["team_name"]} ha già la rosa completa.', 'warning')
+        else:
+            flash(f'{user["team_name"]} ha già {rc.get(player["role"], 0)}/{slots.get(player["role"], 0)} '
+                  f'nel reparto {player["role"]}: non può prenderne altri.', 'warning')
         return redirect(url_for('single_noms'))
     db = get_db()
     db.execute("UPDATE users SET budget=budget-? WHERE id=?", [player['base_value'], uid])

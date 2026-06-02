@@ -146,7 +146,11 @@
   <div class="card">
     <div class="card-header card-header-gold d-flex justify-content-between align-items-center">
       <span><i class="bi bi-person-badge me-2"></i>Giocatori Nominati ({{ nominated|length }})</span>
-      <div class="d-flex gap-1">
+      <div class="d-flex gap-1 align-items-center flex-wrap">
+        <div class="input-group input-group-sm me-2" style="width:200px">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" placeholder="Cerca..." data-table-filter="#nomTable">
+        </div>
         {% for r in ['P','D','C','A'] %}
         <button class="btn btn-sm badge badge-role role-{{ r }}" onclick="filterNom('{{ r }}', this)">{{ r }}</button>
         {% endfor %}
@@ -161,7 +165,7 @@
       </div>
       {% else %}
       <div class="table-responsive">
-        <table class="table table-hover mb-0 small align-middle" id="nomTable">
+        <table class="table table-hover mb-0 small align-middle js-sortable" id="nomTable">
           <thead>
             <tr>
               <th>R</th><th>Giocatore</th><th>Squadra</th>

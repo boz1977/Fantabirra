@@ -83,17 +83,17 @@
           </div>
           <div class="card-body p-0">
             <div class="table-responsive" style="max-height:520px;overflow-y:auto">
-              <table class="table table-hover mb-0 small align-middle" id="playerTable">
+              <table class="table table-hover mb-0 small align-middle js-sortable" id="playerTable">
                 <thead class="sticky-top bg-white">
                   <tr>
-                    <th style="width:40px">
+                    <th class="no-sort" style="width:40px">
                       <input type="checkbox" id="headerCheck" class="form-check-input">
                     </th>
-                    <th class="sortable" data-col="1" data-type="text" style="cursor:pointer">R <i class="bi bi-arrow-down-up text-muted small"></i></th>
-                    <th class="sortable" data-col="2" data-type="text" style="cursor:pointer">Giocatore <i class="bi bi-arrow-down-up text-muted small"></i></th>
-                    <th class="sortable" data-col="3" data-type="text" style="cursor:pointer">Squadra <i class="bi bi-arrow-down-up text-muted small"></i></th>
-                    <th class="sortable text-end" data-col="4" data-type="num" style="cursor:pointer">Q.A. <i class="bi bi-arrow-down-up text-muted small"></i></th>
-                    <th class="sortable text-end" data-col="5" data-type="num" style="cursor:pointer">Nom. <i class="bi bi-arrow-down-up text-muted small"></i></th>
+                    <th>R</th>
+                    <th>Giocatore</th>
+                    <th>Squadra</th>
+                    <th class="text-end">Q.A.</th>
+                    <th class="text-end">Nom.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,22 +197,5 @@ document.getElementById('headerCheck').addEventListener('change', function() {
 });
 
 updateSummary();
-
-// ordinamento colonne
-document.querySelectorAll('#playerTable th.sortable').forEach(th => {
-  th.addEventListener('click', function() {
-    const col = +this.dataset.col, type = this.dataset.type;
-    const asc = this.dataset.asc !== 'true';
-    document.querySelectorAll('#playerTable th.sortable').forEach(h => h.dataset.asc = '');
-    this.dataset.asc = asc;
-    const tbody = document.querySelector('#playerTable tbody');
-    [...tbody.querySelectorAll('tr')].sort((a, b) => {
-      let x, y;
-      if (type === 'num') { x = +(a.children[col].dataset.val || 0); y = +(b.children[col].dataset.val || 0); }
-      else { x = a.children[col].textContent.trim().toLowerCase(); y = b.children[col].textContent.trim().toLowerCase(); }
-      return (x < y ? -1 : x > y ? 1 : 0) * (asc ? 1 : -1);
-    }).forEach(r => tbody.appendChild(r));
-  });
-});
 </script>
 {% endblock %}
