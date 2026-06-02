@@ -52,6 +52,26 @@
     </div>
   </div>
 
+  {% if view_mode == 'light' %}
+  <!-- Azioni rapide (versione light) -->
+  <div class="d-grid gap-3 mb-3">
+    <a href="{{ url_for('nominations') }}" class="btn btn-success btn-lg py-3 d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-card-checklist me-2"></i>Nomination</span>
+      {% if nomination_open %}<span class="badge bg-light text-success">APERTE</span>{% else %}<i class="bi bi-chevron-right"></i>{% endif %}
+    </a>
+    <a href="{{ url_for('auctions') }}" class="btn btn-warning btn-lg py-3 d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-hammer me-2"></i>Aste</span>
+      {% if active_sessions %}<span class="badge bg-dark">{{ active_sessions|length }} in corso</span>{% else %}<i class="bi bi-chevron-right"></i>{% endif %}
+    </a>
+    <a href="{{ url_for('my_team') }}" class="btn btn-outline-success btn-lg py-3 d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-shield-fill me-2"></i>La Mia Squadra</span>
+      <span class="badge bg-success">{{ my_players|length }}</span>
+    </a>
+  </div>
+  <p class="text-center text-muted small">Versione semplice. Tocca <i class="bi bi-display"></i> <strong>Full</strong> in alto per tutte le funzioni.</p>
+  {% endif %}
+
+  {% if view_mode == 'full' %}
   <div class="row g-4">
 
     <!-- Nomination summary -->
@@ -190,5 +210,6 @@
     {% endif %}
 
   </div>
+  {% endif %}
 </div>
 {% endblock %}

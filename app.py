@@ -248,8 +248,18 @@ def inject_globals():
     return dict(
         league_name=get_setting('league_name', 'Fantabirra'),
         nomination_open=get_setting('nomination_open', '0') == '1',
+        view_mode=session.get('view_mode', 'full'),
         now=datetime.now()
     )
+
+
+@app.route('/view/<mode>')
+def set_view(mode):
+    session['view_mode'] = 'light' if mode == 'light' else 'full'
+    dest = request.referrer
+    if not dest or '/view/' in dest:
+        dest = url_for('index')
+    return redirect(dest)
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────

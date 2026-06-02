@@ -9,7 +9,7 @@
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="view-{{ view_mode }}">
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-fantabirra py-2 sticky-top">
@@ -18,18 +18,28 @@
       <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo">
       <span class="text-white fw-bold">{{ league_name }}</span>
     </a>
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
-      <i class="bi bi-list text-white fs-4"></i>
-    </button>
+    <div class="d-flex align-items-center gap-2">
+      {% if session.user_id %}
+      <a href="{{ url_for('set_view', mode='full' if view_mode == 'light' else 'light') }}"
+         class="btn btn-sm btn-outline-light" title="Cambia versione">
+        {% if view_mode == 'light' %}<i class="bi bi-display"></i><span class="d-none d-sm-inline ms-1">Full</span>
+        {% else %}<i class="bi bi-phone"></i><span class="d-none d-sm-inline ms-1">Light</span>{% endif %}
+      </a>
+      {% endif %}
+      <button class="navbar-toggler border-0 p-1" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+        <i class="bi bi-list text-white fs-3"></i>
+      </button>
+    </div>
     <div class="collapse navbar-collapse" id="navMain">
       {% if session.user_id %}
       <ul class="navbar-nav me-auto ms-3 gap-1">
         {% if session.is_admin %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_nominations' %}active{% endif %}" href="{{ url_for('admin_nominations') }}"><i class="bi bi-list-check me-1"></i>Nomination</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint in ['admin_auctions','create_auction','manage_auction','single_noms','free_players'] %}active{% endif %}" href="{{ url_for('admin_auctions') }}"><i class="bi bi-hammer me-1"></i>Aste</a></li>
+        {% if view_mode == 'full' %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people me-1"></i>Utenti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_nominations' %}active{% endif %}" href="{{ url_for('admin_nominations') }}"><i class="bi bi-list-check me-1"></i>Nomination</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint in ['admin_auctions','create_auction','manage_auction'] %}active{% endif %}" href="{{ url_for('admin_auctions') }}"><i class="bi bi-hammer me-1"></i>Aste</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento','admin_storico','edit_standings','admin_regolamento','admin_curiosita'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i>Storico</a>
@@ -45,6 +55,7 @@
             </ul>
           </li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_settings' %}active{% endif %}" href="{{ url_for('admin_settings') }}"><i class="bi bi-gear me-1"></i>Impostazioni</a></li>
+        {% endif %}
         {% else %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
           <li class="nav-item">
@@ -55,6 +66,7 @@
           </li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'auctions' %}active{% endif %}" href="{{ url_for('auctions') }}"><i class="bi bi-hammer me-1"></i>Aste</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'my_team' %}active{% endif %}" href="{{ url_for('my_team') }}"><i class="bi bi-shield-fill me-1"></i>La Mia Squadra</a></li>
+        {% if view_mode == 'full' %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'strategia' %}active{% endif %}" href="{{ url_for('strategia') }}"><i class="bi bi-bullseye me-1"></i>Strategia</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
           <li class="nav-item dropdown">
@@ -66,6 +78,7 @@
               <li><a class="dropdown-item" href="{{ url_for('regolamento') }}"><i class="bi bi-book me-2"></i>Regolamento</a></li>
             </ul>
           </li>
+        {% endif %}
         {% endif %}
       </ul>
       <ul class="navbar-nav ms-auto align-items-center gap-2">

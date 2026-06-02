@@ -103,6 +103,21 @@ body {
 /* ── Toasts / alerts ── */
 .alert { border-radius: 10px; border: none; }
 
+/* ── Versione Light (ottimizzata per telefono) ── */
+.full-only { } /* visibile in full */
+.view-light .full-only { display: none !important; }
+.view-light .nav-link { font-size: 1.15rem; padding: .7rem .9rem; }
+.view-light .navbar-nav { gap: .15rem; }
+.view-light .btn { min-height: 44px; }            /* tocco più facile */
+.view-light .btn-sm { min-height: 36px; }
+.view-light .container-fluid { padding-left: .6rem; padding-right: .6rem; }
+.view-light .card { border-radius: 14px; }
+.view-light .form-control, .view-light .form-select { min-height: 44px; font-size: 1rem; }
+.view-light h4 { font-size: 1.25rem; }
+.view-light .table { font-size: .95rem; }
+/* badge "modalità" sotto la navbar opzionale */
+.view-light .light-hide { display: none !important; }
+
 /* ── Nomination filters ── */
 .role-filter-btn { border-radius: 20px; font-size: .82rem; font-weight: 600; }
 .role-filter-btn.active { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
