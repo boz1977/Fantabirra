@@ -1333,6 +1333,21 @@ def manage_auction(session_id):
         total_pending=total_pending, all_acted=all_acted, waiting=waiting)
 
 
+@app.route('/admin/auctions/<int:session_id>/status')
+@admin_required
+def auction_status(session_id):
+    """Firma dello stato della sessione: cambia quando un manager offre/rinuncia o cambia stato."""
+    s = query_db("SELECT status FROM auction_sessions WHERE id=?", [session_id], one=True)
+    if not s:
+        return jsonify({'signature': 'none'})
+    b = query_db("""SELECT COUNT(*) n, COALESCE(MAX(submitted_at),'') last
+                    FROM bids b JOIN auction_items ai ON ai.id=b.auction_item_id
+                    WHERE ai.session_id=?""", [session_id], one=True)
+    r = query_db("""SELECT COUNT(*) n FROM item_renounces ir
+                    JOIN auction_items ai ON ai.id=ir.item_id WHERE ai.session_id=?""", [session_id], one=True)
+    return jsonify({'signature': f"{s['status']}:{b['n']}:{r['n']}:{b['last']}"})
+
+
 @app.route('/admin/auctions/<int:session_id>/open', methods=['POST'])
 @admin_required
 def open_auction(session_id):

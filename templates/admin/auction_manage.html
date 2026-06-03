@@ -528,5 +528,21 @@ if (new URLSearchParams(location.search).get('reveal') === '1' && SOLD.length) {
     showReveal(0);
   });
 }
+
+{% if s.status == 'bidding' %}
+// ── Aggiornamento in tempo reale: ricarica quando un manager offre/rinuncia ──
+(function () {
+  let sig = null;
+  async function poll() {
+    try {
+      const d = await (await fetch('{{ url_for("auction_status", session_id=s.id) }}')).json();
+      if (sig === null) sig = d.signature;
+      else if (d.signature !== sig) location.reload();
+    } catch (e) {}
+  }
+  poll();
+  setInterval(poll, 4000);
+})();
+{% endif %}
 </script>
 {% endblock %}
