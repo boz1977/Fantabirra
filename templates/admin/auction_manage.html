@@ -205,6 +205,14 @@
             <span class="badge bg-success">
               <i class="bi bi-trophy-fill me-1"></i>{{ item.winner_name }} — {{ item.final_price }} cr.
             </span>
+            {% if item.acq_id %}
+            <form method="POST" action="{{ url_for('cancel_acquisition', acq_id=item.acq_id) }}" class="d-inline"
+                  onsubmit="return confirm('Annullare l\'assegnazione di {{ item.name }} a {{ item.winner_name }}? Rimborso di {{ item.final_price }} crediti e giocatore di nuovo libero.')">
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Annulla assegnazione">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </form>
+            {% endif %}
             {% elif item.status == 'unsold' %}
             <span class="badge bg-secondary">Non aggiudicato</span>
             {% elif item.status == 'tie' %}

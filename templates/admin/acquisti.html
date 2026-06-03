@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Acquisti — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+    <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-success"></i>Acquisti / Rose</h4>
+  </div>
+  <p class="text-muted small mb-4">
+    Annulla un'assegnazione errata: il giocatore torna <strong>libero</strong> e i crediti vengono
+    <strong>restituiti</strong> al manager. ({{ total }} giocatori acquistati in totale)
+  </p>
+
+  {% if not managers %}
+  <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>Nessun acquisto registrato.</div>
+  {% else %}
+
+  <div class="input-group input-group-sm mb-3" style="max-width:320px">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" class="form-control" placeholder="Cerca giocatore..." data-table-filter="#acqTable">
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 small align-middle js-sortable" id="acqTable">
+        <thead>
+          <tr>
+            <th>Manager</th><th>R</th><th>Giocatore</th><th>Squadra</th>
+            <th class="text-end">Pagato</th><th>Acquisto</th><th class="text-end no-sort">Azione</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in managers %}
+          {% for p in m.players %}
+          <tr>
+            <td class="fw-semibold">{{ m.team_name }}</td>
+            <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+            <td class="fw-semibold">{{ p.name }}</td>
+            <td class="text-muted">{{ p.team }}</td>
+            <td class="text-end fw-bold" data-val="{{ p.price }}">{{ p.price }}</td>
+            <td class="text-muted small">{{ p.session_name or '—' }}</td>
+            <td class="text-end">
+              <form method="POST" action="{{ url_for('cancel_acquisition', acq_id=p.id) }}" class="d-inline"
+                    onsubmit="return confirm('Annullare l\'acquisto di {{ p.name }} da parte di {{ m.team_name }}? Verranno restituiti {{ p.price }} crediti e il giocatore tornerà libero.')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-x-circle me-1"></i>Annulla
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

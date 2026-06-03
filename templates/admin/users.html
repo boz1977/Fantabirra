@@ -46,6 +46,11 @@
               <td class="text-center">
                 {% if not u.is_admin %}
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
+                  <button class="btn btn-sm btn-outline-success"
+                          data-bs-toggle="modal" data-bs-target="#teamModal"
+                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}" title="Rinomina squadra">
+                    <i class="bi bi-pencil"></i>
+                  </button>
                   <button class="btn btn-sm btn-outline-primary"
                           data-bs-toggle="modal" data-bs-target="#budgetModal"
                           data-uid="{{ u.id }}" data-team="{{ u.team_name }}" data-budget="{{ u.budget }}">
@@ -106,6 +111,29 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
           <button type="submit" class="btn btn-green"><i class="bi bi-check-lg me-1"></i>Crea Manager</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Rinomina squadra -->
+<div class="modal fade" id="teamModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="POST" id="teamForm" action="">
+        <div class="modal-header card-header-green text-white">
+          <h6 class="modal-title"><i class="bi bi-pencil me-2"></i>Rinomina Squadra</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label fw-semibold">Nome squadra</label>
+          <input type="text" name="team_name" id="team-input" class="form-control" required maxlength="60">
+          <div class="form-text">Lo username di accesso resta invariato.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-green btn-sm">Salva</button>
         </div>
       </form>
     </div>
@@ -183,6 +211,11 @@
 
 {% block scripts %}
 <script>
+document.getElementById('teamModal').addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('team-input').value = btn.dataset.team;
+  document.getElementById('teamForm').action = `/admin/users/${btn.dataset.uid}/team-name`;
+});
 document.getElementById('budgetModal').addEventListener('show.bs.modal', e => {
   const btn = e.relatedTarget;
   document.getElementById('budget-team-name').textContent = btn.dataset.team;

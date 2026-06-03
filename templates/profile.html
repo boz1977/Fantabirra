@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Profilo — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4" style="max-width:640px">
+
+  <h4 class="fw-bold mb-4"><i class="bi bi-person-circle me-2 text-success"></i>Il mio profilo</h4>
+
+  <div class="card mb-3">
+    <div class="card-header card-header-green"><i class="bi bi-shield-fill me-2"></i>Nome squadra</div>
+    <div class="card-body">
+      <p class="small text-muted">Lo <strong>username</strong> di accesso (<code>{{ user.username }}</code>) non cambia: puoi modificare liberamente solo il nome visualizzato della squadra.</p>
+      <form method="POST" class="d-flex gap-2 flex-wrap align-items-end">
+        <input type="hidden" name="action" value="team_name">
+        <div class="flex-grow-1">
+          <label class="form-label fw-semibold">Nome squadra</label>
+          <input type="text" name="team_name" class="form-control" value="{{ user.team_name }}" required maxlength="60">
+        </div>
+        <button type="submit" class="btn btn-gold"><i class="bi bi-save me-1"></i>Salva</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header card-header-green"><i class="bi bi-key me-2"></i>Cambia password</div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="action" value="password">
+        <div class="mb-2">
+          <label class="form-label fw-semibold">Password attuale</label>
+          <input type="password" name="current_password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nuova password</label>
+          <input type="password" name="new_password" class="form-control" required minlength="4">
+        </div>
+        <button type="submit" class="btn btn-outline-success"><i class="bi bi-key me-1"></i>Aggiorna password</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

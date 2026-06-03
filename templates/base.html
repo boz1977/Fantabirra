@@ -38,6 +38,7 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_nominations' %}active{% endif %}" href="{{ url_for('admin_nominations') }}"><i class="bi bi-list-check me-1"></i>Nomination</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint in ['admin_auctions','create_auction','manage_auction','single_noms','free_players'] %}active{% endif %}" href="{{ url_for('admin_auctions') }}"><i class="bi bi-hammer me-1"></i>Aste</a></li>
         {% if view_mode == 'full' %}
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_acquisti' %}active{% endif %}" href="{{ url_for('admin_acquisti') }}"><i class="bi bi-bag-check me-1"></i>Acquisti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people me-1"></i>Utenti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
@@ -83,7 +84,9 @@
       </ul>
       <ul class="navbar-nav ms-auto align-items-center gap-2">
         <li class="nav-item d-flex align-items-center">
-          <span class="text-white-50 small me-2"><i class="bi bi-person-circle me-1"></i>{{ session.team_name }}</span>
+          <a href="{{ url_for('profile') }}" class="text-white-50 small me-2 text-decoration-none" title="Modifica profilo / nome squadra">
+            <i class="bi bi-person-circle me-1"></i>{{ session.team_name }}
+          </a>
         </li>
         <li class="nav-item">
           <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">

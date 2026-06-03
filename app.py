@@ -744,6 +744,35 @@ def my_team():
         user=user, by_role=by_role, total_spent=total_spent, total_players=len(players))
 
 
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    uid = session['user_id']
+    user = query_db("SELECT * FROM users WHERE id=?", [uid], one=True)
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'team_name':
+            name = request.form.get('team_name', '').strip()
+            if not name:
+                flash('Il nome squadra non può essere vuoto.', 'danger')
+            else:
+                execute_db("UPDATE users SET team_name=? WHERE id=?", [name, uid])
+                session['team_name'] = name
+                flash('Nome squadra aggiornato.', 'success')
+        elif action == 'password':
+            cur = request.form.get('current_password', '')
+            new = request.form.get('new_password', '')
+            if not check_password_hash(user['password'], cur):
+                flash('Password attuale errata.', 'danger')
+            elif len(new) < 4:
+                flash('La nuova password deve avere almeno 4 caratteri.', 'danger')
+            else:
+                execute_db("UPDATE users SET password=? WHERE id=?", [generate_password_hash(new), uid])
+                flash('Password aggiornata.', 'success')
+        return redirect(url_for('profile'))
+    return render_template('profile.html', user=user)
+
+
 # ── Strategia manager ────────────────────────────────────────────────────────
 
 @app.route('/strategia')
@@ -933,6 +962,20 @@ def edit_budget(uid):
     flash('Budget aggiornato.', 'success')
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/users/<int:uid>/team-name', methods=['POST'])
+@admin_required
+def edit_team_name(uid):
+    name = request.form.get('team_name', '').strip()
+    if not name:
+        flash('Il nome squadra non può essere vuoto.', 'danger')
+        return redirect(url_for('admin_users'))
+    execute_db("UPDATE users SET team_name=? WHERE id=?", [name, uid])
+    if uid == session.get('user_id'):
+        session['team_name'] = name
+    flash('Nome squadra aggiornato.', 'success')
+    return redirect(url_for('admin_users'))
+
+
 @app.route('/admin/users/<int:uid>/delete', methods=['POST'])
 @admin_required
 def delete_user(uid):
@@ -941,6 +984,54 @@ def delete_user(uid):
     execute_db("DELETE FROM users WHERE id=? AND is_admin=0", [uid])
     flash('Utente eliminato.', 'success')
     return redirect(url_for('admin_users'))
+
+
+# ── Acquisti: annulla un'assegnazione (rimborso + giocatore libero) ──────────
+
+@app.route('/admin/acquisti')
+@admin_required
+def admin_acquisti():
+    rows = query_db("""
+        SELECT a.id, a.price, a.session_name, a.acquired_at,
+               u.id as uid, u.team_name,
+               p.role, p.name, p.team
+        FROM acquisitions a
+        JOIN users u ON u.id=a.user_id
+        JOIN players p ON p.id=a.player_id
+        ORDER BY u.team_name,
+                 CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+                 a.acquired_at
+    """)
+    by_user = {}
+    for r in rows:
+        by_user.setdefault((r['uid'], r['team_name']), []).append(r)
+    managers = [{'uid': k[0], 'team_name': k[1], 'players': v,
+                 'spent': sum(x['price'] for x in v)} for k, v in by_user.items()]
+    return render_template('admin/acquisti.html', managers=managers, total=len(rows))
+
+
+@app.route('/admin/acquisti/<int:acq_id>/cancel', methods=['POST'])
+@admin_required
+def cancel_acquisition(acq_id):
+    acq = query_db("""SELECT a.*, p.name as pname, u.team_name FROM acquisitions a
+                      JOIN players p ON p.id=a.player_id JOIN users u ON u.id=a.user_id
+                      WHERE a.id=?""", [acq_id], one=True)
+    if not acq:
+        flash('Acquisto non trovato.', 'danger')
+        return redirect(request.referrer or url_for('admin_acquisti'))
+    db = get_db()
+    # rimborso al manager
+    db.execute("UPDATE users SET budget=budget+? WHERE id=?", [acq['price'], acq['user_id']])
+    # elimina l'acquisto
+    db.execute("DELETE FROM acquisitions WHERE id=?", [acq_id])
+    # libera il giocatore: l'eventuale item venduto torna 'unsold' (disponibile)
+    db.execute("""UPDATE auction_items SET status='unsold', winner_id=NULL, final_price=NULL
+                  WHERE player_id=? AND status='sold'""", [acq['player_id']])
+    db.commit()
+    db.close()
+    flash(f'Acquisto annullato: {acq["pname"]} torna libero e {acq["price"]} crediti '
+          f'restituiti a {acq["team_name"]}.', 'success')
+    return redirect(request.referrer or url_for('admin_acquisti'))
 
 
 @app.route('/admin/players')
@@ -1104,7 +1195,8 @@ def manage_auction(session_id):
                p.id as pid, p.role, p.name, p.team, p.base_value,
                uw.team_name as winner_name, uc.team_name as caller_name,
                COUNT(b.id) as bid_count,
-               (SELECT COUNT(*) FROM nominations n WHERE n.player_id=p.id) as nom_count
+               (SELECT COUNT(*) FROM nominations n WHERE n.player_id=p.id) as nom_count,
+               (SELECT acq.id FROM acquisitions acq WHERE acq.player_id=p.id AND acq.user_id=ai.winner_id) as acq_id
         FROM auction_items ai JOIN players p ON p.id=ai.player_id
         LEFT JOIN users uw ON uw.id=ai.winner_id
         LEFT JOIN users uc ON uc.id=ai.caller_id
