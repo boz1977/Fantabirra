@@ -73,6 +73,7 @@
   </div>
   {% endif %}
 
+  {% if nomination_open %}
   <!-- Search & filter -->
   <div class="card mb-3">
     <div class="card-body py-2">
@@ -164,6 +165,86 @@
   </div>
   {% endif %}
 
+  {% else %}
+  <!-- ═══ Tabellone "chi ha nominato chi" (nomination chiuse) ═══ -->
+  <div class="card">
+    <div class="card-header card-header-gold d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-grid-3x3-gap me-2"></i>Chi ha nominato chi</span>
+      <div class="input-group input-group-sm" style="max-width:240px">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="matrixSearch" class="form-control" placeholder="Cerca giocatore...">
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% set roles = [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+      {% set has_any = matrix.P or matrix.D or matrix.C or matrix.A %}
+      {% if not has_any %}
+      <div class="text-center text-muted py-4">Nessuna nomination inserita.</div>
+      {% else %}
+
+      <!-- FULL: matrice manager × giocatori -->
+      <div class="full-only">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0 small align-middle text-center matrix-table">
+            <thead>
+              <tr>
+                <th class="matrix-firstcol text-start">Giocatore</th>
+                {% for m in managers %}<th class="matrix-mgr"><span>{{ m.team_name }}</span></th>{% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for role, label in roles %}
+              {% if matrix[role] %}
+              <tr class="table-secondary"><td class="text-start fw-bold matrix-firstcol" colspan="{{ managers|length + 1 }}">
+                <span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</td></tr>
+              {% for p in matrix[role] %}
+              <tr class="matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
+                <td class="text-start matrix-firstcol"><span class="fw-semibold">{{ p.name }}</span>
+                  <span class="text-muted d-block" style="font-size:.7rem">{{ p.team }}</span></td>
+                {% for m in managers %}
+                <td class="{% if m.id in p.nominators %}table-success{% endif %}">
+                  {% if m.id in p.nominators %}<i class="bi bi-check-lg text-success fw-bold"></i>{% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-muted small p-2">Scorri lateralmente per vedere tutti i manager. ✓ = ha nominato il giocatore.</div>
+      </div>
+
+      <!-- LIGHT: lista per giocatore con i nominatori -->
+      <div class="light-only">
+        <ul class="list-group list-group-flush">
+          {% for role, label in roles %}
+          {% if matrix[role] %}
+          <li class="list-group-item bg-light fw-bold py-1"><span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</li>
+          {% for p in matrix[role] %}
+          <li class="list-group-item matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold">{{ p.name }} <span class="text-muted small">{{ p.team }}</span></span>
+              <span class="badge bg-secondary">{{ p.nominators|length }}</span>
+            </div>
+            <div class="mt-1">
+              {% for m in managers %}{% if m.id in p.nominators %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1">{{ m.team_name }}</span>
+              {% endif %}{% endfor %}
+            </div>
+          </li>
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}
 
@@ -250,5 +331,14 @@ function showToast(msg, type = 'info') {
   document.body.appendChild(div);
   setTimeout(() => div.remove(), 3500);
 }
+
+// ricerca nel tabellone (matrice full + lista light)
+const matrixSearch = document.getElementById('matrixSearch');
+if (matrixSearch) matrixSearch.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.matrix-item').forEach(el => {
+    el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
+  });
+});
 </script>
 {% endblock %}

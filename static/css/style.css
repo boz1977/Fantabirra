@@ -106,6 +106,8 @@ body {
 /* ── Versione Light (ottimizzata per telefono) ── */
 .full-only { } /* visibile in full */
 .view-light .full-only { display: none !important; }
+.light-only { display: none; }            /* mostrato solo in modalità light */
+.view-light .light-only { display: block; }
 .view-light .nav-link { font-size: 1.15rem; padding: .7rem .9rem; }
 .view-light .navbar-nav { gap: .15rem; }
 .view-light .btn { min-height: 44px; }            /* tocco più facile */
@@ -117,6 +119,20 @@ body {
 .view-light .table { font-size: .95rem; }
 /* badge "modalità" sotto la navbar opzionale */
 .view-light .light-hide { display: none !important; }
+
+/* ── Tabellone nomination (matrice) ── */
+.matrix-table td, .matrix-table th { padding: .25rem .45rem; }
+.matrix-table th.matrix-mgr { vertical-align: bottom; white-space: nowrap; }
+.matrix-table th.matrix-mgr span {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  display: inline-block; max-height: 120px; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 600;
+}
+.matrix-table .matrix-firstcol {
+  position: sticky; left: 0; background: #fff; z-index: 2; min-width: 150px;
+}
+.matrix-table thead th.matrix-firstcol { z-index: 3; }
+.matrix-table tr.table-secondary .matrix-firstcol { background: #e2e3e5; }
 
 /* ── Nomination filters ── */
 .role-filter-btn { border-radius: 20px; font-size: .82rem; font-weight: 600; }

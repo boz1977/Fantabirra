@@ -393,11 +393,32 @@ def nominations():
         JOIN auction_sessions s ON s.id=ai.session_id WHERE s.status IN ('pending','bidding')
     """)}
 
+    # Tabellone "chi ha nominato chi": visibile SOLO a nomination chiuse (segrete finché aperte)
+    managers = []
+    matrix = {'P': [], 'D': [], 'C': [], 'A': []}
+    if not nomination_open:
+        managers = query_db("SELECT id, team_name FROM users WHERE is_admin=0 ORDER BY team_name")
+        nom_map = {}
+        for r in query_db("SELECT player_id, user_id FROM nominations"):
+            nom_map.setdefault(r['player_id'], set()).add(r['user_id'])
+        nominated = query_db("""
+            SELECT p.id, p.role, p.name, p.team, p.base_value, COUNT(n.id) as nom_count
+            FROM players p JOIN nominations n ON n.player_id=p.id
+            GROUP BY p.id
+            ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+                     nom_count DESC, p.base_value DESC, p.name
+        """)
+        for pl in nominated:
+            d = dict(pl)
+            d['nominators'] = nom_map.get(pl['id'], set())
+            matrix[pl['role']].append(d)
+
     return render_template('manager/nominations.html',
         players=players, my_noms=my_noms, my_nom_ids=my_nom_ids,
         nom_by_role=nom_by_role, acquired_ids=acquired_ids,
         in_session_ids=in_session_ids, nomination_open=nomination_open,
-        settings=settings, role_filter=role_filter, search=search)
+        settings=settings, role_filter=role_filter, search=search,
+        managers=managers, matrix=matrix)
 
 
 @app.route('/nominations/toggle', methods=['POST'])
