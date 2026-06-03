@@ -27,7 +27,9 @@
           <tbody>
             {% for u in users %}
             <tr>
-              <td class="fw-semibold">{{ u.team_name }}</td>
+              <td class="fw-semibold">{{ u.team_name }}
+                {% if not u.is_admin and u.short_name %}<span class="badge bg-light text-dark border ms-1" title="Nome breve">{{ u.short_name }}</span>{% endif %}
+              </td>
               <td><code>{{ u.username }}</code></td>
               <td class="text-end">
                 <span class="fw-bold {% if u.budget < 50 %}text-danger{% elif u.budget < 150 %}text-warning{% else %}text-success{% endif %}">
@@ -48,7 +50,7 @@
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
                   <button class="btn btn-sm btn-outline-success"
                           data-bs-toggle="modal" data-bs-target="#teamModal"
-                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}" title="Rinomina squadra">
+                          data-uid="{{ u.id }}" data-team="{{ u.team_name }}" data-short="{{ u.short_name or '' }}" title="Rinomina squadra">
                     <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-primary"
@@ -99,6 +101,11 @@
             <input type="text" name="team_name" class="form-control" placeholder="es. Lord Cavallo FC" required>
           </div>
           <div class="mb-3">
+            <label class="form-label fw-semibold">Nome breve (max 4) <span class="text-muted small">— per le colonne del tabellone</span></label>
+            <input type="text" name="short_name" class="form-control" placeholder="es. LORD" maxlength="4">
+            <div class="form-text">Se vuoto, vengono usati i primi 4 caratteri del nome squadra.</div>
+          </div>
+          <div class="mb-3">
             <label class="form-label fw-semibold">Username</label>
             <input type="text" name="username" class="form-control" placeholder="es. lordcavallo" required>
           </div>
@@ -128,8 +135,10 @@
         </div>
         <div class="modal-body">
           <label class="form-label fw-semibold">Nome squadra</label>
-          <input type="text" name="team_name" id="team-input" class="form-control" required maxlength="60">
-          <div class="form-text">Lo username di accesso resta invariato.</div>
+          <input type="text" name="team_name" id="team-input" class="form-control mb-2" required maxlength="60">
+          <label class="form-label fw-semibold">Nome breve (max 4)</label>
+          <input type="text" name="short_name" id="short-input" class="form-control" maxlength="4" placeholder="es. LORD">
+          <div class="form-text">Mostrato nelle colonne del tabellone nomination. Lo username resta invariato.</div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
@@ -214,6 +223,7 @@
 document.getElementById('teamModal').addEventListener('show.bs.modal', e => {
   const btn = e.relatedTarget;
   document.getElementById('team-input').value = btn.dataset.team;
+  document.getElementById('short-input').value = btn.dataset.short || '';
   document.getElementById('teamForm').action = `/admin/users/${btn.dataset.uid}/team-name`;
 });
 document.getElementById('budgetModal').addEventListener('show.bs.modal', e => {

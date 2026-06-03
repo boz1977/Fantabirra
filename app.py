@@ -55,6 +55,7 @@ def init_db():
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             team_name TEXT NOT NULL,
+            short_name TEXT,
             budget INTEGER DEFAULT 500,
             is_admin INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -208,6 +209,12 @@ def init_db():
     fp_cols = [r['name'] for r in db.execute("PRAGMA table_info(free_phase)").fetchall()]
     if fp_cols and 'role' not in fp_cols:
         db.execute("ALTER TABLE free_phase ADD COLUMN role TEXT")
+    ucols = [r['name'] for r in db.execute("PRAGMA table_info(users)").fetchall()]
+    if 'short_name' not in ucols:
+        db.execute("ALTER TABLE users ADD COLUMN short_name TEXT")
+    # popola i nomi brevi mancanti coi primi 4 caratteri del nome squadra
+    for u in db.execute("SELECT id, team_name FROM users WHERE short_name IS NULL OR short_name=''").fetchall():
+        db.execute("UPDATE users SET short_name=? WHERE id=?", [(u['team_name'] or '')[:4].upper(), u['id']])
 
     admin_exists = db.execute("SELECT id FROM users WHERE is_admin=1").fetchone()
     if not admin_exists:
@@ -396,8 +403,10 @@ def nominations():
     # Tabellone "chi ha nominato chi": visibile SOLO a nomination chiuse (segrete finché aperte)
     managers = []
     matrix = {'P': [], 'D': [], 'C': [], 'A': []}
+    free_pool = {'P': [], 'D': [], 'C': [], 'A': []}
+    free_count = 0
     if not nomination_open:
-        managers = query_db("SELECT id, team_name FROM users WHERE is_admin=0 ORDER BY team_name")
+        managers = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
         nom_map = {}
         for r in query_db("SELECT player_id, user_id FROM nominations"):
             nom_map.setdefault(r['player_id'], set()).add(r['user_id'])
@@ -413,12 +422,28 @@ def nominations():
             d['nominators'] = nom_map.get(pl['id'], set())
             matrix[pl['role']].append(d)
 
+        # Giocatori liberi: mai nominati da nessuno, non acquistati, non in sessione attiva
+        free_players_rows = query_db("""
+            SELECT p.id, p.role, p.name, p.team, p.base_value
+            FROM players p
+            WHERE p.id NOT IN (SELECT player_id FROM nominations)
+              AND p.id NOT IN (SELECT player_id FROM acquisitions)
+              AND p.id NOT IN (SELECT ai.player_id FROM auction_items ai
+                               JOIN auction_sessions s ON s.id=ai.session_id
+                               WHERE s.status IN ('pending','bidding','resolving'))
+            ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+                     p.base_value DESC, p.name
+        """)
+        for pl in free_players_rows:
+            free_pool[pl['role']].append(pl)
+        free_count = len(free_players_rows)
+
     return render_template('manager/nominations.html',
         players=players, my_noms=my_noms, my_nom_ids=my_nom_ids,
         nom_by_role=nom_by_role, acquired_ids=acquired_ids,
         in_session_ids=in_session_ids, nomination_open=nomination_open,
         settings=settings, role_filter=role_filter, search=search,
-        managers=managers, matrix=matrix)
+        managers=managers, matrix=matrix, free_pool=free_pool, free_count=free_count)
 
 
 @app.route('/nominations/toggle', methods=['POST'])
@@ -774,10 +799,11 @@ def profile():
         action = request.form.get('action')
         if action == 'team_name':
             name = request.form.get('team_name', '').strip()
+            short = request.form.get('short_name', '').strip()[:4].upper() or name[:4].upper()
             if not name:
                 flash('Il nome squadra non può essere vuoto.', 'danger')
             else:
-                execute_db("UPDATE users SET team_name=? WHERE id=?", [name, uid])
+                execute_db("UPDATE users SET team_name=?, short_name=? WHERE id=?", [name, short, uid])
                 session['team_name'] = name
                 flash('Nome squadra aggiornato.', 'success')
         elif action == 'password':
@@ -932,7 +958,7 @@ def admin_dashboard():
 @admin_required
 def admin_users():
     users = query_db("""
-        SELECT u.id, u.username, u.team_name, u.budget, u.is_admin, u.created_at,
+        SELECT u.id, u.username, u.team_name, u.short_name, u.budget, u.is_admin, u.created_at,
                COUNT(DISTINCT n.id) as nominations,
                COUNT(DISTINCT a.id) as players_won
         FROM users u
@@ -949,13 +975,14 @@ def create_user():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '')
     team_name = request.form.get('team_name', '').strip()
+    short_name = request.form.get('short_name', '').strip()[:4].upper() or team_name[:4].upper()
     if not all([username, password, team_name]):
         flash('Tutti i campi sono obbligatori.', 'danger')
         return redirect(url_for('admin_users'))
     try:
         budget = int(get_setting('initial_budget', '500'))
-        execute_db("INSERT INTO users (username,password,team_name,budget) VALUES (?,?,?,?)",
-                   [username, generate_password_hash(password), team_name, budget])
+        execute_db("INSERT INTO users (username,password,team_name,short_name,budget) VALUES (?,?,?,?,?)",
+                   [username, generate_password_hash(password), team_name, short_name, budget])
         flash(f'Utente "{username}" ({team_name}) creato con budget {budget} crediti.', 'success')
     except Exception as e:
         flash('Username già esistente.' if 'UNIQUE' in str(e) else str(e), 'danger')
@@ -987,10 +1014,13 @@ def edit_budget(uid):
 @admin_required
 def edit_team_name(uid):
     name = request.form.get('team_name', '').strip()
+    short = request.form.get('short_name', '').strip()[:4].upper()
     if not name:
         flash('Il nome squadra non può essere vuoto.', 'danger')
         return redirect(url_for('admin_users'))
-    execute_db("UPDATE users SET team_name=? WHERE id=?", [name, uid])
+    if not short:
+        short = name[:4].upper()
+    execute_db("UPDATE users SET team_name=?, short_name=? WHERE id=?", [name, short, uid])
     if uid == session.get('user_id'):
         session['team_name'] = name
     flash('Nome squadra aggiornato.', 'success')

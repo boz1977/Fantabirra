@@ -166,81 +166,123 @@
   {% endif %}
 
   {% else %}
-  <!-- ═══ Tabellone "chi ha nominato chi" (nomination chiuse) ═══ -->
-  <div class="card">
+  {% set roles = [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
+  <!-- ═══ Tabellone Nomination (nomination chiuse) ═══ -->
+  <div class="card mb-3">
     <div class="card-header card-header-gold d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span><i class="bi bi-grid-3x3-gap me-2"></i>Chi ha nominato chi</span>
+      <span><i class="bi bi-grid-3x3-gap me-2"></i>Nomination</span>
       <div class="input-group input-group-sm" style="max-width:240px">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
         <input type="text" id="matrixSearch" class="form-control" placeholder="Cerca giocatore...">
       </div>
     </div>
     <div class="card-body p-0">
-      {% set roles = [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
       {% set has_any = matrix.P or matrix.D or matrix.C or matrix.A %}
       {% if not has_any %}
       <div class="text-center text-muted py-4">Nessuna nomination inserita.</div>
-      {% else %}
 
+      {% elif view_mode == 'full' %}
       <!-- FULL: matrice manager × giocatori -->
-      <div class="full-only">
-        <div class="table-responsive">
-          <table class="table table-sm table-bordered mb-0 small align-middle text-center matrix-table">
-            <thead>
-              <tr>
-                <th class="matrix-firstcol text-start">Giocatore</th>
-                {% for m in managers %}<th class="matrix-mgr"><span>{{ m.team_name }}</span></th>{% endfor %}
-              </tr>
-            </thead>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0 small align-middle text-center matrix-table">
+          <thead>
+            <tr>
+              <th class="matrix-firstcol text-start">Giocatore</th>
+              {% for m in managers %}<th class="matrix-mgr" title="{{ m.team_name }}"><span>{{ m.short_name or m.team_name[:4] }}</span></th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for role, label in roles %}
+            {% if matrix[role] %}
+            <tr class="table-secondary"><td class="text-start fw-bold matrix-firstcol" colspan="{{ managers|length + 1 }}">
+              <span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</td></tr>
+            {% for p in matrix[role] %}
+            <tr class="matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
+              <td class="text-start matrix-firstcol"><span class="fw-semibold">{{ p.name }}</span>
+                <span class="text-muted d-block" style="font-size:.7rem">{{ p.team }}</span></td>
+              {% for m in managers %}
+              <td class="{% if m.id in p.nominators %}table-success{% endif %}">
+                {% if m.id in p.nominators %}<i class="bi bi-check-lg text-success fw-bold"></i>{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-muted small p-2">Scorri lateralmente per vedere tutti i manager. ✓ = ha nominato il giocatore.</div>
+
+      {% else %}
+      <!-- LIGHT: lista per giocatore con i nominatori -->
+      <ul class="list-group list-group-flush">
+        {% for role, label in roles %}
+        {% if matrix[role] %}
+        <li class="list-group-item bg-light fw-bold py-1"><span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</li>
+        {% for p in matrix[role] %}
+        <li class="list-group-item matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">{{ p.name }} <span class="text-muted small">{{ p.team }}</span></span>
+            <span class="badge bg-secondary">{{ p.nominators|length }}</span>
+          </div>
+          <div class="mt-1">
+            {% for m in managers %}{% if m.id in p.nominators %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1">{{ m.short_name or m.team_name }}</span>
+            {% endif %}{% endfor %}
+          </div>
+        </li>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ═══ Giocatori liberi (mai nominati da nessuno) ═══ -->
+  <div class="card">
+    <div class="card-header card-header-green d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-person-dash me-2"></i>Giocatori liberi (mai nominati)</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-dark">{{ free_count }}</span>
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#freeBox">
+          <i class="bi bi-chevron-down"></i> Mostra/Nascondi
+        </button>
+      </div>
+    </div>
+    <div class="collapse" id="freeBox">
+      <div class="card-body p-0">
+        {% if free_count == 0 %}
+        <div class="text-center text-muted py-4">Nessun giocatore libero (tutti nominati o già assegnati).</div>
+        {% else %}
+        <div class="p-2 border-bottom">
+          <div class="input-group input-group-sm" style="max-width:260px">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="freeSearch" class="form-control" placeholder="Cerca giocatore libero...">
+          </div>
+        </div>
+        <div class="table-responsive" style="max-height:460px;overflow-y:auto">
+          <table class="table table-hover table-sm mb-0 small align-middle js-sortable" id="freeTable">
+            <thead class="sticky-top bg-white"><tr>
+              <th>R</th><th>Giocatore</th><th>Squadra</th><th class="text-end">Q.A.</th>
+            </tr></thead>
             <tbody>
               {% for role, label in roles %}
-              {% if matrix[role] %}
-              <tr class="table-secondary"><td class="text-start fw-bold matrix-firstcol" colspan="{{ managers|length + 1 }}">
-                <span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</td></tr>
-              {% for p in matrix[role] %}
-              <tr class="matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
-                <td class="text-start matrix-firstcol"><span class="fw-semibold">{{ p.name }}</span>
-                  <span class="text-muted d-block" style="font-size:.7rem">{{ p.team }}</span></td>
-                {% for m in managers %}
-                <td class="{% if m.id in p.nominators %}table-success{% endif %}">
-                  {% if m.id in p.nominators %}<i class="bi bi-check-lg text-success fw-bold"></i>{% endif %}
-                </td>
-                {% endfor %}
+              {% for p in free_pool[role] %}
+              <tr class="free-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
+                <td><span class="badge badge-role role-{{ role }}">{{ role }}</span></td>
+                <td class="fw-semibold">{{ p.name }}</td>
+                <td class="text-muted">{{ p.team }}</td>
+                <td class="text-end" data-val="{{ p.base_value }}">{{ p.base_value }}</td>
               </tr>
               {% endfor %}
-              {% endif %}
               {% endfor %}
             </tbody>
           </table>
         </div>
-        <div class="text-muted small p-2">Scorri lateralmente per vedere tutti i manager. ✓ = ha nominato il giocatore.</div>
+        {% endif %}
       </div>
-
-      <!-- LIGHT: lista per giocatore con i nominatori -->
-      <div class="light-only">
-        <ul class="list-group list-group-flush">
-          {% for role, label in roles %}
-          {% if matrix[role] %}
-          <li class="list-group-item bg-light fw-bold py-1"><span class="badge badge-role role-{{ role }} me-1">{{ role }}</span>{{ label }}</li>
-          {% for p in matrix[role] %}
-          <li class="list-group-item matrix-item" data-name="{{ p.name|lower }} {{ p.team|lower }}">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-semibold">{{ p.name }} <span class="text-muted small">{{ p.team }}</span></span>
-              <span class="badge bg-secondary">{{ p.nominators|length }}</span>
-            </div>
-            <div class="mt-1">
-              {% for m in managers %}{% if m.id in p.nominators %}
-              <span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1">{{ m.team_name }}</span>
-              {% endif %}{% endfor %}
-            </div>
-          </li>
-          {% endfor %}
-          {% endif %}
-          {% endfor %}
-        </ul>
-      </div>
-
-      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -337,6 +379,14 @@ const matrixSearch = document.getElementById('matrixSearch');
 if (matrixSearch) matrixSearch.addEventListener('input', function () {
   const q = this.value.toLowerCase();
   document.querySelectorAll('.matrix-item').forEach(el => {
+    el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
+  });
+});
+// ricerca giocatori liberi
+const freeSearch = document.getElementById('freeSearch');
+if (freeSearch) freeSearch.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.free-item').forEach(el => {
     el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
   });
 });
