@@ -133,6 +133,9 @@ body {
 }
 .matrix-table thead th.matrix-firstcol { z-index: 3; }
 .matrix-table tr.table-secondary .matrix-firstcol { background: #e2e3e5; }
+.matrix-table tr.matrix-head th { background: #1b5e20; color: #fff; vertical-align: bottom; }
+.matrix-table tr.matrix-head th.matrix-firstcol { background: #1b5e20; color: #fff; }
+.matrix-table tr.matrix-head th.matrix-mgr span { color: #fff; }
 
 /* ── Nomination filters ── */
 .role-filter-btn { border-radius: 20px; font-size: .82rem; font-weight: 600; }

@@ -446,6 +446,88 @@ def nominations():
         managers=managers, matrix=matrix, free_pool=free_pool, free_count=free_count)
 
 
+def _incomplete_managers():
+    """Manager (non-admin) che non hanno completato tutte le nomination, con il dettaglio mancante."""
+    mx = {r: int(get_setting(f'max_nom_{r}', '0')) for r in ['P', 'D', 'C', 'A']}
+    rows = query_db("""
+        SELECT u.id, u.team_name,
+               SUM(CASE WHEN p.role='P' THEN 1 ELSE 0 END) as nP,
+               SUM(CASE WHEN p.role='D' THEN 1 ELSE 0 END) as nD,
+               SUM(CASE WHEN p.role='C' THEN 1 ELSE 0 END) as nC,
+               SUM(CASE WHEN p.role='A' THEN 1 ELSE 0 END) as nA
+        FROM users u
+        LEFT JOIN nominations n ON n.user_id=u.id
+        LEFT JOIN players p ON p.id=n.player_id
+        WHERE u.is_admin=0 GROUP BY u.id ORDER BY u.team_name
+    """)
+    out = []
+    for r in rows:
+        cnt = {'P': r['nP'] or 0, 'D': r['nD'] or 0, 'C': r['nC'] or 0, 'A': r['nA'] or 0}
+        missing = [f"{role} {cnt[role]}/{mx[role]}" for role in ['P', 'D', 'C', 'A'] if cnt[role] < mx[role]]
+        if missing:
+            out.append({'team_name': r['team_name'], 'missing': ', '.join(missing)})
+    return out
+
+
+@app.route('/admin/nominations/incomplete')
+@admin_required
+def nominations_incomplete():
+    return jsonify({'incomplete': _incomplete_managers()})
+
+
+@app.route('/nominations/export')
+@login_required
+def export_nominations():
+    if get_setting('nomination_open', '0') == '1':
+        flash('Esportazione disponibile solo a nomination chiuse.', 'warning')
+        return redirect(url_for('admin_nominations' if session.get('is_admin') else 'nominations'))
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from flask import send_file
+    managers = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    nom_map = {}
+    for r in query_db("SELECT player_id, user_id FROM nominations"):
+        nom_map.setdefault(r['player_id'], set()).add(r['user_id'])
+    nominated = query_db("""
+        SELECT p.id, p.role, p.name, p.team, p.base_value, COUNT(n.id) as nc
+        FROM players p JOIN nominations n ON n.player_id=p.id
+        GROUP BY p.id
+        ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+                 nc DESC, p.base_value DESC, p.name
+    """)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Nomination'
+    headers = ['Ruolo', 'Giocatore', 'Squadra', 'Prezzo', 'Nom.'] + [m['team_name'] for m in managers]
+    ws.append(headers)
+    hfill = PatternFill('solid', fgColor='2E7D32')
+    center = Alignment(horizontal='center')
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = hfill
+        cell.alignment = center
+    for pl in nominated:
+        noms = nom_map.get(pl['id'], set())
+        ws.append([pl['role'], pl['name'], pl['team'], pl['base_value'], len(noms)]
+                  + ['X' if m['id'] in noms else '' for m in managers])
+    # larghezze e blocco riquadri
+    ws.column_dimensions['A'].width = 7
+    ws.column_dimensions['B'].width = 24
+    ws.column_dimensions['C'].width = 16
+    ws.column_dimensions['D'].width = 8
+    ws.column_dimensions['E'].width = 6
+    from openpyxl.utils import get_column_letter
+    for i in range(len(managers)):
+        ws.column_dimensions[get_column_letter(6 + i)].width = 6
+    ws.freeze_panes = 'B2'
+    bio = io.BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"nomination_{datetime.now():%Y%m%d}.xlsx",
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @app.route('/nominations/toggle', methods=['POST'])
 @login_required
 def toggle_nomination():

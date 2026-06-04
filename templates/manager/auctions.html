@@ -46,6 +46,13 @@
     </div>
   </div>
   {% else %}
+  <div class="card mb-3">
+    <div class="card-body py-2 d-flex align-items-center gap-2 flex-wrap">
+      <span class="small text-muted"><i class="bi bi-funnel me-1"></i>Filtra per squadra:</span>
+      <select id="teamFilter" class="form-select form-select-sm" style="max-width:220px"><option value="">Tutte le squadre</option></select>
+      <span class="small text-muted ms-auto" id="teamFilterCount"></span>
+    </div>
+  </div>
   {% for sd in sessions_data %}
   {% set s = sd.session %}
   <div class="card mb-4 auction-card status-bidding" id="sess-{{ s.id }}">
@@ -72,7 +79,7 @@
           <tbody>
             {% for item in sd['items'] %}
             {% set min_req = item.min_bid if item.min_bid else (item.base_value if item.caller_id else item.base_value + 1) %}
-            <tr id="item-row-{{ item.id }}">
+            <tr id="item-row-{{ item.id }}" class="auct-row" data-team="{{ item.team|lower }}">
               <td><span class="badge badge-role role-{{ item.role }}">{{ item.role }}</span></td>
               <td class="fw-semibold">{{ item.name }}
                 {% if item.min_bid %}<span class="badge bg-danger ms-1" title="Rilancio dopo pareggio">rilancio {{ item.min_bid }}+</span>{% endif %}
@@ -283,6 +290,33 @@ function showToast(msg, type = 'info') {
   document.body.appendChild(div);
   setTimeout(() => div.remove(), 4000);
 }
+
+// ── Filtro per squadra (colonna SQUADRA) ──
+(function () {
+  const sel = document.getElementById('teamFilter');
+  if (!sel) return;
+  const rows = Array.from(document.querySelectorAll('.auct-row'));
+  // mappa valore->etichetta usando il testo della cella squadra (3ª colonna)
+  const teams = new Map();
+  rows.forEach(r => {
+    const key = r.dataset.team || '';
+    const label = r.cells[2] ? r.cells[2].textContent.trim() : key;
+    if (key && !teams.has(key)) teams.set(key, label);
+  });
+  [...teams.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([k, lbl]) => {
+    const o = document.createElement('option'); o.value = k; o.textContent = lbl; sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () {
+    const q = this.value;
+    let n = 0;
+    rows.forEach(r => {
+      const show = !q || r.dataset.team === q;
+      r.style.display = show ? '' : 'none';
+      if (show) n++;
+    });
+    document.getElementById('teamFilterCount').textContent = q ? (n + ' giocatori') : '';
+  });
+})();
 
 // ── Polling fase liberi a turni: ricarica quando cambia lo stato ──
 (function() {

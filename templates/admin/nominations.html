@@ -6,12 +6,18 @@
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2 text-success"></i>Riepilogo Nomination</h4>
     <div class="d-flex gap-2 flex-wrap">
-      <form method="POST" action="{{ url_for('toggle_nominations') }}">
+      <form method="POST" action="{{ url_for('toggle_nominations') }}" id="nomToggleForm" data-open="{{ '1' if nomination_open else '0' }}">
+        <input type="hidden" name="force" id="nomForce" value="0">
         <button type="submit" class="btn {% if nomination_open %}btn-warning{% else %}btn-success{% endif %}">
           <i class="bi bi-{% if nomination_open %}lock{% else %}unlock{% endif %} me-1"></i>
           {% if nomination_open %}Chiudi Nomination{% else %}Apri Nomination{% endif %}
         </button>
       </form>
+      {% if not nomination_open %}
+      <a href="{{ url_for('export_nominations') }}" class="btn btn-outline-success">
+        <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+      </a>
+      {% endif %}
       <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#adminImportModal">
         <i class="bi bi-file-earmark-arrow-up me-1"></i>Importa per Manager
       </button>
@@ -20,6 +26,27 @@
         <i class="bi bi-hammer me-1"></i>Crea Asta dalle Nomination
       </a>
       {% endif %}
+    </div>
+  </div>
+
+  <!-- Modal: check completamento prima di chiudere -->
+  <div class="modal fade" id="incompleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Nomination non completate</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Questi manager <strong>non hanno completato</strong> tutte le nomination:</p>
+          <ul class="list-group mb-2" id="incompleteList"></ul>
+          <p class="small text-muted mb-0">Vuoi chiudere comunque le nomination?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="button" class="btn btn-danger" id="forceCloseBtn"><i class="bi bi-lock me-1"></i>Chiudi comunque</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -207,6 +234,31 @@ function filterNom(role, btn) {
   activeRole = role;
   document.querySelectorAll('#nomTable tbody tr').forEach(tr => {
     tr.style.display = (role === 'Tutti' || tr.dataset.role === role) ? '' : 'none';
+  });
+}
+
+// ── Check completamento nomination prima di chiudere ──
+const nomForm = document.getElementById('nomToggleForm');
+if (nomForm && nomForm.dataset.open === '1') {
+  const incModal = new bootstrap.Modal(document.getElementById('incompleteModal'));
+  nomForm.addEventListener('submit', async function (e) {
+    if (document.getElementById('nomForce').value === '1') return; // già confermato
+    e.preventDefault();
+    let data = { incomplete: [] };
+    try { data = await (await fetch('{{ url_for("nominations_incomplete") }}')).json(); } catch (err) {}
+    if (!data.incomplete || data.incomplete.length === 0) {
+      nomForm.submit();  // tutti completi → chiudi
+      return;
+    }
+    const ul = document.getElementById('incompleteList');
+    ul.innerHTML = data.incomplete.map(m =>
+      `<li class="list-group-item d-flex justify-content-between"><span class="fw-semibold">${m.team_name}</span><span class="text-muted small">manca: ${m.missing}</span></li>`
+    ).join('');
+    incModal.show();
+  });
+  document.getElementById('forceCloseBtn').addEventListener('click', function () {
+    document.getElementById('nomForce').value = '1';
+    nomForm.submit();
   });
 }
 </script>
