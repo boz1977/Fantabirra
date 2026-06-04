@@ -260,6 +260,16 @@ def inject_globals():
     )
 
 
+@app.route('/sw.js')
+def service_worker():
+    from flask import send_from_directory, make_response
+    resp = make_response(send_from_directory(os.path.join(app.root_path, 'static'), 'sw.js'))
+    resp.headers['Content-Type'] = 'application/javascript'
+    resp.headers['Service-Worker-Allowed'] = '/'
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
+
+
 @app.route('/view/<mode>')
 def set_view(mode):
     session['view_mode'] = 'light' if mode == 'light' else 'full'
