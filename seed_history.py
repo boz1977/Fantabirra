@@ -27,6 +27,10 @@ ALBO_CAMPIONATO = [
     ('2019-20', 'Daniele', 'Lord Cavallo FC'),
     ('2020-21', 'Massimo', 'Hammerlake F.C.'),
     ('2021-22', 'Igor',    'Eiakulowsky FTM'),
+    ('2022-23', 'Paolo',   'Horto Muso'),
+    ('2023-24', 'Boz',     'Bungabunga'),
+    ('2024-25', 'Massimo', 'Hammerlake F.C.'),
+    ('2025-26', 'Stefano', 'Ingiocabili'),
 ]
 
 # ── Albo d'Oro FantaChampion (anno, presidente, squadra) ────────────────────
@@ -51,6 +55,10 @@ ALBO_CHAMPION = [
     ('2019-20', 'Daniele',  'Lord Cavallo FC'),
     ('2020-21', 'Calsa',    'I Baucheti'),
     ('2021-22', 'Liviano',  'Pm Black White'),
+    ('2022-23', 'Stefano',  'Tttttmabm'),
+    ('2023-24', 'Daniele',  'Lord Cavallo FC'),
+    ('2024-25', 'Daniele',  'Lord Cavallo FC'),
+    ('2025-26', 'Stefano',  'Ingiocabili'),
 ]
 
 # ── Classifiche finali FantaCampionato (pos, squadra, presidente, punti) ─────
@@ -74,11 +82,15 @@ STANDINGS = {
     '2019-20': [(1,'Lord Cavallo FC','Daniele',73),(2,'BungaBunga','Boz',66),(3,'Bibbianese','Stefano',66),(4,'Pm Black White','Liviano',57),(5,'Milf Hunters','Antonio',53),(6,'As Fidanken','Massimo',51),(7,'Anemavaff','Scatto',48),(8,'I Baucheti','Calsa',47),(9,'AC Venetian','Fausto',43),(10,'Moonbeams','Igor',36)],
     '2020-21': [(1,'Hammerlake F.C.','Massimo',60),(2,'Lord Cavallo FC','Daniele',59),(3,'Real Sarruidi','Paolo',56),(4,'NonceneCoviddi','Stefano',54),(5,'Bungabunga','Boz',49),(6,'Eiankulovsky FTM','Igor',49),(7,'AC XOXO','Fausto',49),(8,'I Baucheti','Calsa',43),(9,'ExtraImmunitari','Scatto',41),(10,'Pm Black White','Liviano',33)],
     '2021-22': [(1,'Eiakulowsky FTM','Igor',60),(2,'I Baucheti','Calsa',59),(3,'Hammerlake F.C.','Massimo',56),(4,'Lord Cavallo FC','Daniele',52),(5,'Pm Black White','Liviano',51),(6,'An-ae-m-en-a','Scatto',49),(7,'Monkeypox','Stefano',46),(8,'cepocodastareAllegri','Paolo',45),(9,'Bungabunga','Boz',40),(10,'AC XOXO','Fausto',35)],
+    '2022-23': [(1,'Horto Muso','Paolo',None),(2,'Lord Cavallo FC','Daniele',None),(3,'Hammerlake F.C.','Massimo',None),(10,'NewAgeReload','Scatto',None)],
+    '2023-24': [(1,'Bungabunga','Boz',64),(2,'I Baucheti','Calsa',53),(3,'NewAgeFcl','Scatto',51),(4,'ATestAlta','Liviano',49),(5,'Longobarda','Davide',48),(6,'Salah perché ti amo','Mattia',47),(7,'Lord Cavallo FC','Daniele',45),(8,'Hammerlake F.C.','Massimo',38),(9,'Horto Muso','Paolo',38),(10,'Atletico Codroipo PM','Igor',37),(11,'F.C. PokaVoja','Fausto',37),(12,'Giambrunese','Stefano',34)],
+    '2024-25': [(1,'Hammerlake F.C.','Massimo',61),(2,'Bungabunga','Boz',59),(3,'AC MiBan','Michele',59),(4,'Atletico Codroipo PM','Igor',53),(5,'Lord Cavallo FC','Daniele',50),(6,'Longobarda','Liviano',46),(7,'Horto Muso','Paolo',44),(8,'NewAgeFcl','Scatto',43),(9,'Massimo Futuro','Stefano',40),(10,'Atesta Alta','Liviano',37),(11,'I Baucheti','Calsa',31),(12,'Spiaze','Mattia',26)],
+    '2025-26': [(1,'Ingiocabili','Stefano',60),(2,'New Age FCL','Scatto',57),(3,'Lord Cavallo','Daniele',52),(4,'Horto Muso','Paolo',49),(5,'ATestaAlta','Liviano',47),(6,'I Bauchetti','Calsa',47),(7,'Hammerlake FC','Massimo',43),(8,'Atletico Codroipo PM','Igor',40),(9,'FC Bancellona','Michele',38),(10,'Bungabunga','Boz',37),(11,'Kung Fu Panza','Mattia',35),(12,'Longobarda','Davide',30)],
 }
 
 # ── Curiosità (titolo, valore, dettaglio) ───────────────────────────────────
 CURIOSITA = [
-    ('Punteggio massimo di una squadra', '99 punti', 'Il punteggio più alto mai realizzato da una squadra in una giornata.'),
+    ('Punteggio massimo di una squadra', '99,5', 'Record in Champions League (99,0 in Campionato). Es. finale Champions 2022/23: Tttttmabm 6 (99,5) - New Age Reload 1.'),
     ('Partita con più gol', '9 gol', 'La partita con il maggior numero di gol complessivi.'),
     ('Punteggio più alto di un giocatore', '25 punti', 'Il miglior voto + bonus mai ottenuto da un singolo calciatore.'),
     ('Anno di fondazione', '2000', 'La lega nasce nel 2000 al Bar "Tre Scalini" di Padova con i presidenti Boz, Donè, Mighè e Peo.'),
@@ -152,6 +164,6 @@ def seed(db, regolamento_txt=None):
     if regolamento_txt:
         html = build_regolamento_html(regolamento_txt)
         db.execute("INSERT OR REPLACE INTO settings VALUES ('regolamento_html', ?)", [html])
-        db.execute("INSERT OR REPLACE INTO settings VALUES ('regolamento_version', '2021-22')")
+        db.execute("INSERT OR REPLACE INTO settings VALUES ('regolamento_version', '2025-26')")
 
     db.commit()

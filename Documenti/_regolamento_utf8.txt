@@ -1,6 +1,7 @@
 ﻿Regolamento Fantacalcio
-Versione  2021-22
-Lega  FantaBirra
+Versione  2025-2026
+
+Lega FantaBirra
 
 
 
@@ -15,164 +16,153 @@ Creazione della Rosa.	7
 FantaAsta	7
 Asta Iniziale	8
 Inserimento Formazione	9
-Il calcio mercato.	9
-Il calcio mercato on line.	9
-Il calcolo dei punteggio.	10
-FantaChampion :	14
-Campionato a 8 squadre:	14
-Campionato a 10 squadre:	14
-Campionato a 12 squadre:	14
+Il calcio mercato.	10
+Il calcio mercato on line.	10
+Il calcolo dei punteggio.	11
+FantaChampion :	15
+Campionato a 8 squadre:	15
+Campionato a 10 squadre:	15
+Campionato a 12 squadre:	15
 Premi	16
-Albo D'oro	18
-Albo d'oro FantaCampionato  	18
-Albo FantaChampion 	19
-Albo d'oro per presidente	20
-FantaStagione 2002/03	21
-FantaStagione 2003/04	21
-FantaStagione 2004/05	21
-FantaStagione 2005/06	22
-FantaStagione 2006/07	22
-FantaStagione 2007/08	23
-FantaStagione 2008/09	23
-FantaStagione 2009/10	24
-FantaStagione 2010/11	24
-FantaStagione 2011/12	25
-FantaStagione 2012/13	25
-FantaStagione 2013/14	26
-FantaStagione 2014/15	26
-FantaStagione 2015/16	27
-FantaStagione 2016/17	27
-FantaStagione 2017/18	28
-FantaStagione 2018/19	28
-FantaStagione 2019/20	29
-FantaStagione 2020/21	29
-FantaStagione 2021/22	30
+Albo D'oro	19
+Albo d'oro FantaCampionato  	19
+Albo FantaChampion 	20
+Albo d'oro per presidente	21
+FantaStagione 2002/03	22
+FantaStagione 2003/04	22
+FantaStagione 2004/05	22
+FantaStagione 2005/06	23
+FantaStagione 2006/07	23
+FantaStagione 2007/08	24
+FantaStagione 2008/09	24
+FantaStagione 2009/10	25
+FantaStagione 2010/11	25
+FantaStagione 2011/12	26
+FantaStagione 2012/13	26
+FantaStagione 2013/14	27
+FantaStagione 2014/15	27
+FantaStagione 2015/16	28
+FantaStagione 2016/17	28
+FantaStagione 2017/18	29
+FantaStagione 2018/19	29
+FantaStagione 2019/20	30
+FantaStagione 2020/21	30
 Curiosita'	31
-Punteggio massimo:  99	31
-Partita con piu' gol:  9 gol	32
+Punteggio massimo:  99/99,5	33
+Partita con piu' gol:  9 gol	34
 Giocatore con il punteggio più alto:  25 punti	33
 
 
 
 Introduzione
-Dopo anni e anni di Fantacalcio e' nata l'esigenza di stilare un regolamento per il nostro Fantacalcio in modo che molti casi critici  che sono venuti fuori negli ultimi anni (caso Piangerelli su tutti) non si presentino più. 
+Dopo molti anni di Fantacalcio è nata l'esigenza di stilare un regolamento per il nostro Torneo, in modo che molti casi critici verificateisi nel corso degli anni (come il caso Piangerelli) non si ripresentino più. 
 Questo è il Regolamento Ufficiale della Lega Fantabirra.
 
 Storia della FantaLega
-La lega costituitasi nel lontano 2000 con un incontro segretissimo nel noto Bar Padovano "Tre Scalini" alla presenza dei presidenti Boz, Done', Mighe' e Peo ha dato disposizione di creare la Lega Fantabirra dove si potesse svolgere l'attività  allora illecita del Fantacalcio in un ambiente pulito e privo di qualsiasi controllo da parte di attività criminose.
-Nella prima edizione sono stati chiamati a far parte di questa lega anche i due fidatissimi Presidenti  Igor e Stefano, ed e' nato il primo fantacampionato vinto dallo squadrone di Gogheta.
-Negli anni successivi si sono aggiunti anche noti impresari edili come Zangrandi Giuseppe che con le sue conoscenze e' riuscito a creare una cricca molto potente ed e' riuscito a vincere svariati titoli e FantaChampions, poi sono arrivati anche Scatto, Fausto, l'indimenticato Thomas, Gigi, Calsa e per finire Andrea.
-Ormai la lega e' cresciuta e forse il prossimo anno verrà ampliata ad altri due Presidenti.
-Stagione 2010/11: La lega si e' ampliata a 12 squadre. Sono state ammesse alla massima serie le squadre dei presidenti Done' (un gradito ritorno dopo degli anni passati nelle leghe minori) e di Kekko Stevanato fratello minore del noto presidente Stefano Stevanato.
-Stagione 2011/12: Abbandona uno dei fondatori della lega, il grandissimo presidente PEO, senza riuscire a vincere nessun trofeo. Prende il suo posto TenTen.
-Stagione 2012/13: Ritorno alla lega a 10 squadre. Eliminate dalla massima serie Kekko e Andrea.
-Stagione 2013/14: Dopo 13 anni hanno abbandonato due presidenti storici. Il pluripremiato Beppe con la sua storica Pitiglia e presidente Mighè con la sua famosissima Cicileo. E' tornato dopo un anno in serie B anche Kekko Stevanato. Il presidente Donè ha introdotto in lega un suo amico (si teme qualche inciucio, ma la federazione sta indagando) Fabrizio.
-
-Stagione 2016/17: Stevanato Senior è il grande favorito per questa stagione....ha speso tantissimo e ha portato nel campionato il suo socio Massimo (si teme qualche inciucio). La stagione però ha un dominio incontrastato e indiscusso come non si vedeva dai tempi della Pitiglia e Stevanato Junior ammazza il campionato  e vince agevolmente il titolo.
-Stevanato Senior però si aggiudica la Champion in una finale senza storia contro il suo storico nemico Scatto.
-Stagione 2017/18: Stevanato Senior non riuscendo a vincere il Campionato introduce in lega un altro componente della cricca MPS....un certo Liviano. C'è qualche sospetto all'inizio del campionato per i troppi poteri presi da questa triade Stefano-Massimo-Liviano. Infatti in campionato Stefano parte fortissimo e crea un vuoto....poi con il passare delle giornate tutto ritorna nella normalità e Stefano giunge ultimo superato all'ultimo anche dal Calsa, mentre Liviano con una grande partita all'ultima giornata fa un favore al pluripremiato Boz che aggiunge l'ennesimo trofeo....da quest'ultima giornata è nato un gemellaggio tra le tiforie di BungaBunga e PM Black White.
-Massimo invece si aggiudica il suo primo trofeo, vincendo la Champion in finale contro il sempre temutissimo Stefano.
-
-Stagione 2018/19: Due nuovi ingressi quest'anno. Daniele portato nella lega dal Boss Stevanato che sta ancora cercando di vincere il suo primo campionato e quindi sta cercando di monopolizzare la Lega facendo entrare dei suoi fedelissimi. Ormai la cricca MPS conta di 4 elementi: Liviano-Massimo-Daniele tutti subalterni del super boss Mps Stevanato Senior. Boz allora per cercare di contrastare questo strapotere e per sostituire all'ultimo Kekko (fratello minore di Stefano e fatto fuori causa contrasti interni familiari ) fa entrare Antonio una giovane promessa del Fantacalcio. La stagione vive di un susseguirsi di emozioni e tentate fughe fino a concludersi all'ultima giornata con 4 squadre che potevano aggiudicarsi l'ambito trofeo. Tra queste non c'era la squadra di Stefano. Liviano Scatto Boz e Antonio si sono contesi il campionato in una giornata piena di colpi di scena. Alla fine l'ha spuntata Antonio che per confermare la tradizione (i nuovi giocatori portati da Boz vincono!) si è aggiudicato il Campionato.
-Nella Fantachampion invece Scatto e Fausto hanno avuto un percorso fantastico distruggendo tutti i loro avversari e andando in finale dove per l'ennesima volta Scatto ha perso, non riuscendo a conquistare questo ambito trofeo (terza finale persa).
-
-Stagione 2019/20: Dopo un grande mercato estivo Stevanato sempre essere la squadra da battere, il presidente ha speso una montagna di soldi per fare un super attacco e portare a casa il titolo che ancora manca....Lukaku - Zapata - Caputo con alle spalle De Paul....e invece i sogni si sono infranti subito a causa della stagione pazzesca di Joao Pedro e Lautaro che hanno portato bonus a ripetizione a Daniele che ha stabilito una fantastica doppietta Campionato e Champion...
-Nella Fantachampion invece Scatto e Fausto hanno avuto un percorso fantastico distruggendo tutti i loro avversari e andando in finale dove per l'ennesima volta Scatto ha perso, non riescendo a conquistare questo ambito trofeo (terza finale persa).
-
-Stagione 2020/21: Anno strano dovuto al noto virus COVID...incognita in più in da non sottovalutare. Partenza a razzo di Massimo che con un Lukako devastante, Nzola immarcabile e un culo incredibile mette la freccia e saluta tutti andando in fuga con anche 10 punti di vantaggio sugli avversari....durante l'anno Boz, Daniele e il nuovo arrivato Paolo (altro affiliato della nota società MPS) si fanno sotto e si arriva all'ultima giornata con tre squadre racchiuse in un punto. Alla fine Massimo ce la fa e si prende il suo primo Trofeo.
-Nella Fantachampion invece Scatto raggiunge la sua solita finale e per l'ennesima volta perde contro un grande Calsa che ha puntato molto sulla rivelazione Vlaovic.
-
-Stagione 2021/22: Primo campionato post Covid. Il favorito come ogni anno era il Grande Stevanato che era riuscito a aggiudicarsi in fase d'asta il capocannoniere della passata stagione Vlahovic, ma dopo una serie di prestazioni sfortunate e il cambio di casacca del bomber, non è riuscito a competere per la vittoria finale. Campionato dominato da Igor con il solito vero fantaBomber Immobile. Calsa ha tentato una rimonta finale ma è riuscito ad arrivare a un punto dalla vittoria.
-Nella FantaChampion epilogo scontato con la solita sconfitta di Scatto. Questa volta si è dovuto arrendere ad un Liviano che ha finito la stagione in crescendo che si è portato a casa il suo primo Trofeo grazie all'unico gol fatto in tutta la stagione da Lobotka!!!
-
-
-
+La Lega si è costituita nel lontano 2000 durante un incontro segretissimo nel noto Bar Padovano "Tre Scalini" alla presenza dei presidenti Boz, Donè, Mighe' e Peo. I presidenti hanno disposto di creare la Lega Fantabirra per svolgere l'allora illecito Giuoco del Fantacalcio in un ambiente pulito e libero dal controllo delle cosche adite ad attività criminose.
+Sono stati chiamati a far parte della prima edizione i due fidatissimi Presidenti Igor e Stefano. È nato pertanto il primo fantacampionato vinto dallo squadrone di Gogheta.
+Negli anni successivi si sono aggiunti il noto impresario edile Zangrandi Giuseppe che, con le proprie conoscenze, è riuscito a creare una cricca molto potente riuscendo a vincere svariati titoli nazionali e diverse Champions. Dopo di lui, negli anni: Scatto, Fausto, l'indimenticato Thomas, Gigi, Calsa, Andrea, Fabrizio, Antonio, Kekko, Davide, il Rag. Rigoni, Massimo, Michele, Paolo, Liviano ed il piccolo Mattia.
+Stagione 2010/11: La Lega viene ampliata a 12 squadre. Vengono ammesse alla massima serie le squadre dei presidenti Donè (un gradito ritorno dopo degli anni passati nelle leghe minori) e di Kekko Stevanato, fratello minore del noto presidente Stefano Stevanato.
+Stagione 2011/12: Abbandona uno dei fondatori della Lega, il grandissimo presidente Peo, senza purtroppo riuscire a vincere nessun trofeo. Prende il suo posto TenTen.
+Stagione 2012/13: Ritorno alla Lega a 10 squadre. Eliminati dalla massima serie Kekko e Andrea.
+Stagione 2013/14: Dopo 13 anni abbandonano due presidenti storici: il discusso seppur pluripremiato Beppe, per anni alla guida della mitica Pitiglia, e Mighè con la sua storica Cicileo. Torna, dopo un solo anno in serie B, Kekko Stevanato. Il presidente Donè introduce in Lega Fabrizio. Si teme qualche inciucio ma la Federazione, dopo mesi di indagini, archivia il caso.
+Stagione 2016/17: Stevanato Senior è il grande favorito per questa stagione. Rinnova e spende tantissimo e porta nel campionato il suo socio in affari, il finanziere Massimo DG. La stagione però ha un dominio incontrastato e indiscusso come non si vedeva dai tempi della Pitiglia: è infatti Stevanato Junior ad uccidere il campionato, vincendo agevolmente il titolo con un record di punti di vantaggio.
+Stevanato Senior però si aggiudica la Champion in una finale senza storia contro il suo storico nemico Scatto, uscito nuovamente sconfitto.
+Stagione 2017/18: Stevanato Senior, ancora a zero tituli, introduce in Lega un altro componente della cricca MPS, tale Cibin Liviano. Impossibile celare i sospetti fin dall'inizio del campionato per i troppi poteri della triade Stefano/Massimo/Liviano. Stefano parte fortissimo e crea il vuoto. Con il passare delle giornate però si ridimensiona fino a chiudere all'ultimo posto, superato anche dal Calsa. Liviano facilita all'ultima giornata il pluripremiato Boz, che aggiunge l'ennesimo trofeo. Nasce in questa occasione un gemellaggio tra le tifoserie di BungaBunga e PM Black White. Si aggiudica il suo primo trofeo Massimo, vincendo la Champion in finale ai danni di Stefano, inaugurando una tradizione che lo vedrà sempre vincente contro di lui. Disperato, quest'ultimo si gemella a sua volta con Liviano.
+Stagione 2018/19: La stagione vede due nuovi ingressi: il primo è Daniele Rag. Rigoni, portato in Lega dal Boss Stevanato che sta ancora cercando di vincere il suo primo campionato e cerca di monopolizzarla inserendo sodali e fedelissimi. Ormai la cricca MPS conta ormai elementi: Stefano, Liviano, Massimo e Daniele, tutti subalterni a Stevanato Senior. Boz, nel tentativo di contrastare questo strapotere propone la sostituzione di Kekko (fratello minore di Stefano e fatto fuori a causa di contrasti familiari ) con Antonio, giovane promessa del Fantacalcio. La stagione vive di un susseguirsi di emozioni e tentativi di fuga fino a concludersi all'ultima giornata con ben 4 squadre in lizza per aggiudicarsi l'ambito trofeo. Tra queste è ovviamente assente Stefano. Liviano, Scatto, Boz e Antonio si giocano il campionato in una giornata piena di colpi di scena. La spunta Antonio che, a conferma della tradizione che vuole i nuovi giocatori portati da Boz risultare particolarmente culoni, si aggiudica il Campionato.
+In FantaChampion Scatto e Fausto, dopo un un percorso fantastico e dopo aver cancellato tutti i rispettivi avversari, si ritrovano in finale dove per l'ennesima volta Scatto ha la peggio, non riuscendo a conquistare questo il trofeo e perdendo la terza finale.
+Stagione 2019/20: Dopo un grande mercato estivo Stevanato si propone come la squadra da battere. Allestisce un super attacco, con Lukaku, Zapata e Caputo alle spalle di De Paul. Dal canto suo anche il presidente Scatto investe molto denaro nella sessione estiva ma i sogni si infrangono fin da subito a causa della stagione pazzesca di Joao Pedro e Lautaro Martinez che portano bonus a ripetizione a Daniele, il quale stabilisce una fantastica doppietta Campionato e Fantachampion.
+Stagione 2020/21: Annata anomala interrotta dalla pandemia da COVID e che vede la partenza a razzo di Massimo. Con un Lukako devastante, uno Nzola immarcabile e soprattutto un culo incredibile mette la freccia e saluta tutti andando in fuga con oltre 10 punti di vantaggio sugli avversari. Nel corso della stagione il Boz, Daniele e il nuovo arrivato Paolo (altro oscuro affiliato alla cricca MPS) si rifanno sotto portandosi ad un solo punto all'ultima giornata. Massimo riesce comunque nell'impresa e conquista il suo primo Trofeo.
+In Fantachampion, giunto in finale, Scatto perde l'ennesima volta contro un grande Calsa che ha puntato tutto sulla rivelazione Vlaovic.
+Stagione 2021/22: Primo campionato post Covid. Il favorito, come ogni anno, rimane Stevanato che riesce ad aggiudicarsi in fase d'asta il capocannoniere della precedente stagione Dusan Vlahovic ma una serie di prestazioni sfortunate ed il cambio di casacca del bomber gli impediscono anche quest'anno di competere per la vittoria finale. Campionato dominato da Igor con il solito vero FantaBomber Immobile. Calsa tenta una rimonta finale ma arriva ad un punto dalla vittoria.
+In FantaChampion epilogo scontato con la solita sconfitta di Scatto che questa volta si arrende a Liviano che termina la stagione in crescendo e si porta a casa il primo trofeo grazie all'unico gol fatto in tutta la stagione da parte di Lobotka.
+Stagione 2022/23:
+Il Bicefalo Paolo Enrico con marcia trionfale vince il campionato. Quinta finale nelle ultime 7 edizioni per Scatto che puntualmente perde all'ultima curva, stavolta contro Stefano con uno storico e roboante 1-6.
+Stagione 2023/24:
+Vince con una certa sorpresa il Boz, grazie alle prestazioni del fenomeno del Bologna Zirkzee. Boz diventa così il presidente più vincente della storia. Lord, cavallo di razza, batte in finale di Champions un sorprendente giovanissimo Mini Stevanato e vince la sua seconda coppa.
+Stagione 2024/25:
+Vince il titolo Massimo, dopo un'incredibile rimonta su Michele. New entry terribile questi spaventa tutti e, dopo un mercato spregiudicato e aggressivo, domina le classifiche per mesi ma rallenta nel finale e ottiene il terzo posto. Si piazza al secondo il Boz, dimostrando ancora una volta costanza e tenacia ai livelli di Sir Alex Ferguson. In Champion, finalissima tra Igor e Lord vinta nuovamente da quest'ultimo.
+Stagione 2025/26:
+Annata destinata a passare alla storia e, secondo il parere di molti, la più culona di sempre per il vincitore finale, partito quest'anno in sordina e senza i favori dei pronostici. Scatto parte subito alla grande e staziona nelle primissime posizioni fin dall'inizio del campionato, seguito a poca distanza da Stefano che tiene il passo fino a superarlo alla trentesima giornata grazie ad un filotto di 6 vittorie consecutive, interrotto solo dalla consueta sconfitta casalinga contro Massimo. Stefano chiude così al primo posto per la prima volta dopo 26 anni, grazie soprattutto ad una difesa super culona che incassa solo 29 reti in 33 giornate. L'annata sensazionale di Stevanato senior si chiude con la vittoria in finale di Champions per 3-0 ai danni ancora una volta di Scatto, arrivato ormai a 7 sconfitte su 7 nella finale continentale. In coda chiude ultimo Davide.
 
 
 
 Creazione della Rosa. 
 
-La gioco del Fantacalcio simula la gestione di una squadra di calcio virtuale. 
-Tale rosa si costituisce di 25 giocatori che vengono scelti tra quelli della serie A del campionato in corso.
-Si hanno a disposizione 450 FantaMiliardi per poter acquistare 25 giocatori che sono suddivisi in questo modo: 3 portieri, 8 difensori, 8 centrocampisti, 6 attaccanti. 
-E' possibile consultare il valore dei calciatori dal file ufficiale della Gazzetta la settimana prima del giorno prestabilito per le aste. E' possibile utilizzare meno dei 450 FantaMiliardi  e i restanti serviranno durante la stagione per fare nuovi acquisti durante i mercati di riparazione.
-Una volta scelti i 25 giocatori attraverso il metodo della FantaAsta il presidente della lega inserirà le rose di tutti i giocatori nel sito http://leghe.fantagazzetta.com e creerà la nuova lega per l'anno in corso.
-Per la gestione della lega a livello informatico la guida di riferimento e' la seguente: https://www.fantagazzetta.com/regolamenti
+Il gioco del Fantacalcio simula la gestione di una squadra di calcio virtuale. La rosa si compone di 25 giocatori, scelti tra nel campionato di serie A in corso.
+
+Si hanno a disposizione 600 Fanta Milioni dalla stagione 2022-2023 per acquistare 25 giocatori suddivisi in questo modo: 3 portieri, 8 difensori, 8 centrocampisti e 6 attaccanti. 
+È possibile consultare il valore dei calciatori dal file ufficiale del portale Fantacalcio la settimana prima del giorno prestabilito per le aste. Si possono utilizzare meno dei 600 Fanta Milioni ed i restanti serviranno, durante la stagione, per successivi acquisti durante i mercati di riparazione.
+Una volta scelti i 25 calciatori attraverso il metodo della Fanta Asta il presidente della Lega inserirà le rose di tutti i partecipanti nel sito http://leghe.fantagazzetta.com  https://leghe.fantacalcio.it/fantabirra e creerà la nuova Lega per l'anno in corso.
+Per la gestione della lega a livello informatico la guida di riferimento è la seguente: https://www.fantagazzetta.com/regolamenti
+www.fantacalcio.it
+
 
 FantaAsta
 L'evento clou della stagione avviene prima dell'inizio del campionato con l'asta dei giocatori.
-Questo importantissimo evento si effettuerà il venerdì prima dell'inizio della fantalega presso la hall del Woody Palace Center alle ore 21,30 (o presso un altro luogo oscuro nei pressi di Valecenter...). L'inizio del fantacampionato può non coincidere con l'inizio del campionato reale e dovrà essere deciso attraverso un giro di mail.
-In questa serata si svolgeranno le seguenti funzioni, se non fossero state decise in precedenza durante l'estate con l'utilizzo delle email/whatsap: 
+Questo fondamentale evento si svolge il venerdì prima dell'inizio della Fanta Lega in una Location a scelta. Negli anni è stato ospitato nella Hall del Woody Palace Center, nel negozio di scommesse di Fausto, da Igor, da Michele o al Fero Vecio a Marghera. L'inizio del fantacampionato può non coincidere con l'inizio del campionato reale e dovrà essere deciso attraverso un giro di mail.
+In questa serata si svolgerà quanto segue, se non già deciso in precedenza durante l'estate via email o whatsapp: 
 1. Nomina di un presidente operaio.
-2. Nomina di un tesoriere.
-3. Calendario FantaCampionato e FantaChampion  (numero di giorni per il campionato e giornata d'inizio della FantaChampion).
-4. Votazioni per eventuali modifiche al regolamento e/o aggiunta nuove regole
-5. Compilazione tramite aste e compravendite di tutte le rose iscritte al campionato. 
-6. Consegna premi stagione precedente se non si ci si e' trovati in precedenza.
+2. Nomina di un tesoriere (dopo i difficili anni faustiani, tutto è ora investito in MPS da Stefano)
+3. Stesura dei calendari di Fanta Campionato e Fanta Champion (numero di giorni per il campionato e giornata d'inizio della Fanta Champion).
+4. Votazioni per eventuali modifiche al regolamento e aggiunta di nuove regole
+5. Compilazione - dopo aste e compravendite - di tutte le rose iscritte al campionato. 
+6. Consegna dei premi della stagione precedente.
 7. Definizione dei giorni dei mercati di riparazione.
 8. Varie ed eventuali.
 
-
 Asta Iniziale
-Un paio di giorni prima dell'inizio delle aste bisogna consegnare le nomination.
+Un paio di giorni prima dell'inizio delle aste si devono consegnare le nomination.
 Per l'asta iniziale le nomination sono:
 5 portieri 
 15 difensori 
 15 centrocampisti 
 12 attaccanti 
 
-quelli definitivi saranno: 
+Mentre quelle definitive prevedono: 
 3 portieri 
 8 difensori 
 8 centrocampisti 
 6 attaccanti
-Una volta che il le nomination saranno consegnate al presidente scelto per la gestione delle aste, vengono stilate l'ordine delle aste.
-L'ordine e':
-* Per ruolo (Portieri, difensori,centrocampisti e attaccanti)
+Una volta pronte, le nomination vengono trasmesse al presidente per la gestione delle aste.
+Viene quindi stilato l'ordine delle aste:
+* Per ruolo (portieri, difensori, centrocampisti e attaccanti)
 * Per numerosità (dal più nominato)
-Se un giocatore è stato nominato da un solo presidente, allora lui ha diritto di comprarlo (se vuole) al prezzo segnalato dalla FantaGazzetta, ovvero nel file ufficiale inviato per le nominations.
-Le aste verranno svolte per Ruolo per Ruolo. Prima i giocatori con maggiori nominations (secondo il tabellone) poi quelli nominati da un solo allenatore (che dovrà confermarne l'acquisto o rimetterlo a disposizione degli altri) e quindi i giocatori liberi. I giocatori liberi vanno chiamati uno alla volta, per vedere se c'è qualcun altro interessato. Chi volesse partecipare all'asta istantanea non dovrà fare altro che dichiarare la sua volontà. Queste aste, per motivi di tempo e organizzativi non verranno rinviate e verranno svolte immediatamente. Anche per queste aste valgono le regole delle classiche aste: giocatore acquistato all'asta non lo si può vendere. Obbligo di rilancio di almeno 1mln. Dopo il terzo pareggio estrazione a sorte di un vincitore che aggiungerà un ulteriore mln al valore raggiunto fino a quel momento. Se nessuno vuole partecipare, il giocatore rimane libero, qualora solo un presidente decida di partecipare all'asta lo comprerà al normale costo del cartellino.
-Una volta completato l'acquisto dei giocatori necessari per il Ruolo, si passa al successivo, nell'ordine P D C A. Per D C A, l'ordine di chiamata dei giocatori liberi è a turno, secondo un giro con l'inizio estratto a sorte. 
-Se per motivi di gestione approssimativa, alla fine del completamento della Rosa, avanza qualche milione, è possibile sostituire un qualche Difensore o Centrocampista acquistato non all'asta tra quelli liberi al massimo a 5mln, con un altro del valore non superiore ad altri 5 mln. Questo permette, in teoria, a chi ha comprato 3-4 giocatori a uno, a prenderne qualcuno tra i liberi finali, visto che neanche con gli attaccanti è riuscito a comprare ciò che voleva (o a risparmiare qualcosa).
-La regola dell'ultimo capoverso viene bandita ad agosto 2019 in quanto si decide che alla fine di centrocampisti e difensori si faccia il punto di quanti soldi ognuno ha a disposizione per evitare confusione e errori, e strategie di chi teneva i conti dei soldi spesi. Per lo stesso motivo sono banditi gli strumenti di calcolo e gestione avanzati (tablet e pc --> o ce li hanno tutti?) 
-La regola 20/21 definisce che, nel giro dei giocatori non nominati, chi fa la chiamata, ha di fatto già la vittoria al posto della monetina in caso di pareggio.
 
+Se un giocatore viene nominato da un solo presidente questi, se ritiene, ha il diritto di comprarlo al prezzo riportato su FantaGazzetta/Fantacalcio ovvero nel file ufficiale inviato per le nomination.
+Le aste si svolgono per ruolo. Vengono prima i giocatori con maggiori nomination (secondo l'ordine del tabellone) fino a quelli nominati da un solo allenatore (che deve confermarne l'acquisto o rimetterlo a disposizione degli altri). Infine i giocatori liberi. Questi vengono chiamati uno alla volta per determinarne l'interesse. Chi vuole partecipare all'asta istantanea deve dichiarare la propria volontà. Queste aste, per motivi di tempo e organizzativi, non vengono rinviate ma svolte immediatamente. Valgono sempre le regole delle aste classiche: il giocatore acquistato all'asta non può essere venduto; l'obbligo di rilancio è di almeno 1 milione; dopo il terzo pareggio si procede con l'estrazione a sorte del vincitore con aggiunta di 1 ulteriore milione al valore raggiunto fino a quel momento della trattativa. Se nessuno vuole partecipare il giocatore rimane libero. Qualora solo un presidente decida di partecipare all'asta egli può comprarlo al normale costo del cartellino. Dal 2025-2026 è stato eliminato l'uso della monetina.
+Una volta completato l'acquisto dei giocatori necessari per il ruolo si passa al successivo, nell'ordine P D C A. Per D C A, l'ordine di chiamata dei giocatori liberi è a turno, con estrazione a sorte del partente. 
+Alla fine delle aste per i centrocampisti e i difensori, ognuno deve dichiarare il residuo del denaro ancora a disposizione al fine di evitare confusione od errori o azzerare strategie di chi ha tenuto conto fin qui dei soldi spesi dagli avversari. 
+La regola 20/21 definisce che, limitatamente al giro dei giocatori non nominati, chi chiama un dato giocatore lo acquista automaticamente e di diritto in caso di pareggio, senza ausilio della monetina.
 Inserimento Formazione
 
-Nella sezione formazione del sito è possibile schierare gli 11 titolari e le 7 riserve. Prima occorre però scegliere un modulo tra quelli a disposizione. I moduli il sito mette a disposizione sono: 3-4-3, 3-5-2, 4-5-1, 4-4-2, 4-3-3, 5-4-1, 5-3-2. Successivamente si completa lo schema scegliendo i calciatori per mezzo di menù a tendina. Le sostituzioni possibili durante la partita sono massimo 3 (diventate 5 ne 2020/2021 causa COVID), rispettando l'ordine dei giocatori messi in panchina (quindi con cambio di modulo se fattibile). Queste vengono fatte automaticamente dal computer dando la prevalenza ai giocatori primi nella lista delle riserve. La formazione deve essere comunicata almeno 5 minuto prima della partita di anticipo di serie A , altrimenti sarà considerata quella della precedente domenica.
+Nella sezione formazione del sito è possibile schierare gli 11 titolari e le 7 riserve. Prima occorre scegliere un modulo tra quelli a disposizione. I moduli che il sito mette a disposizione sono: 3-4-3, 3-5-2, 4-5-1, 4-4-2, 4-3-3, 5-4-1, 5-3-2. Successivamente si completa lo schema scegliendo i calciatori per mezzo di menù a tendina. Le sostituzioni possibili durante la partita sono al massimo 5, rispettando l'ordine dei giocatori messi in panchina e quindi comportando il cambio di modulo qualora possibile.
+Le sostituzioni vengono eseguite automaticamente dall'App, PC o tablet rispettando l'ordine dei giocatori nella lista delle riserve. La formazione deve essere comunicata almeno 5 minuti prima dell'inizio della prima partita di serie A. in caso contrario viene considerata quella del turno precedente.
 
 Il calcio mercato.
 
-Alla fine di ogni girone si effettua un mercato di riparazione. 
-Il giorno fissato per il mercato è il venerdi precedente alla prima giornata del nuovo girone.
-Si possono effettuare 10 nominations senza ruoli (cioe uno può nominare anche 10 portieri se vuole) ed effettuare 5 acquisti.
-Le regole delle aste sono uguali a quelle del FantaMercato principale.
-Cambia solo l'ordine con cui si effettuano le aste. Per questi mercati di riparazione essendo pochi i giocatori interessanti vengono effettuate le aste a seconda delle nomination che ha ricevuto il giocatore indipendentemente dal ruolo.
-Calcolo dei soldi:
-Per il calcolo dei soldi da utilizzare durante il mercato di riparazione di utilizza questa formula:
-Soldi rimasti dal mecato precedente  + 2 * gol fatti + 3 *gol subiti
-Dove i gol fatti e i gol subiti sono quelli del girone appena concluso.
+Si propende per un mercato di riparazione veloce dopo il primo turno completo ed un mercato più importante dopo il calciomercato invernale.
+Il mercato deve terminare entro il giorno precedente alla prima giornata del nuovo girone.
+Si possono effettuare 10 nomination senza distinzione di ruolo (un allenatore può nominare anche 10 calciatori con il mede3simo ruolo) ed effettuare 5 acquisti.
+Le regole delle aste dei mercati di riparazione sono le medesime del mercato principale, cambia però l'ordine. Essendo infatti pochi i giocatori interessanti, queste stesse vengono effettuate a partire dal giocatore che ricevuto più nomination indipendentemente dal ruolo e via via a seguire.
+Calcolo dei soldi a disposizione:
+Per il calcolo dei soldi da utilizzare durante il mercato di riparazione si utilizza la seguente formula:
+Residuo mercato precedente + 2 per ogni gol fatto + 3 per ogni gol subito, dove i gol fatti e i gol subiti sono riferiti al girone appena concluso.
 
- Il calcio mercato on line.
+ Il calcio mercato online.
 
-Ormai è sempre più difficile trovarsi fisicamente per fare il fantamercato. Quindi abbiamo la necessità di effettuare un mercato on-line.
-Le regole generali del mercato valgono anche per il mercato on-line. 
-Quando si mandano le nomination per i mercati online, bisogna specificate se si hanno dei problemi  
-e quindi dei giorni in cui non si è online per fare(gestire le aste.
-Una persona (di solito il vice presidente) decide per ogni asta con più di due partecipanti un battitore d'asta che diventa responsabile per quella asta, e un orario di validità dell'asta. I battitori d'asta 
-dovranno rispondere il prima possibile dando la loro disponibilità a gestire le aste assegante a loro.
-I partecipanti all'asta dovranno mandare la loro quotazione al battitore d'asta che alla fine dell'orario di validità dell'asta, manderà una mail con il risultato.
-Si usa Whatsapp per velocità. Boz prepara ogni volta soldi a disposizione ed elenco aste per orario.
-Si deve rendere noto, alla fine di ogni asta, quanto ognuno ha puntato per lo stesso giocatore.
-A quel punto si partirà con l'asta sucessiva.
-Es: 
-Asta PELLICORI 
-MERCOLEDI h 00-12 AM
-Battitore asta PEO.
-La Aste a due verranno gestite dai due contendenti in maniera privata. Se non ci si mette d'accordo allora si effettua un'asta.
-
+Le regole generali del mercato valgono anche per il mercato online. Quando si mandano le nomination per i mercati online occorre verificare le disponibilità di tutti i partecipanti per determinare i giorni e le fasce orarie in cui non si è online per gestire le trattative.
+Si decide per ogni asta con più di due partecipanti un battitore che diventa responsabile per quell'asta ed un orario di validità. Il battitore d'asta deve rispondere il prima possibile dando la propria disponibilità a gestire le aste assegnate.
+I partecipanti all'asta devono mandare la loro quotazione al battitore d'asta il quale, alla fine dell'orario di validità dell'asta, comunica il risultato nel gruppo Whatsapp Fantabirra. È affidata al Boz la preparazione della tabella con i soldi a disposizione e l'elenco delle aste per orario.
+Ogni partecipante deve rendere noto, alla fine di ogni asta, quanto ha puntato per lo stesso giocatore. In caso di pareggio, da novembre 2021, il giocatore viene attribuito alla squadra più indietro in classifica.
+A quel punto si parte con l'asta successiva.
+Esempio: 
+Asta Pellicori
+Mercoledì H 00-12 AM
+Battitore asta: Peo.
+La Aste a due vengono gestite dai due contendenti in maniera privata. Se non vi è accordo si procede con un'asta.
 Il calcolo dei punteggio.
-Vengono sommati i voti dei singoli giocatori inseriti come titolari e in mancanza saranno valutate le riserve del ruolo dove manca il titolare secondo l'ordine riportato sulla panchina. I voti saranno quelli segnalati dalla gazzetta dello sport.  A questi voti si sommeranno e sottrarranno dei valori nel seguente modo:
+Vengono sommati i voti dei singoli giocatori inseriti come titolari. In mancanza subentrano le riserve secondo l'ordine riportato in panchina. I voti vengono assegnati dal portale Fantacalcio. A questi si possono sommare o sottrarre altri valori nel seguente modo:
 +3 per ogni gol segnato
 +3 per ogni rigore parato
 -0.5 per ogni ammonizione
@@ -182,46 +172,43 @@ Vengono sommati i voti dei singoli giocatori inseriti come titolari e in mancanz
 -3 per ogni rigore sbagliato
 +1 per ogni assist servito 
 I casi di calciatore senza voto.
-Dicevamo che ogni volta che un giocatore non prende il voto si procederà alla sostituzione con un panchinaro. Ci sono tuttavia delle eccezioni: il giocatore che prende s.v. e che ottiene il bonus, riceve 6 d'ufficio a prescindere dai minuti che ha giocato (più il bonus).
-Quando si parlava di bonus generici, non si sapeva che forse non esiste la possibilità di settare tutto. Ma solo mettere 5,5 se giocatore sv + ammonizione
- Se il giocarore s.v. viene espulso prende 4 punti d'ufficio (comprensivi del -1 dell'espulsione). Se il giocatore che prende s.v sbaglia un rigore o fa autogol riceve 6 d'ufficio (meno il malus che ha ottenuto).
-Per il portiere s.v. che è sceso in campo almeno 25 minuti (senza contare quelli di recupero, anche se viene sostituito) prende 6 d'ufficio (più i bonus e meno i malus eventuali). Se ha giocato meno di 25 minuti (esclusi quelli di recupero) non viene conteggiato e si applica la sostituzione. Tranne nei casi dove si è messo in luce per qualche intervento.
-Nota: se un giocatore che non sia un portiere di ruolo gioca in porta, i gol subiti o eventuali rigori parati non saranno considerati ma solo eventuali ammonizioni ed espulsioni.
-I giocatori in genere vengono valutati se hanno disputato almeno 25 minuti, ma questa regola non si applica nei casi in cui il giocatore abbia siglato una rete o si sia messo in luce per alcuni episodi positivi e/o negativi.
+Ogni volta che un giocatore non prende il voto si procede alla sua sostituzione con un altro in panchina. Vi sono delle eccezioni: il giocatore che non prende voto (s.v.) ma che ottiene un bonus riceve d'ufficio il voto 6 oltre al bonus a prescindere dai minuti giocati.
+Nota: se un giocatore - di ruolo non portiere - si trova a giocare in porta, i gol subiti o gli eventuali rigori parati non vengono considerati ma solo le eventuali ammonizioni ed espulsioni.
+I giocatori in genere vengono valutati se disputano almeno 25 minuti. La regola non si applica nei casi in cui il giocatore segni una rete o si sia messo in luce per alcuni episodi positivi o negativi.
 
-In caso di partita sospesa i tutti giocatori delle squadre coinvolte riceveranno il 6 d'ufficio tranne gli squalificati e gli indisponibili a lungo termine.
-Per sospensione consideriamo sia la gara interrotta senza che i giocatori possano essere valutati e sia una gara che viene rinviata ad una data successiva:
-- che sia oltre alle ore 23.59 del giovedì seguente alla domenica di campionato se non è previsto un turno infrasettimanale
-- che sia di almeno 48 ore dopo la giornata di campionato nel caso di turno infrasettimanale (regola generale Fantagazzetta)
-Se la gara si dovesse rigiocare entro tali limiti, valgono i giocatori che in quella partita hanno giocato e preso il voto.
+In caso di partita sospesa tutti i giocatori delle squadre coinvolte ricevono il voto 6 d'ufficio, tranne gli squalificati e gli indisponibili a lungo termine. Per sospensione si intende una gara interrotta senza che i giocatori siano stati valutati o in caso di rinvio in data successiva, a seconda dei casi di seguito specificati.
+- gara rinviata oltre le ore 23.59 del giovedì seguente alla domenica di campionato (se non è previsto un turno infrasettimanale);
+- gara giocata almeno 48 ore dopo la giornata di campionato nel caso di turno infrasettimanale (regola generale FantaGazzetta e Fantacalcio)
+Se la gara viene rigiocata entro tali termini, si valutano i giocatori che in quella partita giocano e prendono un voto.
 
-L'assegnazione dei gol negli scontri tra due squadre.
-Il calcolo dei gol fatti tiene in considerazione il punteggio totale realizzato dalla squadra, a seconda della fascia di punteggio si realizza un certo numero di gol.
-In caso di:
-meno di 66 --------->0 gol
-tra 66 e 71.5 -------->1 gol
-tra 72 e 77.5 -------->2 gol
-e così via per ogni fascia di sei punti.
+Assegnazione dei gol negli scontri tra due squadre.
+Il calcolo dei gol fatti considera il punteggio totale realizzato dalla squadra e, a seconda della fascia di punteggio, si realizza un certo numero di gol. In caso di:
+Meno di 66 	--------->		0 gol
+Tra 66 e 71.5	--------->		1 gol
+Tra 72 e 77.5	--------->		2 gol
+A seguire per ogni fascia di sei punti.
 Bonus Speciali:
-Ci sono vari Bunus speciali che di anno in anno possono variare. L'ultimo campionato trascorso sono stati assegnati questi bonus:
+sono previsti bonus speciali da confermare di anno in anno. Nel campionato trascorso sono stati assegnati questi bonus:
 * Fattore Campo: NO
 * Bonus Portiere: NO
 * Bonus Difesa: SI
 * Bonus Centrocampo: NO
 * Bonus Attacco: SI
-Come nei campionati italiani in caso di parità di gol le squadre ricevono 1 punto, in caso di più gol per la squadra di casa ci saranno 3 punti per la squadra che gioca in casa e 0 per chi gioca fuori, viceversa se è la squadra di fuori a fare più gol. Nel torneo a somma punti non vale il +2 casalingo.
+Come nel campionato italiano di calcio in caso di parità di gol le squadre ricevono 1 punto a testa; in caso si segnino più gol rispetto all'avversario vengono assegnati 3 punti. 0 per chi perde.
+Nel torneo a somma punti non vale il +2 casalingo.
+
 
 
 
 FantaChampion :
-
+Tendenzialmente, negli ultimi anni si usa comunque le regole e i requisiti proposti dalla piattaforma fantacalcio, cercando di seguire le seguenti regole.
 Campionato a 8 squadre:
 
-2 giorni all'italiana da 4 squadre. 1,4,5,8 classificata e 2,3,6,7 classificata nell'ultimo girone. Oppure con algoritmo inventato dal Presidente
+2 giorni all'italiana da 4 squadre. 1,4,5,8 classificata e 2,3,6,7 classificata nell'ultimo girone o con algoritmo inventato dal Presidente
 Le prime due si scontrano per le semifinali incrociate (A-R) + finale; 
 Ordine gironi: punti, gol, fantapunti nella giornata di riposo, fantapunti, posizione in campionato.
 Le semifinali si svolgono con il fattore campo per quanto riguardano i gol. Poi si contano i fantapunti e poi posizione in campionato.
-Sorteggio con algoritmo inventato dal presidente. O utilizzo pulsante creato da FantaGazzetta
+Sorteggio con algoritmo inventato dal presidente oppure utilizzo pulsante creato da portale Fantacalcio
 Finale si contano i gol, fantapunti, posizione in campionato.
 
 Campionato a 10 squadre:
@@ -236,148 +223,148 @@ Sorteggio con algoritmo inventato dal presidente. O utilizzo pulsante creato da 
 
 Campionato a 12 squadre:
 
-le prime 4 squadre passano direttamente ai quarti di finale
-le squadre dalla quinta alla dodicesima posizione si affrontano agli ottavi.
-Gli scontri sono tutti A/R con fattore campo. La squadra meglio posizionata in campionato gioca la prima partita in casa (o cmq ordine del sito automatico). 
--> incontri, gol trasferta, somma punti, ..
-La finale si gioca in campo neutro ed e' una partita secca.
-In finale si contano: gol, fantapunti, posizione in campionato.
-Sorteggio con algoritmo inventato dal presidente. O utilizzo pulsante creato da FantaGazzetta
-Questa la composizione della Champion:
-
-
-
-
-
+NEW 2025: 4 gironi da 3, passano 2 squadre su 3 per girone. Le 8 squadre passate si affrontano ai quarti di finale. Servono 11 giornate: 6 nei gironi, 4 eliminazione, 1 finale. Inizio 24° giornata di Serie A Fine 34° giornata di Serie A
+OLD: le prime 4 squadre passano direttamente ai quarti di finale. Le squadre dalla quinta alla dodicesima posizione si affrontano agli ottavi.
+Gli scontri sono tutti A/R con fattore campo. La squadra meglio posizionata in campionato gioca la prima partita in casa (o comunque seguendo l'ordine del sito automatico). Si contano: incontri, gol in trasferta, somma dei punti.
+La finale si gioca in campo neutro in partita secca. In finale si contano: gol, fantapunti, posizione in campionato.
 Premi
+Da 2022-2023 Campionato a 10 squadre, quota di Partecipazione: 50 euro. 
+(Posizione FantaCampionatoSoldi vintiPrimo 200Secondo 80Terzo50Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono0Decimo-10Posizione FantaChampionSoldi vintiPrimo 100Secondo 30Posizione FantapuntiSoldi vintiPrimo 50
+Campionato a 10 squadre fino al 2021-2022, quota di Partecipazione: 40 euro. 
+Posizione FantaCampionatoSoldi vintiPrimo 180Secondo 90Terzo40Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono-10Decimo-10Posizione FantaChampionSoldi vintiPrimo 90Secondo 20
 
-Campionato a 8 squadre, quota di Partecipazione:  40 euro. 
-Posizione FantaCampionatoSoldi vintiPrimo 160Secondo 70Terzo10Quarto0Quinto0Sesto0Settimo 0Ottavo-10
-Posizione FantaChampionSoldi vintiPrimo 70Secondo 20
-Campionato a 10 squadre, quota di Partecipazione:  40 euro. 
-Posizione FantaCampionatoSoldi vintiPrimo 180Secondo 80Terzo40Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono-10Decimo-10
-Posizione FantaChampionSoldi vintiPrimo 80Secondo 30
-Campionato a 9 squadre + FBU, quota di Partecipazione:  45 euro. 
-Posizione FantaCampionatoSoldi vintiPrimo 180Secondo 80Terzo40Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono-5
-Posizione FantaChampionSoldi vintiPrimo 80Secondo 30
 
-Campionato a 12 squadre, quota di Partecipazione:  40 euro.
-Posizione FantaCampionatoSoldi vintiPrimo 200Secondo 90Terzo60Quarto30Quinto0Sesto0Settimo 0Ottavo0Nono0Decimo0Undicesimo-10Dodicesimo-10
-Posizione FantaChampionSoldi vintiPrimo 90Secondo 30
+Da Campionato a 12 squadre 2023-2024, quota di Partecipazione: 40 euro.
+Posizione FantaCampionatoSoldi vintiPrimo 200Secondo 100Terzo60Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono0Decimo0Undicesimo0Dodicesimo-10Posizione FantaChampionSoldi vintiPrimo 100Secondo 30
+Da Campionato a 12 squadre 2025-2026, quota di Partecipazione: 50 euro (tot 600euro)
+Posizione FantaCampionatoSoldi vintiPrimo 260Secondo 110Terzo60Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono0Decimo0Undicesimo0Dodicesimo0Posizione FantaChampionSoldi vintiPrimo 110Secondo 30Posizione FantapuntiSoldi vintiPrimo 30
+Campionato a 9 squadre + FBU, quota di Partecipazione: 45 euro. 
+Posizione FantaCampionatoSoldi vintiPrimo 180Secondo 80Terzo40Quarto0Quinto0Sesto0Settimo 0Ottavo0Nono-5Posizione FantaChampionSoldi vintiPrimo 80Secondo 30
+Campionato a 8 squadre, quota di Partecipazione: 40 euro. 
+Posizione FantaCampionatoSoldi vintiPrimo 160Secondo 70Terzo10Quarto0Quinto0Sesto0Settimo 0Ottavo-10Posizione FantaChampionSoldi vintiPrimo 70Secondo 20
+
 
 Albo D'oro  
 
 Albo d'oro FantaCampionato  
 
-AnnoPresidenteSquadra2000-01IgorGogheta2001-02BeppeOsama B.L.2002-03BeppePitiglia2003-04Mighe'Cicileo2004-05BeppePitiglia2005-06Mighe'Cicileo2006-07IgorCiuccia tanto ciuccia forte2007-08Sospeso2008-09BozEccerto Team2009-10ScattoWest Hanema2010-11BeppePitiglia2011-12BozBungaBunga2012-13CalsaI Baucheti2013-14FaustoAC VENETIAN2014-15ScattoEast Hanema2015-16FaustoAC VENETIAN2016-17KekkoHellas Madonna	2017-18BozBungaBunga2018-19AntonioMilf Hunters2019-20DanieleLord Cavallo FC2020-21MassimoHammerlake F.C.2021-22IgorEiakulowsky FTM
+AnnoPresidenteSquadra2000-01IgorGogheta2001-02BeppeOsama B.L.2002-03BeppePitiglia2003-04Mighe'Cicileo2004-05BeppePitiglia2005-06Mighe'Cicileo2006-07IgorCiuccia tanto ciuccia forte2007-08Sospeso2008-09BozEccerto Team2009-10ScattoWest Hanema2010-11BeppePitiglia2011-12BozBungaBunga2012-13CalsaI Baucheti2013-14FaustoAC Venetian2014-15ScattoEast Hanema2015-16FaustoAC Venetian2016-17KekkoHellas Madonna	2017-18BozBungaBunga2018-19AntonioMilf Hunters2019-20Daniele R.Lord Cavallo FC2020-21MassimoHammerlake F.C.2021-22IgorEiakulowsky FTM2022-23PaoloHorto Muso2023-24BozBungabunga2024-25MassimoHammerlake F.C.2025-26StefanoIngiocabili
 
 Albo FantaChampion 
 
-AnnoPresidenteSquadra2000-01Non Disputata2001-02Non Disputata2002-03BeppePitiglia2003-04StefanoSporting Milingo2004-05BozPearl Hunter Team2005-06BeppePitiglia2006-07Mighe'Cicileo2007-08ThomasZaziziani2008-09BeppePitiglia2009-10BozEccerto2010-11Mighe'Cicileo2011-12BozBungaBunga2012-13DonèPinerolo2013-14FaustoAC VENETIAN2014-15BozBungaBunga2015-16FabrizioQUALUNQUEMENTE2016-17StefanoVigili del fuoco di La Spezia2017-18MassimoAS Fidanken2018-19FaustoAC VENETIAN2019-20DanieleLord Cavallo FC2020-21CalsaI Baucheti2021-22LivianoPm Black White
+AnnoPresidenteSquadra2000-01Non Disputata2001-02Non Disputata2002-03BeppePitiglia2003-04StefanoSporting Milingo2004-05BozPearl Hunter Team2005-06BeppePitiglia2006-07Mighe'Cicileo2007-08ThomasZaziziani2008-09BeppePitiglia2009-10BozEccerto2010-11Mighe'Cicileo2011-12BozBungaBunga2012-13DonèPinerolo2013-14FaustoAC Venetian2014-15BozBungaBunga2015-16FabrizioQualunquemente2016-17StefanoVigili del fuoco di La Spezia2017-18MassimoAS Fidanken2018-19FaustoAC Venetian2019-20Daniele R.Lord Cavallo FC2020-21CalsaI Baucheti2021-22LivianoPm Black White2022-23StefanoTttttmabm2023-24Daniele R.Lord Cavallo FC2024-25Daniele R.Lord Cavallo FC2025-26StefanoIngiocabili
 
 Albo d'oro per presidente
 
-PresidenteTrofei vintiBeppe4 FantaCampionati
+PresidenteTrofei vintiBoz4 FantaCampionati
+4 FantaChampions2008-09, 2011-12, 2017-18, 2023-24
+2003-04, 2009-10, 2011-12, 2014-15Beppe4 FantaCampionati
 3 FantaChampions2001-02, 2002-03, 2005-05, 2010-11
-2002-03, 2005-06, 2008-09Boz3 FantaCampionati
-4 FantaChampions2008-09, 2011-12, 2017-18
-2003-04, 2009-10, 2011-12, 2014-15Igor3 FantaCampionati2000-01, 2006-07, 2021-22Mighe'2 FantaCampionati
+2002-03, 2005-06, 2008-09Igor3 FantaCampionati2000-01, 2006-07, 2021-22Mighe'2 FantaCampionati
 2 FantaChampions2003-04, 2005-06
 2006-07, 2010-11Fausto2 FantaCampionati
 2 FantaChampions2013-14, 2015-16
-2013-14, 2018-19Scatto2 FantaCampionati2009-10, 2014-15Massimo1 FantaCampionato
-1 FantaChampion2020-21
-2017-18Daniele1 FantaCampionato
-1 FantaChampion2019-20
-2019-20Calsa1 FantaCampionato
-1 FantaChampion2012-13
-2020-21Antonio1 FantaCampionato2018-19Kekko1 FantaCampionato2016-17Stefano2 FantaChampions2004-05, 2016-17Thomas1 FantaChampion2007-08Donè1 FantaChampion2012-13Fabrizio1 FantaChampion2015-16Liviano1 FantaChampion2021-22Peo, Gigi, Andrea,  0
+2013-14, 2018-19Massimo2 FantaCampionati
+1 FantaChampion2020-21, 2024-25
+2017-18Scatto2 FantaCampionati2009-10, 2014-15Stefano1 FantaCampionato
+4 FantaChampions2025-26
+2004-05, 2016-17, 2022-23, 2025-26Daniele R.1 FantaCampionato
+3 FantaChampions2019-20
+2019-20, 2023-24, 2024-25Calsa1 FantaCampionato
+1 FantaChampions2012-13
+2020-21Antonio1 FantaCampionato2018-19Kekko1 FantaCampionato2016-17Paolo (+ Enrico)1 FantaCampionato2022-23Thomas1 FantaChampions2007-08Donè1 FantaChampions2012-13Fabrizio1 FantaChampions2015-16Liviano1 FantaChampions2021-22
 
 FantaStagione 2002/03
 
-FantaCampionatoPosSquadraPresidentePunti1F.C. PitigliaBeppe482A.C. HarleyFausto393JigglypuffDone'364ElefanTeamScatto345Vaffanculo F.C.Mighe'336Sholin SoccerBoz307Morte NeraIgor258United CavallinoPeo229Sporting MilingoStefano21FantaChampion1F.C. PitigliaBeppeFinaleF.C. Pitiglia 0 (62)Vaffanculo F.C. 0 (61,5)
+FantaCampionatoPosSquadraPresidentePunti1F.C. PitigliaBeppe482A.C. HarleyFausto393JigglypuffDone'364ElefanTeamScatto345Vaffanculo F.C.Mighe'336Sholin SoccerBoz307Morte NeraIgor258United CavallinoPeo229Sporting MilingoStefano21FantaChampion1F.C. PitigliaBeppeFinaleF.C. Pitiglia 0 (62)Vaffanculo F.C. 0 (61,5)0-0
 FantaStagione 2003/04
 
+Dati non disponibili
 FantaStagione 2004/05
 
-FantaCampionatoPosSquadraPresidentePunti1PitigliaBeppe442A.C. HarleyFausto423Magic FelipeThomas374AnemaguayScatto375Pearl Hunter TeamBoz366Olympique FossombroneStefano337G.P.S. TeamPeo258CicileoMighe'229EiakulowskyIgor21FantaChampion1Pearl Hunter TeamBoz????Finale
-FantaStagione 2005/06
+FantaCampionatoPosSquadraPresidentePunti1PitigliaBeppe442A.C. HarleyFausto423Magic FelipeThomas374AnemaguayScatto375Pearl Hunter TeamBoz366Olympique FossombroneStefano337G.P.S. TeamPeo258CicileoMighe'229EiakulowskyIgor21FantaChampion1Pearl Hunter TeamBozFinaleDati NDFantaStagione 2005/06
 
-FantaCampionatoPosSquadraPresidentePunti1CICILEOMighe'442REAL BASOVIZZAStefano433ATLETIC QUEIMADAPeo414ECCERTO TEAMBoz405R.A.T.B.Scatto406PITIGLIABeppe367HIGHLANDDone'358TOMMY CITY RAMBLERSThomas349AC HARLEYFausto3410EIAKULOWSKYIgor23FantaChampion1PitigliaBeppe ????FinalePitigliaEccerto Team
+FantaCampionatoPosSquadraPresidentePunti1CicileoMighe'442Real BasovizzaStefano433Atletic QueimadaPeo414Eccerto TeamBoz405R.A.T.B.Scatto406PitigliaBeppe367HighlandDone'358Tommy City RamblersThomas349A.C. HarleyFausto3410EiakulowskyIgor23FantaChampion1PitigliaBeppe FinalePitigliaEccerto TeamDati ND
 FantaStagione 2006/07
 
-FantaCampionatoPosSquadraPresidentePunti1Ciuccia tanto ciuccia forteIgor492Eccerto TeamBoz463Dinamo StramareStefano454A.C. HarleyFausto405CicileoMighè396PitigliaBeppe377Atletic QueimadaPeo368HighlandDone'349La Bbomba F.C.Thomas2610A.C. PuccinaScatto24FantaChampion1CicileoMighe'FinaleCicileo 1 (68,5)Eccerto Team 1 (68)
+FantaCampionatoPosSquadraPresidentePunti1Ciuccia tanto ciuccia forteIgor492Eccerto TeamBoz463Dinamo StramareStefano454A.C. HarleyFausto405CicileoMighè396PitigliaBeppe377Atletic QueimadaPeo368HighlandDone'349La Bbomba F.C.Thomas2610A.C. PuccinaScatto24FantaChampion1CicileoMighe'FinaleCicileo 1 (68,5)Eccerto Team 1 (68)1-1
 FantaStagione 2007/08
 
-FantaCampionato  sospeso alla 19esima GiornataPosSquadraPresidentePunti1Eccerto TeamBoz282Duvel FFCDone'283Eiakulowsy F.C.Igor274A.C. HarleyFausto255CicileoMighè256ZazizianiThomas247A.C. ValkanelaPeo238Cosimomele 1908 F.C.Stefano229PitigliaBeppe1810Stella AnemaScatto8FantaChampion1ZazzizianiThomasFinaleZazziziani  4 (86)Eccerto 3 (78,5)
-Commento del nostro presidente Scatto:  e come è giusto che sia, la partita è stata piena di fuochi d'artificio, e come è più giusto ancora, dedichiamo da oggi il trofeo compionslig a thomas.. un applauso e un bacio al nostro compagno di viaggio!!!
+FantaCampionato sospeso alla 19sima GiornataPosSquadraPresidentePunti1Eccerto TeamBoz282Duvel FFCDone'283Eiakulowsy F.C.Igor274A.C. HarleyFausto255CicileoMighè256ZazizianiThomas247A.C. ValkanelaPeo238Cosimomele 1908 F.C.Stefano229PitigliaBeppe1810Stella AnemaScatto8FantaChampion1ZazzizianiThomasFinaleZazziziani  4 (86)Eccerto 3 (78,5)4-3
+Commento del nostro presidente Scatto: "E come è giusto che sia, la partita è stata piena di fuochi d'artificio. E come è più giusto ancora, dedichiamo da oggi il trofeo Cempionslig a Thomas... Un applauso e un bacio al nostro compagno di viaggio!!!"
 FantaStagione 2008/09
 
-FantaCampionato1Eccerto TeamBoz642PitigliaBeppe613Eiakulowsy F.C.Igor554CicileoMighè505Duvel FFCDone'486AC PorcedduCalsa477Real BabudoiaStefano448A.C. HarleyFausto449CSKAnemaScatto3610A.C. KastroPeo34FantaChampion1PitigliaBeppeFinalePitiglia 3 (78)Eiakulowsy F.C. 0 (59,5)
+FantaCampionatoPosSquadraPresidentePunti1Eccerto TeamBoz642PitigliaBeppe613Eiakulowsy F.C.Igor554CicileoMighè505Duvel FFCDone'486AC PorcedduCalsa477Real BabudoiaStefano448A.C. HarleyFausto449CSKAnemaScatto3610A.C. KastroPeo34FantaChampion1PitigliaBeppeFinalePitiglia 3 (78)Eiakulowsy F.C. 0 (59,5)3-0
 FantaStagione 2009/10
 
-FantaCampionato1 West HanemaScatto542 Eccerto  Boz513 andreablock  Andrea434 sarusko Mighè435 Eiakulowsky F.C.  Igor426 USC Escort 1907  Stefano397 giuzan Beppe318 lultimo777  Fausto249 europeo79  Peo2410  AC PORCEDDU  Calsa16FantaChampion1EccertoBozFinaleEccerto 2 (77)West Hanema 2 (74,5)FantaStagione 2010/11
+FantaCampionatoPosSquadraPresidentePunti1West HanemaScatto542Eccerto  Boz513Andreablock  Andrea434Sarusko Mighè435Eiakulowsky F.C.  Igor426USC Escort 1907  Stefano397Giuzan Beppe318Lultimo777  Fausto249Europeo79  Peo2410A.C. Porceddu  Calsa16FantaChampion1EccertoBozFinaleEccerto 2 (77)West Hanema 2 (74,5)2-2FantaStagione 2010/11
 
-FantaCampionato1 Pitiglia F.C.Beppe572 lultimo777Fausto 563 Cicileo F.C.Mighe' 554 AC PicchiaBoz495 Duvel F.F.C.Done'496 West HanemaScatto467 Atl. Manøn'TroppKekko408 AndreablockAndrea389 I BauchetiCalsa3810 FC SILVIOMERDAStefano3711Eiakulowsky F.C.Igor3212Thai PeoPeo30FantaChampion1 Cicileo F.C. Mighe'Finale Cicileo F.C. 2 (75,5)  I Baucheti 0 (52)
-FantaStagione 2011/12
+FantaCampionatoPosSquadraPresidentePunti1Pitiglia F.C.Beppe572Lultimo777Fausto 563Cicileo F.C.Mighe' 554AC PicchiaBoz495Duvel F.F.C.Done'496West HanemaScatto467Atl. Manøn'TroppKekko408AndreablockAndrea389I BauchetiCalsa3810FC SilviomerdaStefano3711Eiakulowsky F.C.Igor3212Thai PeoPeo30FantaChampion1 Cicileo F.C. Mighe'Finale Cicileo F.C. 2 (75,5)  I Baucheti 0 (52)2-0FantaStagione 2011/12
 
-FantaCampionato1 BungaBungaBoz642 East HanemaScatto613 A.C. VENETIANFausto614 AC ScilipoteseKekko495 I BauchetiCalsa486 CapitanoAndrea477Eiakulowsky F.C.Igor458 FC Bayern MarconTenTen439DuvelDone'4010 CicileoMighe'3711PitigliaBeppe3412Deportivo LavitolaStefano25FantaChampion1BungaBungaBozFinaleBungaBunga 3 (82)I Baucheti 1 (71,5)
+FantaCampionatoPosSquadraPresidentePunti1BungaBungaBoz642East HanemaScatto613A.C. VenetianFausto614AC ScilipoteseKekko495I BauchetiCalsa486CapitanoAndrea477Eiakulowsky F.C.Igor458FC Bayern MarconTenTen439DuvelDone'4010CicileoMighe'3711PitigliaBeppe3412Deportivo LavitolaStefano25FantaChampion1BungaBungaBozFinaleBungaBunga 3 (82)I Baucheti 1 (71,5)3-1
 FantaStagione 2012/13
 
-FantaCampionato1I BauchetiCalsa662PineroloDonè553BungaBungaBoz554East HanemaScatto535A.C. VENETIANFausto446Eiakulowsky F.C.Igor447Federació Catalana de FutbolTenTen448PitigliaBeppe449CSKAPEAStefano4210 CicileoMighe'25FantaChampion1PineroloDonèFinalePinerolo 1 (69) (2529,5)BungaBunga 1 (69) (2471,5)
-
+FantaCampionatoPosSquadraPresidentePunti1I BauchetiCalsa662PineroloDonè553BungaBungaBoz554East HanemaScatto535A.C. VenetianFausto446Eiakulowsky F.C.Igor447Federació Catalana de FutbolTenTen448PitigliaBeppe449CSKAPEAStefano4210CicileoMighe'25FantaChampion1PineroloDonèFinalePinerolo 1 (69) (2529,5)BungaBunga 1 (69) (2471,5)1-1
 FantaStagione 2013/14
 
-FantaCampionato1A.C. VENETIANFausto662BungaBungaBoz613ThunderStruckFabrizio594East HanemaScatto575PineroloDonè566I BauchetiCalsa527Eiakulowsky F.C.Igor438Esercito di SilvioStefano399Federació Catalana de FutbolTenTen3510 Lokomotiv Mosca.rdelliKekko22FantaChampion1A.C. VENETIANFaustoFinaleA.C. VENETIAN 2 (74) ThunderStruck 0 (63) 
+FantaCampionatoPosSquadraPresidentePunti1A.C. VenetianFausto662BungaBungaBoz613ThunderStruckFabrizio594East HanemaScatto575PineroloDonè566I BauchetiCalsa527Eiakulowsky F.C.Igor438Esercito di SilvioStefano399Federació Catalana de FutbolTenTen3510Lokomotiv Mosca.rdelliKekko22FantaChampion1A.C. VenetianFaustoFinaleA.C. Venetian 2 (74) ThunderStruck 0 (63) 2-0
 FantaStagione 2014/15
 
-FantaCampionato1East HanemaScatto2BungaBungaBoz3FC ICEKekko4PineroloDonè5FBUFBU6I BauchetiCalsa7A.C. VENETIANFausto8Dinamo CamposampieroStefano9Eiakulowsky F.CIgor10ThunderStruckFabrizioFantaChampion1BungaBungaBozFinaleBungaBungaI Baucheti
+FantaCampionatoPosSquadraPresidentePunti1East HanemaScattoDati ND2BungaBungaBozDati ND3FC ICEKekkoDati ND4PineroloDonèDati ND5FBUFBUDati ND6I BauchetiCalsaDati ND7A.C. VENETIANFaustoDati ND8Dinamo CamposampieroStefanoDati ND9Eiakulowsky F.CIgorDati ND10ThunderStruckFabrizioDati NDFantaChampion1BungaBungaBozFinaleBungaBungaI BauchetiDati ND
 FantaStagione 2015/16
 
-FantaCampionato1AC VenetianFausto672KnattspyrnyfelagioframStefano623Real HanemaScatto604QUALUNQUEMENTEFabrizio565BungaBungaBoz486FC ICEKekko467Fantabirra UnitedFBU398FuckYouDonè399I BauchetiCalsa3810EiakulowskyIgor24FantaChampion1QUALUNQUEMENTEFabrizioFinaleQUALUNQUEMENTE 1 (68,81)I Baucheti 0 (62,29)
+FantaCampionatoPosSquadraPresidentePunti1AC VenetianFausto672KnattspyrnyfelagioframStefano623Real HanemaScatto604QualunquementeFabrizio565BungaBungaBoz486FC ICEKekko467Fantabirra UnitedFBU398FuckYouDonè399I BauchetiCalsa3810EiakulowskyIgor24FantaChampion1QualunquementeFabrizioFinaleQualunquemente 1 (68,81)I Baucheti 0 (62,29)1-1
 
 FantaStagione 2016/17
 
-FantaCampionato1Hellas MadonnaKekko762BungaBungaBoz553I BauchetiCalsa494Senza HanemaScatto475MoonbeamsIgor466Vigili del fuoco di La SpeziaStefano457AS FidankenMassimo428AC VenetianFausto35FantaChampion1StefanoScattoFinaleVigili del fuoco di La Spezia 2 (74,21)Senza Hanema 0 (65,25)
-
+FantaCampionatoPosSquadraPresidentePunti1Hellas MadonnaKekko762BungaBungaBoz553I BauchetiCalsa494Senza HanemaScatto475MoonbeamsIgor466Vigili del fuoco di La SpeziaStefano457AS FidankenMassimo428AC VenetianFausto35FantaChampion1Vigili del fuoco di La SpeziaStefanoFinaleVigili del fuoco di La Spezia 2 (74,21)Senza Hanema 0 (65,25)2-0
 
 FantaStagione 2017/18
 
-FantaCampionato1BungaBungaBoz612MoonbeamsIgor583Senza HanemaScatto564AC VenetianFausto525PM BLACK WHITELiviano496AS FidankenMassimo487Hellas MadonnaKekko468Fantabirra UnitedFBU429I BauchetiCalsa4110UnisportAuto Chisinau Fotbal ClubStefano38FantaChampion1MassimoStefanoFinaleAS Fidanken 1 (67)UnisportAuto Chisinau Fotbal Club 0 (62)
-
+FantaCampionatoPosSquadraPresidentePunti1BungaBungaBoz612MoonbeamsIgor583Senza HanemaScatto564AC VenetianFausto525PM Black WhiteLiviano496AS FidankenMassimo487Hellas MadonnaKekko468Fantabirra UnitedFBU429I BauchetiCalsa4110UnisportAuto Chisinau Fotbal ClubStefano38FantaChampion1AS FidankenMassimoFinaleAS Fidanken 1 (67)UnisportAuto Chisinau Fotbal Club 0 (62)1-0
 FantaStagione 2018/19
 
-FantaCampionato1Mils HuntersAntonio592BungaBungaBoz573PM BLACK WHITELiviano554FC Hanema 04Scatto555Lord Cavallo FCFausto476SalviniMerda FCStefano467MoonbeamsIgor458AS FidankenMassimo419AC VenetianFausto3910I BauchetiCalsa36FantaChampion1FaustoScattoFinaleAC Venetian 3 (78.5)FC Hanema 04  1 (66.5)
-
-
+FantaCampionatoPosSquadraPresidentePunti1Mils HuntersAntonio592BungaBungaBoz573PM Black WhiteLiviano554FC Hanema 04Scatto555Lord Cavallo FCFausto476SalviniMerda FCStefano467MoonbeamsIgor458AS FidankenMassimo419AC VenetianFausto3910I BauchetiCalsa36FantaChampion1AC VenetianFaustoFinaleAC Venetian 3 (78.5)FC Hanema 04  1 (66.5)3-1
 FantaStagione 2019/20
 
-FantaCampionato1Lord Cavallo FCDaniele732BungaBungaBoz663BibbianeseStefano664Pm Black WhiteLiviano575Milf HuntersAntonio536As FidankenMassimo517AnemavaffScatto488I BauchetiCalsa479AC VenetianFausto4310MoonbeamsIgor36FantaChampion1DanieleAntonioFinaleLord Cavallo FC  3 Milf Hunters  2
+FantaCampionatoPosSquadraPresidentePunti1Lord Cavallo FCDaniele732BungaBungaBoz663BibbianeseStefano664Pm Black WhiteLiviano575Milf HuntersAntonio536As FidankenMassimo517AnemavaffScatto488I BauchetiCalsa479AC VenetianFausto4310MoonbeamsIgor36FantaChampion1Lord Cavallo FC  DanieleFinaleLord Cavallo FC  3 Milf Hunters  23-2
 
 FantaStagione 2020/21
 
-FantaCampionato1Hammerlake F.C.Massimo602Lord Cavallo FCDaniele593Real SarruidiPaolo564NonceneCoviddiStefano545BungabungaBoz496Eiankulovsky FTMIgor497AC XOXOFausto498I BauchetiCalsa439ExtraImmunitariScatto4110Pm Black WhiteLiviano33FantaChampion1CalsaScattoFinaleI Baucheti 2 (77)ExtraImmunitari 2 (72.5)
-
-
+FantaCampionatoPosSquadraPresidentePunti1Hammerlake F.C.Massimo602Lord Cavallo FCDaniele593Real SarruidiPaolo564NonceneCoviddiStefano545BungabungaBoz496Eiankulovsky FTMIgor497AC XoxoFausto498I BauchetiCalsa439ExtraImmunitariScatto4110Pm Black WhiteLiviano33FantaChampion1I BauchetiCalsaFinaleI Baucheti 2 (77)ExtraImmunitari 2 (72.5)2-2
 FantaStagione 2021/22
 
-FantaCampionato1Eiakulowsky FTMIgor602I BauchetiCalsa593Hammerlake F.C.Massimo564Lord Cavallo FCDaniele525Pm Black WhiteLiviano516An-ae-m-en-aScatto497MonkeypoxStefano468cepocodastareAllegriPaolo459BungabungaBoz4010AC XOXOFausto35FantaChampion1LivianoScattoFinalePm Black White 1 (71)An-ae-m-en-a 1 (67)
+FantaCampionatoPosSquadraPresidentePunti1Eiakulowsky FTMIgor602I BauchetiCalsa593Hammerlake F.C.Massimo564Lord Cavallo FCDaniele525Pm Black WhiteLiviano516An-ae-m-en-aScatto497MonkeypoxStefano468CepocodastareAllegriPaolo459BungabungaBoz4010AC XoxoFausto35FantaChampion1Pm Black WhiteLivianoFinalePm Black White 1 (71)An-ae-m-en-a 1 (67)1-1
+FantaStagione 2022/23
+
+FantaCampionatoPosSquadraPresidentePunti1Horto MusoPaolo-EnricoDati ND2Lord Cavallo FCDanieleDati ND3Hammerlake F.C.MassimoDati ND4Dati ND5Dati ND6Dati ND7Dati ND8Dati ND9Dati ND10NewAgeReloadScattoDati NDFantaChampion1TttttmabmStefanoFinaleTttttmabm 6 (99,5)NewAgeReload 1 (ND)6-1
+FantaStagione 2023/24
+
+FantaCampionato1Bungabunga Boz642I BauchetiCalsa533NewAgeFclScatto514ATestAltaLiviano495LongobardaDavide486Salah perché ti amoMattia477Lord Cavallo FCDaniele458Hammerlake F.C.Massimo389Horto MusoPaolo3810Atletico Codroipo PMIgor3711F.C. PokaVojaFausto3712GiambruneseStefano34FantaChampion1Lord Cavallo FCDanieleFinaleSalah perché ti amoLord Cavallo FC0-2FantaStagione 2024/25
+
+FantaCampionatoPosSquadraPresidentePunti1Hammerlake F.C.Massimo612Bungabunga Boz593AC MiBanMichele594Atletico Codroipo PMIgor535Lord Cavallo FCDaniele506LongobardaLiviano467Horto MusoPaolo448NewAgeFclScatto439Massimo FuturoStefano4010Atesta altaLiviano3711I BauchetiCalsa3112SpiazeMattia26FantaChampion1Lord Cavallo FCDanieleFinaleAtletico Codroipo PMLord Cavallo FC1-2FantaStagione 2025/26
+
+FantaCampionatoPosSquadraPresidentePunti1IngiocabiliStefano602New Age FCLScatto573Lord CavalloDaniele524Horto MusoPaolo495ATestaAltaLiviano476I BauchettiCalsa477Hammerlake FCMassimo438Atletico Codroipo PMIgor409FC BancellonaMichele3810BungabungaBoz3711Kung Fu PanzaMattia3512LongobardaDavide30FantaChampion1IngiocabiliStefanoFinaleIngiocabili 3 (83,5)New Age FCL 0 (61,5)3-0
 
 
 
-Curiosita'
-
-Punteggio massimo:  99
-
-
-
-Partita con piu' gol:  9 gol
 
 
 
 
 
-Giocatore con il punteggio più alto:  25 punti
+Curiosità
+Giocatore con il punteggio più alto: 25 punti
+
+
+
+Punteggio massimo: 99,0 in Campionato - 99,5 in Champions League
+
+
+Finale Champions League 2022/2023
+TTTTTMABM 6 (99,5)NEW AGE RELOAD 1 (ND)6-1
+Partite con più gol: 9 gol
+
 
 
 
