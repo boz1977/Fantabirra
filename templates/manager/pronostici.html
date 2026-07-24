@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Pronostici — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Pronostici</h4>
+      <span class="text-muted small">La tua classifica finale prevista</span>
+    </div>
+  </div>
+
+  {% if not is_admin %}
+  <!-- Editor del proprio pronostico -->
+  <div class="card mb-4">
+    <div class="card-header card-header-green d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-list-ol me-2"></i>La mia classifica finale prevista</span>
+    </div>
+    <div class="card-body">
+      <p class="small text-muted">Ordina le squadre dalla 1ª all'ultima con le frecce, poi salva. Puoi modificarlo quando vuoi.</p>
+      <form method="POST" id="predForm">
+        <ul class="list-group" id="predList">
+          {% for t in my_order %}
+          <li class="list-group-item d-flex align-items-center gap-2 pred-row">
+            <span class="badge bg-success pred-pos" style="width:34px">{{ loop.index }}</span>
+            <input type="hidden" name="order" value="{{ t.id }}">
+            <span class="flex-grow-1 fw-semibold">{{ t.team_name }}</span>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary pred-up" title="Su"><i class="bi bi-arrow-up"></i></button>
+              <button type="button" class="btn btn-sm btn-outline-secondary pred-down" title="Giù"><i class="bi bi-arrow-down"></i></button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        <button type="submit" class="btn btn-gold mt-3"><i class="bi bi-save me-1"></i>Salva pronostico</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Pronostici di tutti -->
+  <div class="card">
+    <div class="card-header card-header-gold"><i class="bi bi-people me-2"></i>Pronostici di tutti</div>
+    <div class="card-body">
+      {% if not authors %}
+      <div class="text-center text-muted py-3">Nessun pronostico inserito ancora.</div>
+      {% else %}
+      <div class="row g-3">
+        {% for a in authors %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header py-2 fw-semibold bg-light">{{ a.team_name }}</div>
+            <div class="card-body p-0">
+              <ol class="list-group list-group-flush list-group-numbered">
+                {% for p in allpred[a.id] %}
+                <li class="list-group-item py-1 small">{{ p.team_name }}</li>
+                {% endfor %}
+              </ol>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renumber() {
+  document.querySelectorAll('#predList .pred-pos').forEach((el, i) => el.textContent = i + 1);
+}
+const list = document.getElementById('predList');
+if (list) {
+  list.addEventListener('click', function (e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const row = btn.closest('.pred-row');
+    if (btn.classList.contains('pred-up') && row.previousElementSibling) {
+      row.parentNode.insertBefore(row, row.previousElementSibling);
+      renumber();
+    } else if (btn.classList.contains('pred-down') && row.nextElementSibling) {
+      row.parentNode.insertBefore(row.nextElementSibling, row);
+      renumber();
+    }
+  });
+}
+</script>
+{% endblock %}

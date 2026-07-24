@@ -50,6 +50,7 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_acquisti' %}active{% endif %}" href="{{ url_for('admin_acquisti') }}"><i class="bi bi-bag-check me-1"></i>Acquisti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people me-1"></i>Utenti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento','admin_storico','edit_standings','admin_regolamento','admin_curiosita'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i>Storico</a>
@@ -78,6 +79,7 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'my_team' %}active{% endif %}" href="{{ url_for('my_team') }}"><i class="bi bi-shield-fill me-1"></i>La Mia Squadra</a></li>
         {% if view_mode == 'full' %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'strategia' %}active{% endif %}" href="{{ url_for('strategia') }}"><i class="bi bi-bullseye me-1"></i>Strategia</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i>Storico</a>

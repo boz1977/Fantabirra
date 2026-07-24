@@ -170,6 +170,14 @@ def init_db():
             FOREIGN KEY (item_id) REFERENCES auction_items(id),
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+        CREATE TABLE IF NOT EXISTS predictions (
+            user_id INTEGER NOT NULL,
+            predicted_user_id INTEGER NOT NULL,
+            position INTEGER NOT NULL,
+            PRIMARY KEY (user_id, predicted_user_id),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (predicted_user_id) REFERENCES users(id)
+        );
         CREATE TABLE IF NOT EXISTS free_phase (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             status TEXT DEFAULT 'choosing',     -- choosing | bidding | done
@@ -910,6 +918,59 @@ def profile():
                 flash('Password aggiornata.', 'success')
         return redirect(url_for('profile'))
     return render_template('profile.html', user=user)
+
+
+@app.route('/pronostici', methods=['GET', 'POST'])
+@login_required
+def pronostici():
+    uid = session['user_id']
+    teams = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    valid_ids = {t['id'] for t in teams}
+
+    if request.method == 'POST':
+        if session.get('is_admin'):
+            flash("L'amministratore non fa pronostici.", 'warning')
+            return redirect(url_for('pronostici'))
+        order = request.form.getlist('order')
+        db = get_db()
+        db.execute("DELETE FROM predictions WHERE user_id=?", [uid])
+        pos = 0
+        for pid in order:
+            if pid.isdigit() and int(pid) in valid_ids:
+                pos += 1
+                db.execute("INSERT INTO predictions (user_id, predicted_user_id, position) VALUES (?,?,?)",
+                           [uid, int(pid), pos])
+        db.commit()
+        db.close()
+        flash('Pronostico salvato!', 'success')
+        return redirect(url_for('pronostici'))
+
+    team_by_id = {t['id']: dict(t) for t in teams}
+    # il mio pronostico (ordine salvato + eventuali squadre nuove in coda)
+    my_order = []
+    present = set()
+    for r in query_db("SELECT predicted_user_id FROM predictions WHERE user_id=? ORDER BY position", [uid]):
+        t = team_by_id.get(r['predicted_user_id'])
+        if t:
+            my_order.append(t)
+            present.add(t['id'])
+    for t in teams:
+        if t['id'] not in present:
+            my_order.append(dict(t))
+
+    # pronostici di tutti (per il confronto)
+    allpred = {}
+    for r in query_db("""SELECT p.user_id, p.position, u2.team_name, u2.short_name
+                         FROM predictions p JOIN users u2 ON u2.id=p.predicted_user_id
+                         ORDER BY p.user_id, p.position"""):
+        allpred.setdefault(r['user_id'], []).append(dict(r))
+    authors = query_db("""SELECT id, team_name FROM users
+                          WHERE is_admin=0 AND id IN (SELECT DISTINCT user_id FROM predictions)
+                          ORDER BY team_name""")
+
+    return render_template('manager/pronostici.html',
+        my_order=my_order, allpred=allpred, authors=authors,
+        is_admin=session.get('is_admin'), has_mine=bool(present))
 
 
 # ── Strategia manager ────────────────────────────────────────────────────────
