@@ -973,6 +973,48 @@ def pronostici():
         is_admin=session.get('is_admin'), has_mine=bool(present))
 
 
+@app.route('/admin/pronostici/export')
+@admin_required
+def export_pronostici():
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    from flask import send_file
+    authors = query_db("""SELECT id, team_name FROM users
+                          WHERE is_admin=0 AND id IN (SELECT DISTINCT user_id FROM predictions)
+                          ORDER BY team_name""")
+    if not authors:
+        flash('Nessun pronostico da esportare.', 'warning')
+        return redirect(url_for('pronostici'))
+    pred = {}   # user_id -> {position: team_name}
+    maxpos = 0
+    for r in query_db("""SELECT p.user_id, p.position, u2.team_name
+                         FROM predictions p JOIN users u2 ON u2.id=p.predicted_user_id"""):
+        pred.setdefault(r['user_id'], {})[r['position']] = r['team_name']
+        maxpos = max(maxpos, r['position'])
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Pronostici'
+    ws.append(['Pos.'] + [a['team_name'] for a in authors])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2E7D32')
+        cell.alignment = Alignment(horizontal='center')
+    for pos in range(1, maxpos + 1):
+        ws.append([pos] + [pred.get(a['id'], {}).get(pos, '') for a in authors])
+    ws.column_dimensions['A'].width = 6
+    for i in range(len(authors)):
+        ws.column_dimensions[get_column_letter(2 + i)].width = 20
+    ws.freeze_panes = 'B2'
+    bio = io.BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"pronostici_{datetime.now():%Y%m%d}.xlsx",
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 # ── Strategia manager ────────────────────────────────────────────────────────
 
 @app.route('/strategia')
