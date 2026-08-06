@@ -6,14 +6,12 @@
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
       <h4 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-success"></i>Lista Giocatori</h4>
-      <span class="text-muted small">{{ players|length }} giocatori caricati — Stagione 2025-26</span>
+      <span class="text-muted small">{{ players|length }} giocatori caricati</span>
     </div>
     <div class="d-flex gap-2">
-      <form method="POST" action="{{ url_for('load_players') }}" class="d-inline">
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-cloud-download me-1"></i>Carica da Excel
-        </button>
-      </form>
+      <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#loadModal">
+        <i class="bi bi-file-earmark-arrow-up me-1"></i>Carica da Excel
+      </button>
       {% if players %}
       <form method="POST" action="{{ url_for('clear_players') }}" class="d-inline"
             onsubmit="return confirm('Cancellare tutti i giocatori e le nomination?')">
@@ -28,15 +26,12 @@
   {% if not players %}
   <div class="card">
     <div class="card-body text-center py-5">
-      <i class="bi bi-cloud-download fs-1 d-block mb-3 text-muted"></i>
+      <i class="bi bi-file-earmark-arrow-up fs-1 d-block mb-3 text-muted"></i>
       <h5>Nessun giocatore caricato</h5>
-      <p class="text-muted">Clicca "Carica da Excel" per importare la lista dalla quotazione 2025-26.<br>
-      Il file deve trovarsi in <code>Documenti/0-Quotazioni_Fantacalcio_Stagione_2025_26.xlsx</code></p>
-      <form method="POST" action="{{ url_for('load_players') }}">
-        <button type="submit" class="btn btn-success btn-lg">
-          <i class="bi bi-cloud-download me-2"></i>Carica Giocatori
-        </button>
-      </form>
+      <p class="text-muted">Carica il file Excel delle quotazioni (dal tuo computer) per importare la lista.</p>
+      <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#loadModal">
+        <i class="bi bi-file-earmark-arrow-up me-2"></i>Carica da Excel
+      </button>
     </div>
   </div>
   {% else %}
@@ -95,6 +90,39 @@
     </div>
   </div>
   {% endif %}
+
+  <!-- Modal: carica quotazioni da Excel -->
+  <div class="modal fade" id="loadModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('load_players') }}" enctype="multipart/form-data">
+          <div class="modal-header card-header-green text-white">
+            <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up me-2"></i>Carica lista giocatori</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <label class="form-label fw-semibold">File Excel delle quotazioni</label>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            <div class="form-text mb-3">
+              Il file ufficiale della Gazzetta con le colonne <code>Id, R, Nome, Squadra, Qt.A</code>
+              (es. quotazioni stagione 2026-27).
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="replace" value="1" id="replaceChk" {% if players %}checked{% endif %}>
+              <label class="form-check-label" for="replaceChk">
+                <strong>Sostituisci la lista esistente</strong>
+                <div class="text-muted small">Cancella i giocatori attuali e le nomination prima di caricare (consigliato per una nuova stagione).</div>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-green"><i class="bi bi-upload me-1"></i>Carica</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

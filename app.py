@@ -1289,26 +1289,66 @@ def admin_players():
 @app.route('/admin/players/load', methods=['POST'])
 @admin_required
 def load_players():
-    import pandas as pd
-    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              'Documenti', '0-Quotazioni_Fantacalcio_Stagione_2025_26.xlsx')
-    if not os.path.exists(excel_path):
-        flash('File non trovato: Documenti/0-Quotazioni_Fantacalcio_Stagione_2025_26.xlsx', 'danger')
+    import pandas as pd, io
+    f = request.files.get('file')
+    # sorgente: file caricato dall'utente, altrimenti fallback al file in Documenti (se presente)
+    if f and f.filename:
+        data = f.read()
+    else:
+        bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'Documenti', '0-Quotazioni_Fantacalcio_Stagione_2025_26.xlsx')
+        if not os.path.exists(bundled):
+            flash('Seleziona un file Excel della quotazione da caricare.', 'warning')
+            return redirect(url_for('admin_players'))
+        with open(bundled, 'rb') as fh:
+            data = fh.read()
+
+    # rileva la riga di intestazione (il file Gazzetta a volte ha un titolo in cima)
+    df = None
+    for hdr in (0, 1, 2):
+        try:
+            tmp = pd.read_excel(io.BytesIO(data), header=hdr)
+            cols = [str(c).strip() for c in tmp.columns]
+            if 'Nome' in cols and 'R' in cols and 'Squadra' in cols:
+                tmp.columns = cols
+                df = tmp
+                break
+        except Exception:
+            continue
+    if df is None:
+        flash('Formato non riconosciuto: servono le colonne Id, R, Nome, Squadra, Qt.A.', 'danger')
         return redirect(url_for('admin_players'))
+
     try:
-        df = pd.read_excel(excel_path)[['Id', 'R', 'Nome', 'Squadra', 'Qt.A']].dropna(subset=['Id', 'Nome'])
-        df['Qt.A'] = df['Qt.A'].fillna(1).astype(int)
+        qcol = 'Qt.A' if 'Qt.A' in df.columns else next((c for c in df.columns if c.lower().startswith('qt.a')), None)
+        has_id = 'Id' in df.columns
+        df = df.dropna(subset=['Nome'])
+        replace = request.form.get('replace') == '1'
         db = get_db()
+        if replace:
+            db.execute("DELETE FROM nominations")
+            db.execute("DELETE FROM players")
         count = 0
+        next_id = 1
         for _, row in df.iterrows():
+            role = str(row['R']).strip().upper()
+            if role not in ('P', 'D', 'C', 'A'):
+                continue
+            pid = int(row['Id']) if has_id and pd.notna(row.get('Id')) else next_id
+            next_id = max(next_id, pid) + 1
+            try:
+                base = int(row[qcol]) if qcol and pd.notna(row.get(qcol)) else 1
+            except (ValueError, TypeError):
+                base = 1
             db.execute("INSERT OR REPLACE INTO players (id,role,name,team,base_value) VALUES (?,?,?,?,?)",
-                       [int(row['Id']), str(row['R']), str(row['Nome']), str(row['Squadra']), int(row['Qt.A'])])
+                       [pid, role, str(row['Nome']).strip(), str(row['Squadra']).strip(), max(base, 1)])
             count += 1
         db.commit()
         db.close()
-        flash(f'{count} giocatori caricati con successo.', 'success')
+        flash(f'{count} giocatori caricati con successo.'
+              + (' Lista precedente sostituita.' if replace else ''), 'success')
     except Exception as e:
-        flash(f'Errore: {e}', 'danger')
+        flash(f'Errore durante la lettura del file: {e}', 'danger')
     return redirect(url_for('admin_players'))
 
 @app.route('/admin/players/clear', methods=['POST'])
