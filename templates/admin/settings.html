@@ -20,10 +20,24 @@
                      value="{{ settings.league_name }}" required>
             </div>
             <div class="mb-3">
+              <label class="form-label fw-semibold">Stagione</label>
+              <input type="text" name="season_label" class="form-control"
+                     value="{{ settings.season_label }}" placeholder="es. 2026-27" required>
+              <div class="form-text">Mostrata nella dashboard dei manager.</div>
+            </div>
+            <div class="mb-3">
               <label class="form-label fw-semibold">Budget iniziale per manager (crediti)</label>
               <input type="number" name="initial_budget" class="form-control"
                      value="{{ settings.initial_budget }}" min="1" required>
-              <div class="form-text">Usato quando si crea un nuovo utente.</div>
+              <div class="form-text">
+                Usato per i nuovi utenti. Se lo cambi e nessuno ha ancora fatto aste/acquisti,
+                viene aggiornato automaticamente il budget di <strong>tutti</strong> i manager.
+              </div>
+              <button type="submit" formaction="{{ url_for('apply_budget') }}" formnovalidate
+                      class="btn btn-sm btn-outline-success mt-2"
+                      onclick="return confirm('Impostare il budget di TUTTI i manager al valore attuale del campo salvato? (Funziona solo se non ci sono ancora aste/acquisti)')">
+                <i class="bi bi-arrow-repeat me-1"></i>Applica il budget a tutti i manager ora
+              </button>
             </div>
             <div class="mb-3">
               <label class="form-label fw-semibold">Max giocatori per squadra</label>

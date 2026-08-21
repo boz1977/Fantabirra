@@ -199,6 +199,7 @@ def init_db():
         ('initial_budget', '500'),
         ('max_players', '25'),
         ('league_name', 'Fantabirra'),
+        ('season_label', '2026-27'),
         ('tie_rule', 'first'),
         ('slots_P', '3'),
         ('slots_D', '8'),
@@ -262,6 +263,7 @@ def admin_required(f):
 def inject_globals():
     return dict(
         league_name=get_setting('league_name', 'Fantabirra'),
+        season_label=get_setting('season_label', '2026-27'),
         nomination_open=get_setting('nomination_open', '0') == '1',
         view_mode=session.get('view_mode', 'full'),
         now=datetime.now()
@@ -2242,20 +2244,51 @@ def delete_auction(session_id):
 @admin_required
 def admin_settings():
     if request.method == 'POST':
+        old_budget = int(get_setting('initial_budget', '500'))
         for key in ['max_nom_P','max_nom_D','max_nom_C','max_nom_A',
                     'slots_P','slots_D','slots_C','slots_A',
-                    'initial_budget','max_players','league_name','tie_rule']:
+                    'initial_budget','max_players','league_name','tie_rule','season_label']:
             v = request.form.get(key)
             if v is not None:
                 set_setting(key, v.strip())
         flash('Impostazioni salvate.', 'success')
+
+        # Se il budget iniziale è cambiato e nessuno ha ancora speso, aggiorna tutti i manager
+        new_budget = int(get_setting('initial_budget', '500'))
+        if new_budget != old_budget:
+            spent = query_db("SELECT COUNT(*) c FROM acquisitions", one=True)['c']
+            active = query_db("SELECT COUNT(*) c FROM auction_sessions WHERE status IN ('bidding','resolving')",
+                              one=True)['c']
+            if spent == 0 and active == 0:
+                execute_db("UPDATE users SET budget=? WHERE is_admin=0", [new_budget])
+                flash(f'Budget di tutti i manager aggiornato a {new_budget} crediti.', 'success')
+            else:
+                flash('Budget iniziale salvato, ma i budget dei manager NON sono stati modificati '
+                      'perché ci sono già aste in corso o acquisti effettuati.', 'warning')
         return redirect(url_for('admin_settings'))
     settings = {k: get_setting(k, v) for k, v in [
         ('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12'),
         ('slots_P','3'),('slots_D','8'),('slots_C','8'),('slots_A','6'),
         ('initial_budget','500'),('max_players','25'),('league_name','Fantabirra'),('tie_rule','first'),
+        ('season_label','2026-27'),
     ]}
     return render_template('admin/settings.html', settings=settings)
+
+
+@app.route('/admin/settings/apply-budget', methods=['POST'])
+@admin_required
+def apply_budget():
+    spent = query_db("SELECT COUNT(*) c FROM acquisitions", one=True)['c']
+    active = query_db("SELECT COUNT(*) c FROM auction_sessions WHERE status IN ('bidding','resolving')",
+                      one=True)['c']
+    ib = int(get_setting('initial_budget', '500'))
+    if spent == 0 and active == 0:
+        execute_db("UPDATE users SET budget=? WHERE is_admin=0", [ib])
+        flash(f'Budget di tutti i manager impostato a {ib} crediti.', 'success')
+    else:
+        flash('Operazione annullata: ci sono già aste in corso o acquisti effettuati. '
+              'I budget NON sono stati modificati.', 'warning')
+    return redirect(url_for('admin_settings'))
 
 
 @app.route('/classifica')
