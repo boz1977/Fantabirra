@@ -1325,30 +1325,61 @@ def load_players():
         qcol = 'Qt.A' if 'Qt.A' in df.columns else next((c for c in df.columns if c.lower().startswith('qt.a')), None)
         has_id = 'Id' in df.columns
         df = df.dropna(subset=['Nome'])
-        replace = request.form.get('replace') == '1'
+        # mode: 'replace' = cancella tutto (nomination incluse); 'merge' = aggiorna mantenendo le nomination
+        mode = request.form.get('mode', 'merge')
+        if request.form.get('replace') == '1':  # retrocompatibilità
+            mode = 'replace'
         db = get_db()
-        if replace:
+        if mode == 'replace':
             db.execute("DELETE FROM nominations")
             db.execute("DELETE FROM players")
+
         count = 0
-        next_id = 1
+        new_ids = set()
+        next_id = (db.execute("SELECT COALESCE(MAX(id),0) FROM players").fetchone()[0] or 0) + 1
         for _, row in df.iterrows():
             role = str(row['R']).strip().upper()
             if role not in ('P', 'D', 'C', 'A'):
                 continue
             pid = int(row['Id']) if has_id and pd.notna(row.get('Id')) else next_id
-            next_id = max(next_id, pid) + 1
+            next_id = max(next_id, pid + 1)
             try:
                 base = int(row[qcol]) if qcol and pd.notna(row.get(qcol)) else 1
             except (ValueError, TypeError):
                 base = 1
             db.execute("INSERT OR REPLACE INTO players (id,role,name,team,base_value) VALUES (?,?,?,?,?)",
                        [pid, role, str(row['Nome']).strip(), str(row['Squadra']).strip(), max(base, 1)])
+            new_ids.add(pid)
             count += 1
+
+        removed = 0
+        kept_departed = 0
+        if mode == 'merge':
+            # giocatori referenziati da nomination/acquisti/aste: da mantenere sempre
+            referenced = set()
+            for t, col in [('nominations', 'player_id'), ('acquisitions', 'player_id'), ('auction_items', 'player_id')]:
+                for r in db.execute(f"SELECT DISTINCT {col} pid FROM {t}").fetchall():
+                    if r['pid'] is not None:
+                        referenced.add(r['pid'])
+            # rimuovi i giocatori spariti dalla nuova lista che nessuno ha nominato/acquistato
+            for r in db.execute("SELECT id FROM players").fetchall():
+                if r['id'] not in new_ids:
+                    if r['id'] in referenced:
+                        kept_departed += 1
+                    else:
+                        db.execute("DELETE FROM players WHERE id=?", [r['id']])
+                        removed += 1
+
         db.commit()
         db.close()
-        flash(f'{count} giocatori caricati con successo.'
-              + (' Lista precedente sostituita.' if replace else ''), 'success')
+        if mode == 'replace':
+            flash(f'{count} giocatori caricati. Lista e nomination precedenti azzerate.', 'success')
+        else:
+            msg = f'Lista aggiornata: {count} giocatori nel file. {removed} non più in lista rimossi.'
+            if kept_departed:
+                msg += f' {kept_departed} giocatori non più in lista sono stati mantenuti perché già nominati.'
+            msg += ' Le nomination sono state conservate.'
+            flash(msg, 'success')
     except Exception as e:
         flash(f'Errore durante la lettura del file: {e}', 'danger')
     return redirect(url_for('admin_players'))

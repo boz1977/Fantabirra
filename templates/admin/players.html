@@ -107,11 +107,21 @@
               Il file ufficiale della Gazzetta con le colonne <code>Id, R, Nome, Squadra, Qt.A</code>
               (es. quotazioni stagione 2026-27).
             </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="mode" value="merge" id="modeMerge" checked>
+              <label class="form-check-label" for="modeMerge">
+                <strong>Aggiorna la lista <span class="badge bg-success">mantieni le nomination</span></strong>
+                <div class="text-muted small">Aggiorna valori e squadre, aggiunge i nuovi giocatori e rimuove quelli
+                spariti dalla lista (tranne quelli già nominati, che restano). <strong>Le nomination inserite non si perdono.</strong>
+                Consigliato per aggiornare le quotazioni durante la stagione.</div>
+              </label>
+            </div>
             <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="replace" value="1" id="replaceChk" {% if players %}checked{% endif %}>
-              <label class="form-check-label" for="replaceChk">
-                <strong>Sostituisci la lista esistente</strong>
-                <div class="text-muted small">Cancella i giocatori attuali e le nomination prima di caricare (consigliato per una nuova stagione).</div>
+              <input class="form-check-input" type="radio" name="mode" value="replace" id="modeReplace">
+              <label class="form-check-label" for="modeReplace">
+                <strong class="text-danger">Sostituisci tutto</strong>
+                <div class="text-muted small">Cancella <strong>tutti i giocatori e tutte le nomination</strong> prima di caricare.
+                Solo per iniziare una stagione nuova da zero.</div>
               </label>
             </div>
           </div>
