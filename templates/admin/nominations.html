@@ -113,8 +113,10 @@
               <td class="fw-semibold">{{ u.team_name }}</td>
               <td class="text-center">
                 {% if nom_open %}
-                  {% if u.total > 0 %}
-                  <span class="badge bg-success" title="Ha inserito delle nomination"><i class="bi bi-check-lg"></i> Inserite</span>
+                  {% if u.total >= max_tot %}
+                  <span class="badge bg-success" title="Tutte le nomination inserite"><i class="bi bi-check-lg"></i> Inserite</span>
+                  {% elif u.total > 0 %}
+                  <span class="badge bg-warning text-dark" title="Ha inserito solo {{ u.total }}/{{ max_tot }} nomination"><i class="bi bi-exclamation-triangle"></i> Incompleto</span>
                   {% else %}
                   <span class="badge bg-secondary">In attesa</span>
                   {% endif %}
