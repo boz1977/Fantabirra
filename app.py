@@ -502,13 +502,10 @@ def nominations_incomplete():
 @app.route('/nominations/export')
 @login_required
 def export_nominations():
-    if get_setting('nomination_open', '0') == '1':
-        flash('Esportazione disponibile solo a nomination chiuse.', 'warning')
+    # L'esportazione è disponibile solo dopo la PUBBLICAZIONE del tabellone (vale anche per l'admin, partecipante)
+    if get_setting('nominations_revealed', '0') != '1':
+        flash('Il tabellone non è ancora stato pubblicato: esportazione non disponibile.', 'warning')
         return redirect(url_for('admin_nominations' if session.get('is_admin') else 'nominations'))
-    # i manager possono esportare solo dopo la pubblicazione; l'admin sempre
-    if not session.get('is_admin') and get_setting('nominations_revealed', '0') != '1':
-        flash('Il tabellone non è ancora stato pubblicato.', 'warning')
-        return redirect(url_for('nominations'))
     import openpyxl, io
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from flask import send_file
@@ -1405,15 +1402,16 @@ def clear_players():
 @admin_required
 def admin_nominations():
     nom_open = get_setting('nomination_open', '0') == '1'
-    # Mentre le nomination sono aperte sono SEGRETE anche per l'admin
-    nominated = [] if nom_open else query_db("""
+    # Le nomination sono SEGRETE (anche per l'admin, che è un partecipante) finché non pubblica il tabellone
+    revealed = get_setting('nominations_revealed', '0') == '1'
+    nominated = query_db("""
         SELECT p.id, p.role, p.name, p.team, p.base_value,
                COUNT(n.id) as nom_count,
                GROUP_CONCAT(u.team_name, ', ') as nominators
         FROM players p JOIN nominations n ON n.player_id=p.id
         JOIN users u ON u.id=n.user_id
         GROUP BY p.id ORDER BY nom_count DESC, p.role, p.name
-    """)
+    """) if revealed else []
     users = query_db("""
         SELECT u.id, u.username, u.team_name,
                COUNT(n.id) as total,
@@ -1428,7 +1426,6 @@ def admin_nominations():
     """)
     settings = {k: int(get_setting(k, v)) for k, v in
                 [('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12')]}
-    revealed = get_setting('nominations_revealed', '0') == '1'
     return render_template('admin/nominations.html',
         nominated=nominated, users=users, settings=settings, nom_open=nom_open, revealed=revealed)
 
