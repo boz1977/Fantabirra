@@ -106,8 +106,8 @@
             </div>
             {% endfor %}
           </div>
-          <ul class="list-group list-group-flush">
-            {% for p in my_nominations[:10] %}
+          <ul class="list-group list-group-flush" style="max-height:420px;overflow-y:auto">
+            {% for p in my_nominations %}
             <li class="list-group-item d-flex align-items-center py-2">
               <span class="badge badge-role role-{{ p.role }} me-2">{{ p.role }}</span>
               <span class="flex-grow-1 small fw-semibold">{{ p.name }}</span>
@@ -115,13 +115,10 @@
               <span class="badge bg-light text-dark border">{{ p.base_value }}</span>
             </li>
             {% endfor %}
-            {% if my_nominations|length > 10 %}
-            <li class="list-group-item text-center text-muted small py-2">
-              + altri {{ my_nominations|length - 10 }} giocatori —
-              <a href="{{ url_for('nominations') }}">vedi tutti</a>
-            </li>
-            {% endif %}
           </ul>
+          <div class="card-footer text-muted small py-2 text-center">
+            {{ my_nominations|length }} nomination inserite
+          </div>
           {% endif %}
         </div>
       </div>

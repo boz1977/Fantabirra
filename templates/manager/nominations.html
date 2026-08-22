@@ -172,14 +172,33 @@
 
   {% elif not revealed %}
   <!-- Nomination chiuse ma tabellone non ancora pubblicato dall'admin -->
-  <div class="card border-warning">
-    <div class="card-body text-center py-5">
-      <i class="bi bi-hourglass-split fs-1 d-block mb-3 text-warning"></i>
+  <div class="card border-warning mb-3">
+    <div class="card-body text-center py-4">
+      <i class="bi bi-hourglass-split fs-1 d-block mb-2 text-warning"></i>
       <h5>Nomination chiuse</h5>
       <p class="text-muted mb-0">
-        Il tabellone con le nomination di tutti sarà visibile <strong>quando l'amministratore pubblicherà il tabellone delle aste</strong>.<br>
-        <span class="small">Fino ad allora le scelte restano riservate.</span>
+        Il tabellone con le nomination <strong>di tutti</strong> sarà visibile quando l'amministratore pubblicherà il tabellone delle aste.<br>
+        <span class="small">Fino ad allora le scelte degli altri restano riservate. Qui sotto vedi le <strong>tue</strong> nomination.</span>
       </p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header card-header-green"><i class="bi bi-card-checklist me-2"></i>Le mie nomination ({{ my_noms|length }})</div>
+    <div class="card-body p-0">
+      {% if not my_noms %}
+      <div class="text-center text-muted py-4">Non hai inserito nomination.</div>
+      {% else %}
+      <ul class="list-group list-group-flush">
+        {% for p in my_noms %}
+        <li class="list-group-item d-flex align-items-center py-2">
+          <span class="badge badge-role role-{{ p.role }} me-2">{{ p.role }}</span>
+          <span class="flex-grow-1 small fw-semibold">{{ p.name }}</span>
+          <span class="text-muted small me-2">{{ p.team }}</span>
+          <span class="badge bg-light text-dark border">{{ p.base_value }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
     </div>
   </div>
 
