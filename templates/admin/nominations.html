@@ -14,6 +14,13 @@
         </button>
       </form>
       {% if not nomination_open %}
+      <form method="POST" action="{{ url_for('reveal_nominations') }}">
+        <button type="submit" class="btn {% if revealed %}btn-outline-secondary{% else %}btn-gold{% endif %}"
+                {% if not revealed %}onclick="return confirm('Pubblicare il tabellone? Da ora tutti i manager vedranno chi ha nominato chi.')"{% endif %}>
+          <i class="bi bi-{% if revealed %}eye-slash{% else %}megaphone{% endif %} me-1"></i>
+          {% if revealed %}Nascondi tabellone{% else %}Pubblica tabellone{% endif %}
+        </button>
+      </form>
       <a href="{{ url_for('export_nominations') }}" class="btn btn-outline-success">
         <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
       </a>

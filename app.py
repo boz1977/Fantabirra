@@ -192,6 +192,7 @@ def init_db():
 
     defaults = [
         ('nomination_open', '0'),
+        ('nominations_revealed', '0'),
         ('max_nom_P', '5'),
         ('max_nom_D', '15'),
         ('max_nom_C', '15'),
@@ -380,6 +381,7 @@ def nominations():
         return redirect(url_for('admin_nominations'))
     uid = session['user_id']
     nomination_open = get_setting('nomination_open', '0') == '1'
+    revealed = get_setting('nominations_revealed', '0') == '1'
 
     settings = {k: int(get_setting(k, v)) for k, v in
                 [('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12')]}
@@ -420,12 +422,13 @@ def nominations():
         JOIN auction_sessions s ON s.id=ai.session_id WHERE s.status IN ('pending','bidding')
     """)}
 
-    # Tabellone "chi ha nominato chi": visibile SOLO a nomination chiuse (segrete finché aperte)
+    # Tabellone "chi ha nominato chi": visibile ai manager solo dopo la PUBBLICAZIONE
+    # (nomination chiuse E rivelate dall'admin), per evitare accordi.
     managers = []
     matrix = {'P': [], 'D': [], 'C': [], 'A': []}
     free_pool = {'P': [], 'D': [], 'C': [], 'A': []}
     free_count = 0
-    if not nomination_open:
+    if not nomination_open and revealed:
         managers = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
         nom_map = {}
         for r in query_db("SELECT player_id, user_id FROM nominations"):
@@ -462,6 +465,7 @@ def nominations():
         players=players, my_noms=my_noms, my_nom_ids=my_nom_ids,
         nom_by_role=nom_by_role, acquired_ids=acquired_ids,
         in_session_ids=in_session_ids, nomination_open=nomination_open,
+        revealed=revealed,
         settings=settings, role_filter=role_filter, search=search,
         managers=managers, matrix=matrix, free_pool=free_pool, free_count=free_count)
 
@@ -501,6 +505,10 @@ def export_nominations():
     if get_setting('nomination_open', '0') == '1':
         flash('Esportazione disponibile solo a nomination chiuse.', 'warning')
         return redirect(url_for('admin_nominations' if session.get('is_admin') else 'nominations'))
+    # i manager possono esportare solo dopo la pubblicazione; l'admin sempre
+    if not session.get('is_admin') and get_setting('nominations_revealed', '0') != '1':
+        flash('Il tabellone non è ancora stato pubblicato.', 'warning')
+        return redirect(url_for('nominations'))
     import openpyxl, io
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from flask import send_file
@@ -1420,8 +1428,9 @@ def admin_nominations():
     """)
     settings = {k: int(get_setting(k, v)) for k, v in
                 [('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12')]}
+    revealed = get_setting('nominations_revealed', '0') == '1'
     return render_template('admin/nominations.html',
-        nominated=nominated, users=users, settings=settings, nom_open=nom_open)
+        nominated=nominated, users=users, settings=settings, nom_open=nom_open, revealed=revealed)
 
 @app.route('/admin/nominations/toggle', methods=['POST'])
 @admin_required
@@ -1429,7 +1438,23 @@ def toggle_nominations():
     cur = get_setting('nomination_open', '0')
     new = '0' if cur == '1' else '1'
     set_setting('nomination_open', new)
+    if new == '1':
+        # riaprendo le nomination, il tabellone torna non pubblicato
+        set_setting('nominations_revealed', '0')
     flash(f'Nomination {"aperte" if new=="1" else "chiuse"}.', 'success')
+    return redirect(url_for('admin_nominations'))
+
+
+@app.route('/admin/nominations/reveal', methods=['POST'])
+@admin_required
+def reveal_nominations():
+    cur = get_setting('nominations_revealed', '0')
+    new = '0' if cur == '1' else '1'
+    set_setting('nominations_revealed', new)
+    if new == '1':
+        flash('Tabellone nomination PUBBLICATO: ora i manager vedono chi ha nominato chi.', 'success')
+    else:
+        flash('Tabellone nomination nascosto ai manager.', 'success')
     return redirect(url_for('admin_nominations'))
 
 @app.route('/admin/nominations/clear-user', methods=['POST'])
@@ -1479,6 +1504,8 @@ def create_auction():
             db.execute("INSERT INTO auction_items (session_id,player_id) VALUES (?,?)", [sid, int(pid)])
         db.commit()
         db.close()
+        # creando il tabellone delle aste, il tabellone nomination diventa pubblico
+        set_setting('nominations_revealed', '1')
         if open_now:
             flash(f'Asta "{name}" creata e APERTA con {len(pids)} giocatori. I manager possono già fare offerte.', 'success')
         else:
