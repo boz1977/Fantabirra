@@ -368,10 +368,18 @@ def dashboard():
     settings = {k: int(get_setting(k, v)) for k, v in
                 [('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12')]}
 
+    # giocatori nominati da un solo manager (non vanno in asta): evidenziabili solo a nomination chiuse
+    single_ids = set()
+    if get_setting('nomination_open', '0') != '1':
+        single_ids = {r['pid'] for r in
+                      query_db("SELECT player_id pid FROM nominations GROUP BY player_id HAVING COUNT(*)=1")}
+    solo_count = sum(1 for n in my_nominations if n['player_id'] in single_ids)
+
     return render_template('manager/dashboard.html',
         user=user, my_players=my_players, role_counts=role_counts,
         active_sessions=active_sessions, my_nominations=my_nominations,
-        nom_by_role=nom_by_role, settings=settings)
+        nom_by_role=nom_by_role, settings=settings,
+        single_ids=single_ids, solo_count=solo_count)
 
 
 @app.route('/nominations')

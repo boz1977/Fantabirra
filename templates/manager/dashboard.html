@@ -108,16 +108,20 @@
           </div>
           <ul class="list-group list-group-flush" style="max-height:420px;overflow-y:auto">
             {% for p in my_nominations %}
-            <li class="list-group-item d-flex align-items-center py-2">
+            {% set solo = p.player_id in single_ids %}
+            <li class="list-group-item d-flex align-items-center py-2 {% if solo %}list-group-item-success{% endif %}">
               <span class="badge badge-role role-{{ p.role }} me-2">{{ p.role }}</span>
-              <span class="flex-grow-1 small fw-semibold">{{ p.name }}</span>
+              <span class="flex-grow-1 small fw-semibold">{{ p.name }}
+                {% if solo %}<span class="badge bg-success ms-1" title="Nominato solo da te: non va in asta, lo prendi al prezzo base"><i class="bi bi-star-fill me-1"></i>solo tuo</span>{% endif %}
+              </span>
               <span class="text-muted small me-2">{{ p.team }}</span>
               <span class="badge bg-light text-dark border">{{ p.base_value }}</span>
             </li>
             {% endfor %}
           </ul>
-          <div class="card-footer text-muted small py-2 text-center">
-            {{ my_nominations|length }} nomination inserite
+          <div class="card-footer text-muted small py-2 d-flex justify-content-between">
+            <span>{{ my_nominations|length }} nomination inserite</span>
+            {% if solo_count %}<span class="text-success"><i class="bi bi-star-fill me-1"></i>{{ solo_count }} solo tuoi (niente asta)</span>{% endif %}
           </div>
           {% endif %}
         </div>
