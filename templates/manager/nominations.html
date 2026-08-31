@@ -5,7 +5,12 @@
 
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <h4 class="mb-0 fw-bold"><i class="bi bi-card-checklist me-2 text-success"></i>Le mie Nomination</h4>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      {% if my_noms %}
+      <a href="{{ url_for('export_my_nominations') }}" class="btn btn-sm btn-outline-success" title="Scarica le tue nomination in Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i>Le mie in Excel
+      </a>
+      {% endif %}
       {% if nomination_open %}
       <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal">
         <i class="bi bi-file-earmark-arrow-up me-1"></i>Importa da Excel
@@ -13,8 +18,8 @@
       <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-unlock me-1"></i>Nomination aperte</span>
       {% else %}
       {% if revealed %}
-      <a href="{{ url_for('export_nominations') }}" class="btn btn-sm btn-outline-success">
-        <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+      <a href="{{ url_for('export_nominations') }}" class="btn btn-sm btn-outline-secondary" title="Tabellone completo di tutti">
+        <i class="bi bi-file-earmark-excel me-1"></i>Tabellone
       </a>
       {% endif %}
       <span class="badge bg-secondary fs-6 px-3 py-2"><i class="bi bi-lock me-1"></i>Nomination chiuse</span>

@@ -507,6 +507,46 @@ def nominations_incomplete():
     return jsonify({'incomplete': _incomplete_managers()})
 
 
+@app.route('/nominations/export-mine')
+@login_required
+def export_my_nominations():
+    if session.get('is_admin'):
+        return redirect(url_for('admin_dashboard'))
+    uid = session['user_id']
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from flask import send_file
+    rows = query_db("""
+        SELECT p.role, p.name, p.team, p.base_value
+        FROM nominations n JOIN players p ON p.id=n.player_id
+        WHERE n.user_id=?
+        ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+                 p.base_value DESC, p.name
+    """, [uid])
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Le mie nomination'
+    ws.append(['Ruolo', 'Giocatore', 'Squadra', 'Prezzo'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2E7D32')
+        cell.alignment = Alignment(horizontal='center')
+    for r in rows:
+        ws.append([r['role'], r['name'], r['team'], r['base_value']])
+    ws.column_dimensions['A'].width = 7
+    ws.column_dimensions['B'].width = 26
+    ws.column_dimensions['C'].width = 18
+    ws.column_dimensions['D'].width = 9
+    ws.freeze_panes = 'A2'
+    team = ''.join(ch for ch in (session.get('team_name') or 'squadra') if ch.isalnum())[:20] or 'squadra'
+    bio = io.BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"nomination_{team}_{datetime.now():%Y%m%d}.xlsx",
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @app.route('/nominations/export')
 @login_required
 def export_nominations():

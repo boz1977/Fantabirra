@@ -79,7 +79,14 @@
       <div class="card h-100">
         <div class="card-header card-header-green d-flex justify-content-between align-items-center">
           <span><i class="bi bi-list-check me-2"></i>Le mie Nomination</span>
-          <a href="{{ url_for('nominations') }}" class="btn btn-sm btn-gold">Gestisci</a>
+          <div class="d-flex gap-1">
+            {% if my_nominations %}
+            <a href="{{ url_for('export_my_nominations') }}" class="btn btn-sm btn-light" title="Scarica in Excel">
+              <i class="bi bi-file-earmark-excel"></i>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('nominations') }}" class="btn btn-sm btn-gold">Gestisci</a>
+          </div>
         </div>
         <div class="card-body p-0">
           {% if not my_nominations %}
