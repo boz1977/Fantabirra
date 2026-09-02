@@ -8,7 +8,24 @@
       <h4 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-success"></i>Lista Giocatori</h4>
       <span class="text-muted small">{{ players|length }} giocatori caricati</span>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      {% if players %}
+      {% if revealed %}
+      <a href="{{ url_for('export_players_all') }}" class="btn btn-outline-success" title="Tutti i giocatori, con i nominati evidenziati">
+        <i class="bi bi-file-earmark-excel me-1"></i>Listone
+      </a>
+      <a href="{{ url_for('export_players_free') }}" class="btn btn-outline-success" title="Solo i giocatori che nessuno ha nominato">
+        <i class="bi bi-file-earmark-excel me-1"></i>Liberi
+      </a>
+      {% else %}
+      <button class="btn btn-outline-secondary" disabled title="Disponibile dopo la pubblicazione del tabellone nomination">
+        <i class="bi bi-file-earmark-excel me-1"></i>Listone
+      </button>
+      <button class="btn btn-outline-secondary" disabled title="Disponibile dopo la pubblicazione del tabellone nomination">
+        <i class="bi bi-file-earmark-excel me-1"></i>Liberi
+      </button>
+      {% endif %}
+      {% endif %}
       <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#loadModal">
         <i class="bi bi-file-earmark-arrow-up me-1"></i>Carica da Excel
       </button>

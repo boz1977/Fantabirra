@@ -643,6 +643,73 @@ def export_nominations():
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
+XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+ROLE_ORDER_SQL = "CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END"
+
+
+@app.route('/admin/players/export-all')
+@admin_required
+def export_players_all():
+    if get_setting('nominations_revealed', '0') != '1':
+        flash('Disponibile dopo la pubblicazione del tabellone nomination.', 'warning')
+        return redirect(url_for('admin_players'))
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from flask import send_file
+    nc = {r['pid']: r['c'] for r in query_db("SELECT player_id pid, COUNT(*) c FROM nominations GROUP BY player_id")}
+    players = query_db(f"""SELECT p.id, p.role, p.name, p.team, p.base_value FROM players p
+                           ORDER BY {ROLE_ORDER_SQL}, p.base_value DESC, p.name""")
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Listone'
+    ws.append(['Ruolo', 'Giocatore', 'Squadra', 'Prezzo', 'Nominato', 'N. nomination'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2E7D32')
+        cell.alignment = Alignment(horizontal='center')
+    green = PatternFill('solid', fgColor='C6EFCE')
+    nominati = 0
+    for p in players:
+        n = nc.get(p['id'], 0)
+        ws.append([p['role'], p['name'], p['team'], p['base_value'], 'Sì' if n else '', n or ''])
+        if n:
+            nominati += 1
+            for cell in ws[ws.max_row]:
+                cell.fill = green
+    for col, w in {'A': 7, 'B': 26, 'C': 18, 'D': 9, 'E': 10, 'F': 14}.items():
+        ws.column_dimensions[col].width = w
+    ws.freeze_panes = 'A2'
+    bio = io.BytesIO(); wb.save(bio); bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"listone_{datetime.now():%Y%m%d}.xlsx", mimetype=XLSX_MIME)
+
+
+@app.route('/admin/players/export-free')
+@admin_required
+def export_players_free():
+    if get_setting('nominations_revealed', '0') != '1':
+        flash('Disponibile dopo la pubblicazione del tabellone nomination.', 'warning')
+        return redirect(url_for('admin_players'))
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from flask import send_file
+    players = query_db(f"""SELECT p.id, p.role, p.name, p.team, p.base_value FROM players p
+                           WHERE p.id NOT IN (SELECT player_id FROM nominations)
+                           ORDER BY {ROLE_ORDER_SQL}, p.base_value DESC, p.name""")
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Giocatori liberi'
+    ws.append(['Ruolo', 'Giocatore', 'Squadra', 'Prezzo'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2E7D32')
+        cell.alignment = Alignment(horizontal='center')
+    for p in players:
+        ws.append([p['role'], p['name'], p['team'], p['base_value']])
+    for col, w in {'A': 7, 'B': 26, 'C': 18, 'D': 9}.items():
+        ws.column_dimensions[col].width = w
+    ws.freeze_panes = 'A2'
+    bio = io.BytesIO(); wb.save(bio); bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"giocatori_liberi_{datetime.now():%Y%m%d}.xlsx", mimetype=XLSX_MIME)
+
+
 @app.route('/nominations/toggle', methods=['POST'])
 @login_required
 def toggle_nomination():
@@ -1381,7 +1448,8 @@ def cancel_acquisition(acq_id):
 @admin_required
 def admin_players():
     players = query_db("SELECT * FROM players ORDER BY role, base_value DESC, name")
-    return render_template('admin/players.html', players=players)
+    revealed = get_setting('nominations_revealed', '0') == '1'
+    return render_template('admin/players.html', players=players, revealed=revealed)
 
 @app.route('/admin/players/load', methods=['POST'])
 @admin_required
