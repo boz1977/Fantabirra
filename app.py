@@ -598,7 +598,7 @@ def export_nominations():
     import openpyxl, io
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from flask import send_file
-    managers = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    managers = query_db("SELECT id, username, team_name, short_name FROM users WHERE is_admin=0 ORDER BY username")
     nom_map = {}
     for r in query_db("SELECT player_id, user_id FROM nominations"):
         nom_map.setdefault(r['player_id'], set()).add(r['user_id'])
@@ -612,7 +612,8 @@ def export_nominations():
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Nomination'
-    headers = ['Ruolo', 'Giocatore', 'Squadra', 'Prezzo', 'Nom.'] + [m['team_name'] for m in managers]
+    # intestazioni delle colonne = nome del fantaallenatore (username)
+    headers = ['Ruolo', 'Giocatore', 'Squadra', 'Prezzo', 'Nom.'] + [(m['username'] or m['team_name']).capitalize() for m in managers]
     ws.append(headers)
     hfill = PatternFill('solid', fgColor='2E7D32')
     center = Alignment(horizontal='center')
