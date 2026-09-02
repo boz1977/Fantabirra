@@ -6,6 +6,12 @@
   <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
     <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
     <h4 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-success"></i>Acquisti / Rose</h4>
+    {% if managers %}
+    <a href="{{ url_for('export_all_rosters_csv') }}" class="btn btn-outline-success btn-sm ms-auto"
+       title="Esporta tutte le rose in CSV (squadra,id,costo) - per Fantagazzetta">
+      <i class="bi bi-filetype-csv me-1"></i>Esporta rose (CSV)
+    </a>
+    {% endif %}
   </div>
   <p class="text-muted small mb-4">
     Annulla un'assegnazione errata: il giocatore torna <strong>libero</strong> e i crediti vengono

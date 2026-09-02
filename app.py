@@ -710,6 +710,51 @@ def export_players_free():
                      download_name=f"giocatori_liberi_{datetime.now():%Y%m%d}.xlsx", mimetype=XLSX_MIME)
 
 
+def _roster_csv(rows):
+    """Costruisce il CSV nel formato squadra,id,costo (una riga per calciatore)."""
+    import csv, io
+    from flask import Response
+    sio = io.StringIO()
+    w = csv.writer(sio)
+    for r in rows:
+        w.writerow([r['team_name'], r['player_id'], r['price']])
+    return sio.getvalue()
+
+
+@app.route('/team/export-csv')
+@login_required
+def export_team_csv():
+    if session.get('is_admin'):
+        return redirect(url_for('admin_dashboard'))
+    from flask import Response
+    uid = session['user_id']
+    rows = query_db("""
+        SELECT u.team_name, a.player_id, a.price
+        FROM acquisitions a JOIN users u ON u.id=a.user_id
+        JOIN players p ON p.id=a.player_id
+        WHERE a.user_id=?
+        ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END, p.name
+    """, [uid])
+    team = ''.join(ch for ch in (session.get('team_name') or 'rosa') if ch.isalnum())[:20] or 'rosa'
+    return Response(_roster_csv(rows), mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename="rosa_{team}.csv"'})
+
+
+@app.route('/admin/acquisti/export-csv')
+@admin_required
+def export_all_rosters_csv():
+    from flask import Response
+    rows = query_db("""
+        SELECT u.team_name, a.player_id, a.price
+        FROM acquisitions a JOIN users u ON u.id=a.user_id
+        JOIN players p ON p.id=a.player_id
+        ORDER BY u.team_name,
+                 CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END, p.name
+    """)
+    return Response(_roster_csv(rows), mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename="rose_tutte_{datetime.now():%Y%m%d}.csv"'})
+
+
 @app.route('/nominations/toggle', methods=['POST'])
 @login_required
 def toggle_nomination():
