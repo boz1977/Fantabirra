@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, abort, g, has_app_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
@@ -16,16 +16,40 @@ DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fantabirra.
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
 def get_db():
-    db = sqlite3.connect(DATABASE)
+    # connessione dedicata (per i blocchi che gestiscono commit/close manualmente)
+    db = sqlite3.connect(DATABASE, timeout=15)
     db.row_factory = sqlite3.Row
-    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA busy_timeout=15000")
     return db
 
+def _read_conn():
+    """Connessione in sola lettura riusata per l'intera richiesta (meno aperture di file = più veloce)."""
+    if has_app_context():
+        db = getattr(g, '_read_conn', None)
+        if db is None:
+            db = sqlite3.connect(DATABASE, timeout=15)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA busy_timeout=15000")
+            g._read_conn = db
+        return db, False
+    # fuori da una richiesta: connessione usa-e-getta
+    db = sqlite3.connect(DATABASE, timeout=15)
+    db.row_factory = sqlite3.Row
+    return db, True
+
+@app.teardown_appcontext
+def _close_read_conn(exc):
+    db = getattr(g, '_read_conn', None)
+    if db is not None:
+        db.close()
+
 def query_db(query, args=(), one=False):
-    db = get_db()
+    db, temp = _read_conn()
     cur = db.execute(query, args)
     rv = cur.fetchall()
-    db.close()
+    cur.close()
+    if temp:
+        db.close()
     return (rv[0] if rv else None) if one else rv
 
 def execute_db(query, args=()):
@@ -49,6 +73,11 @@ def set_setting(key, value):
 
 def init_db():
     db = get_db()
+    # Esci dalla modalità WAL: su PythonAnywhere (filesystem di rete) è lenta/problematica.
+    try:
+        db.execute("PRAGMA journal_mode=DELETE")
+    except Exception:
+        pass
     db.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,6 +217,18 @@ def init_db():
             active INTEGER DEFAULT 1,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE INDEX IF NOT EXISTS idx_nom_player ON nominations(player_id);
+        CREATE INDEX IF NOT EXISTS idx_nom_user ON nominations(user_id);
+        CREATE INDEX IF NOT EXISTS idx_acq_player ON acquisitions(player_id);
+        CREATE INDEX IF NOT EXISTS idx_acq_user ON acquisitions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_bids_item ON bids(auction_item_id);
+        CREATE INDEX IF NOT EXISTS idx_bids_user ON bids(user_id);
+        CREATE INDEX IF NOT EXISTS idx_ren_item ON item_renounces(item_id);
+        CREATE INDEX IF NOT EXISTS idx_items_session ON auction_items(session_id);
+        CREATE INDEX IF NOT EXISTS idx_items_player ON auction_items(player_id);
+        CREATE INDEX IF NOT EXISTS idx_items_status ON auction_items(status);
+        CREATE INDEX IF NOT EXISTS idx_players_role ON players(role);
+        CREATE INDEX IF NOT EXISTS idx_pred_user ON predictions(user_id);
     ''')
 
     defaults = [
