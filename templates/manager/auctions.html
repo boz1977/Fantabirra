@@ -319,16 +319,20 @@ function showToast(msg, type = 'info') {
 })();
 
 // ── Polling fase liberi a turni: ricarica quando cambia lo stato ──
+// Intervallo lungo + niente polling a scheda nascosta: su hosting con 1 solo
+// worker questo evita di saturarlo mentre 12 manager tengono la pagina aperta.
 (function() {
   const cont = document.querySelector('[data-fp-signature]');
   let sig = cont ? cont.dataset.fpSignature : 'none';
-  setInterval(async () => {
+  async function poll() {
+    if (document.hidden) return;
     try {
       const r = await fetch('/free-phase/status');
       const d = await r.json();
       if (d.signature !== sig) location.reload();
     } catch (e) {}
-  }, 4000);
+  }
+  setInterval(poll, 8000 + Math.floor(Math.random() * 2000));
 })();
 </script>
 {% endblock %}

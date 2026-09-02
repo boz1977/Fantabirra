@@ -534,6 +534,7 @@ if (new URLSearchParams(location.search).get('reveal') === '1' && SOLD.length) {
 (function () {
   let sig = null;
   async function poll() {
+    if (document.hidden) return;
     try {
       const d = await (await fetch('{{ url_for("auction_status", session_id=s.id) }}')).json();
       if (sig === null) sig = d.signature;
@@ -541,7 +542,7 @@ if (new URLSearchParams(location.search).get('reveal') === '1' && SOLD.length) {
     } catch (e) {}
   }
   poll();
-  setInterval(poll, 4000);
+  setInterval(poll, 6000);
 })();
 {% endif %}
 </script>

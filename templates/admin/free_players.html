@@ -198,7 +198,7 @@ if (rollBtn) {
   const sig=cont.dataset.fpSignature;
   // non ricaricare durante l'animazione di reveal
   if(new URLSearchParams(location.search).get('rv_player')) return;
-  setInterval(async()=>{try{const d=await (await fetch('/free-phase/status')).json();if(d.signature!==sig)location.reload();}catch(e){}},4000);
+  setInterval(async()=>{if(document.hidden)return;try{const d=await (await fetch('/free-phase/status')).json();if(d.signature!==sig)location.reload();}catch(e){}},8000+Math.floor(Math.random()*2000));
 })();
 </script>
 {% endblock %}
