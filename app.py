@@ -1375,7 +1375,17 @@ def load_players():
         return redirect(url_for('admin_players'))
 
     try:
-        qcol = 'Qt.A' if 'Qt.A' in df.columns else next((c for c in df.columns if c.lower().startswith('qt.a')), None)
+        # colonna del valore: preferisci Qt.A (attuale), poi Qt.I (iniziale), poi qualsiasi "Qt*", infine FVM
+        norm = {str(c).strip().lower(): c for c in df.columns}
+        qcol = None
+        for cand in ('qt.a', 'qt.i', 'qta', 'qti', 'quotazione'):
+            if cand in norm:
+                qcol = norm[cand]
+                break
+        if qcol is None:
+            qcol = next((c for c in df.columns if str(c).strip().lower().startswith('qt')), None)
+        if qcol is None:
+            qcol = next((c for c in df.columns if str(c).strip().lower() in ('fvm', 'fvm m')), None)
         has_id = 'Id' in df.columns
         df = df.dropna(subset=['Nome'])
         # mode: 'replace' = cancella tutto (nomination incluse); 'merge' = aggiorna mantenendo le nomination
