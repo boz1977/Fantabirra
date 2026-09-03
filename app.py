@@ -1331,6 +1331,31 @@ def my_team():
         user=user, by_role=by_role, total_spent=total_spent, total_players=len(players))
 
 
+@app.route('/rose')
+@login_required
+def all_rosters():
+    """Vista di tutte le rose: ogni squadra con i giocatori per ruolo, spesa e budget residuo."""
+    initial_budget = int(get_setting('initial_budget', '500'))
+    users = query_db("SELECT id, team_name, username, budget FROM users WHERE is_admin=0 ORDER BY team_name")
+    rows = query_db(f"""
+        SELECT a.user_id, a.price, p.role, p.name, p.team, p.base_value
+        FROM acquisitions a JOIN players p ON p.id=a.player_id
+        ORDER BY {ROLE_ORDER_SQL}, a.price DESC, p.name
+    """)
+    teams = []
+    for u in users:
+        by_role = {'P': [], 'D': [], 'C': [], 'A': []}
+        for r in rows:
+            if r['user_id'] == u['id']:
+                by_role.get(r['role'], []).append(r)
+        spent = sum(x['price'] for v in by_role.values() for x in v)
+        n = sum(len(v) for v in by_role.values())
+        teams.append({'user': u, 'by_role': by_role, 'spent': spent, 'n': n})
+    return render_template('manager/rose_tutte.html',
+        teams=teams, initial_budget=initial_budget,
+        roles=[('P', 'Portieri'), ('D', 'Difensori'), ('C', 'Centrocampisti'), ('A', 'Attaccanti')])
+
+
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():

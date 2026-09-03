@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Tutte le rose — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-success"></i>Tutte le rose</h4>
+      <span class="text-muted small">{{ teams|length }} squadre — budget iniziale {{ initial_budget }} crediti</span>
+    </div>
+    <div class="input-group input-group-sm" style="max-width:260px">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control" id="roseSearch" placeholder="Cerca giocatore o squadra...">
+    </div>
+  </div>
+
+  {% set role_color = {'P':'#ffd700','D':'#4caf50','C':'#2196f3','A':'#f44336'} %}
+
+  <div class="row g-3">
+    {% for t in teams %}
+    <div class="col-12 col-md-6 col-xl-4 team-card" data-team="{{ t.user.team_name | lower }}">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2 card-header-green text-white">
+          <span class="fw-bold text-truncate"><i class="bi bi-shield-fill me-1"></i>{{ t.user.team_name }}</span>
+          <span class="badge bg-light text-dark">{{ t.n }} gioc.</span>
+        </div>
+        <div class="card-body p-0">
+          {% if t.n == 0 %}
+          <div class="text-muted small text-center py-4"><i class="bi bi-dash-circle me-1"></i>Nessun giocatore</div>
+          {% else %}
+          <table class="table table-sm table-hover mb-0 small align-middle">
+            <tbody>
+              {% for code, label in roles %}
+              {% if t.by_role[code] %}
+              <tr class="table-light">
+                <td colspan="3" class="fw-semibold py-1" style="border-left:4px solid {{ role_color[code] }}">
+                  {{ label }} <span class="text-muted">({{ t.by_role[code]|length }})</span>
+                </td>
+              </tr>
+              {% for p in t.by_role[code] %}
+              <tr class="player-row" data-name="{{ p.name | lower }}">
+                <td class="fw-semibold">{{ p.name }}</td>
+                <td class="text-muted">{{ p.team }}</td>
+                <td class="text-end fw-bold">{{ p.price }}</td>
+              </tr>
+              {% endfor %}
+              {% endif %}
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <td colspan="2" class="text-end fw-semibold text-muted">Speso / Residuo</td>
+                <td class="text-end fw-bold">{{ t.spent }} <span class="text-muted fw-normal">/ {{ initial_budget - t.spent }}</span></td>
+              </tr>
+            </tfoot>
+          </table>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('roseSearch')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.team-card').forEach(card => {
+    const teamMatch = card.dataset.team.includes(q);
+    let anyPlayer = false;
+    card.querySelectorAll('.player-row').forEach(tr => {
+      const hit = !q || teamMatch || tr.dataset.name.includes(q);
+      tr.style.display = hit ? '' : 'none';
+      if (hit) anyPlayer = true;
+    });
+    card.style.display = (!q || teamMatch || anyPlayer) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
