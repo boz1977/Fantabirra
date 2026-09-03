@@ -1434,8 +1434,24 @@ def pronostici():
                           WHERE is_admin=0 AND id IN (SELECT DISTINCT user_id FROM predictions)
                           ORDER BY team_name""")
 
+    # pronostico di Claude (analisi delle rose), salvato come impostazione
+    claude = None
+    raw = get_setting('claude_prediction')
+    if raw:
+        try:
+            data = json.loads(raw)
+            order = []
+            for s in data.get('order', []):
+                t = team_by_id.get(s['id'])
+                if t:
+                    order.append({'team_name': t['team_name'], 'value': s.get('value'), 'n': s.get('n')})
+            if order:
+                claude = {'ts': data.get('ts'), 'order': order}
+        except Exception:
+            claude = None
+
     return render_template('manager/pronostici.html',
-        my_order=my_order, allpred=allpred, authors=authors,
+        my_order=my_order, allpred=allpred, authors=authors, claude=claude,
         is_admin=session.get('is_admin'), has_mine=bool(present))
 
 
@@ -1479,6 +1495,36 @@ def export_pronostici():
     return send_file(bio, as_attachment=True,
                      download_name=f"pronostici_{datetime.now():%Y%m%d}.xlsx",
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+def _compute_claude_ranking():
+    """Analizza le rose e produce un pronostico di classifica finale.
+    Punteggio = somma quotazioni (Qt) + 30% della somma dei 5 giocatori più forti
+    (premia chi ha i top player oltre al valore complessivo). Ritorna lista ordinata."""
+    teams = query_db("SELECT id, team_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    scored = []
+    for t in teams:
+        vals = [r['base_value'] for r in query_db(
+            "SELECT p.base_value FROM acquisitions a JOIN players p ON p.id=a.player_id WHERE a.user_id=?", [t['id']])]
+        total = sum(vals)
+        top5 = sum(sorted(vals, reverse=True)[:5])
+        scored.append({'id': t['id'], 'value': total, 'n': len(vals), 'score': round(total + 0.30 * top5, 1)})
+    scored.sort(key=lambda x: (-x['score'], -x['value']))
+    return scored
+
+
+@app.route('/admin/pronostici/genera-claude', methods=['POST'])
+@admin_required
+def genera_pronostico_claude():
+    import json
+    scored = _compute_claude_ranking()
+    if not any(s['n'] for s in scored):
+        flash('Nessuna rosa caricata: importa prima le rose.', 'warning')
+        return redirect(url_for('pronostici'))
+    set_setting('claude_prediction',
+                json.dumps({'order': scored, 'ts': datetime.now().strftime('%Y-%m-%d %H:%M')}))
+    flash('Pronostico di Claude generato dall\'analisi delle rose (somma quotazioni + qualità dei top player).', 'success')
+    return redirect(url_for('pronostici'))
 
 
 # ── Strategia manager ────────────────────────────────────────────────────────

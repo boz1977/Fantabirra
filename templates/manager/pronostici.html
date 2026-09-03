@@ -42,17 +42,50 @@
   <div class="card">
     <div class="card-header card-header-gold d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span><i class="bi bi-people me-2"></i>Pronostici di tutti</span>
-      {% if is_admin and authors %}
-      <a href="{{ url_for('export_pronostici') }}" class="btn btn-sm btn-green text-white">
-        <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
-      </a>
-      {% endif %}
+      <div class="d-flex gap-2 flex-wrap">
+        {% if is_admin %}
+        <form method="POST" action="{{ url_for('genera_pronostico_claude') }}" class="d-inline"
+              onsubmit="return confirm('Generare/aggiornare il pronostico di Claude analizzando le rose attuali?')">
+          <button type="submit" class="btn btn-sm btn-dark">
+            <i class="bi bi-robot me-1"></i>{% if claude %}Aggiorna{% else %}Genera{% endif %} pronostico di Claude
+          </button>
+        </form>
+        {% endif %}
+        {% if is_admin and authors %}
+        <a href="{{ url_for('export_pronostici') }}" class="btn btn-sm btn-green text-white">
+          <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+        </a>
+        {% endif %}
+      </div>
     </div>
     <div class="card-body">
-      {% if not authors %}
+      {% if not authors and not claude %}
       <div class="text-center text-muted py-3">Nessun pronostico inserito ancora.</div>
       {% else %}
       <div class="row g-3">
+        {% if claude %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border-dark">
+            <div class="card-header py-2 fw-semibold bg-dark text-white d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-robot me-1"></i>Claude <span class="fw-normal small">(analisi rose)</span></span>
+              {% if claude.ts %}<span class="badge bg-light text-dark" title="Generato il">{{ claude.ts }}</span>{% endif %}
+            </div>
+            <div class="card-body p-0">
+              <ol class="list-group list-group-flush list-group-numbered">
+                {% for p in claude.order %}
+                <li class="list-group-item py-1 small d-flex justify-content-between align-items-center">
+                  <span>{{ p.team_name }}</span>
+                  {% if p.value is not none %}<span class="text-muted small" title="Somma quotazioni">{{ p.value }}</span>{% endif %}
+                </li>
+                {% endfor %}
+              </ol>
+            </div>
+            <div class="card-footer small text-muted py-1">
+              <i class="bi bi-info-circle me-1"></i>Ordinamento per valore rosa + qualità top player.
+            </div>
+          </div>
+        </div>
+        {% endif %}
         {% for a in authors %}
         <div class="col-12 col-md-6 col-lg-4">
           <div class="card h-100">
