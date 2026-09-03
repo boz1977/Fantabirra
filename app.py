@@ -1527,6 +1527,51 @@ def genera_pronostico_claude():
     return redirect(url_for('pronostici'))
 
 
+@app.route('/admin/pronostici/claude-edit', methods=['GET', 'POST'])
+@admin_required
+def edit_pronostico_claude():
+    """Editor manuale del pronostico di Claude: l'admin ordina le squadre 1->ultima e salva."""
+    teams = query_db("SELECT id, team_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    team_by_id = {t['id']: dict(t) for t in teams}
+    stats = {s['id']: s for s in _compute_claude_ranking()}
+
+    if request.method == 'POST':
+        valid = set(team_by_id)
+        order, present = [], set()
+        for x in request.form.getlist('order'):
+            if x.isdigit() and int(x) in valid and int(x) not in present:
+                pid = int(x); present.add(pid)
+                s = stats.get(pid, {})
+                order.append({'id': pid, 'value': s.get('value', 0), 'n': s.get('n', 0), 'score': s.get('score', 0)})
+        for t in teams:  # accoda eventuali squadre non incluse
+            if t['id'] not in present:
+                s = stats.get(t['id'], {})
+                order.append({'id': t['id'], 'value': s.get('value', 0), 'n': s.get('n', 0), 'score': s.get('score', 0)})
+        set_setting('claude_prediction',
+                    json.dumps({'order': order, 'ts': datetime.now().strftime('%Y-%m-%d %H:%M'), 'method': 'manual'}))
+        flash('Pronostico di Claude salvato.', 'success')
+        return redirect(url_for('pronostici'))
+
+    # GET: ordine iniziale = pronostico salvato, altrimenti per valore rosa
+    order, present = [], set()
+    raw = get_setting('claude_prediction')
+    if raw:
+        try:
+            for s in json.loads(raw).get('order', []):
+                if s['id'] in team_by_id and s['id'] not in present:
+                    order.append(team_by_id[s['id']]); present.add(s['id'])
+        except Exception:
+            order = []
+    if not order:
+        for s in _compute_claude_ranking():
+            if s['id'] in team_by_id:
+                order.append(team_by_id[s['id']]); present.add(s['id'])
+    for t in teams:
+        if t['id'] not in present:
+            order.append(dict(t))
+    return render_template('admin/claude_pred_edit.html', order=order, stats=stats)
+
+
 # ── Strategia manager ────────────────────────────────────────────────────────
 
 @app.route('/strategia')

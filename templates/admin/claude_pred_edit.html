@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Pronostico di Claude — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+    <a href="{{ url_for('pronostici') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-robot me-2"></i>Pronostico di Claude — modifica</h4>
+  </div>
+  <p class="text-muted small mb-4">
+    Ordina le squadre dalla 1ª all'ultima con le frecce (accanto il valore rosa come riferimento), poi salva.
+    Questo è il pronostico mostrato come card «Claude» nel confronto.
+  </p>
+
+  <div class="card">
+    <div class="card-header card-header-green"><i class="bi bi-list-ol me-2"></i>Classifica finale prevista</div>
+    <div class="card-body">
+      <form method="POST" id="predForm">
+        <ul class="list-group" id="predList">
+          {% for t in order %}
+          <li class="list-group-item d-flex align-items-center gap-2 pred-row">
+            <span class="badge bg-dark pred-pos" style="width:34px">{{ loop.index }}</span>
+            <input type="hidden" name="order" value="{{ t.id }}">
+            <span class="flex-grow-1 fw-semibold">{{ t.team_name }}</span>
+            {% if stats.get(t.id) %}<span class="text-muted small" title="Valore rosa (somma quotazioni)">{{ stats[t.id].value }}</span>{% endif %}
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary pred-up" title="Su"><i class="bi bi-arrow-up"></i></button>
+              <button type="button" class="btn btn-sm btn-outline-secondary pred-down" title="Giù"><i class="bi bi-arrow-down"></i></button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-gold"><i class="bi bi-save me-1"></i>Salva pronostico di Claude</button>
+          <a href="{{ url_for('pronostici') }}" class="btn btn-outline-secondary">Annulla</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renumber() {
+  document.querySelectorAll('#predList .pred-pos').forEach((el, i) => el.textContent = i + 1);
+}
+const list = document.getElementById('predList');
+if (list) {
+  list.addEventListener('click', function (e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const row = btn.closest('.pred-row');
+    if (btn.classList.contains('pred-up') && row.previousElementSibling) {
+      row.parentNode.insertBefore(row, row.previousElementSibling);
+      renumber();
+    } else if (btn.classList.contains('pred-down') && row.nextElementSibling) {
+      row.parentNode.insertBefore(row.nextElementSibling, row);
+      renumber();
+    }
+  });
+}
+</script>
+{% endblock %}

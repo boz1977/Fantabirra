@@ -47,9 +47,12 @@
         <form method="POST" action="{{ url_for('genera_pronostico_claude') }}" class="d-inline"
               onsubmit="return confirm('Generare/aggiornare il pronostico di Claude analizzando le rose attuali?')">
           <button type="submit" class="btn btn-sm btn-dark">
-            <i class="bi bi-robot me-1"></i>{% if claude %}Aggiorna{% else %}Genera{% endif %} pronostico di Claude
+            <i class="bi bi-robot me-1"></i>{% if claude %}Rigenera{% else %}Genera{% endif %} (auto)
           </button>
         </form>
+        <a href="{{ url_for('edit_pronostico_claude') }}" class="btn btn-sm btn-outline-dark">
+          <i class="bi bi-pencil me-1"></i>Modifica a mano
+        </a>
         {% endif %}
         {% if is_admin and authors %}
         <a href="{{ url_for('export_pronostici') }}" class="btn btn-sm btn-green text-white">
