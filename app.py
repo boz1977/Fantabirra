@@ -755,6 +755,238 @@ def export_all_rosters_csv():
                     headers={'Content-Disposition': f'attachment; filename="rose_tutte_{datetime.now():%Y%m%d}.csv"'})
 
 
+# ── Import/Export rose (formato "ROSE" a blocchi: per ogni squadra due colonne nome/costo) ──
+
+def _norm_name(s):
+    """Normalizza un nome per il confronto: minuscolo, senza accenti/punteggiatura, spazi compattati."""
+    import unicodedata, re
+    s = unicodedata.normalize('NFKD', str(s or ''))
+    s = ''.join(ch for ch in s if not unicodedata.combining(ch))
+    s = s.lower().replace("'", ' ').replace('`', ' ')
+    s = re.sub(r'[^a-z0-9 ]', ' ', s)
+    return re.sub(r'\s+', ' ', s).strip()
+
+
+def _parse_roster_blocks(data):
+    """Legge un file 'ROSE': per ogni cella 'costo' la colonna a sinistra è una squadra,
+    con i giocatori elencati sotto fino a una riga vuota o 'totale'. Ritorna [{team, players:[{name,cost}]}]."""
+    import openpyxl, io
+    wb = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
+    ws = wb.active
+    grid = list(ws.iter_rows(values_only=True))
+    n = len(grid)
+    teams = []
+    for r, row in enumerate(grid):
+        for c, val in enumerate(row):
+            if c >= 1 and isinstance(val, str) and val.strip().lower() == 'costo':
+                tname = row[c - 1]
+                if not isinstance(tname, str) or not tname.strip():
+                    continue
+                players = []
+                rr = r + 1
+                while rr < n:
+                    prow = grid[rr]
+                    pname = prow[c - 1] if c - 1 < len(prow) else None
+                    pcost = prow[c] if c < len(prow) else None
+                    if pname is None or (isinstance(pname, str) and pname.strip() == ''):
+                        break
+                    if isinstance(pname, str) and pname.strip().lower() == 'totale':
+                        break
+                    try:
+                        cost = int(pcost) if pcost is not None else 0
+                    except (ValueError, TypeError):
+                        cost = 0
+                    players.append({'name': str(pname).strip(), 'cost': cost})
+                    rr += 1
+                teams.append({'team': tname.strip(), 'players': players})
+    return teams
+
+
+@app.route('/admin/rose/export-xlsx')
+@admin_required
+def export_rosters_xlsx():
+    """Esporta tutte le rose nel formato 'ROSE' a blocchi (round-trip con l'import)."""
+    import openpyxl, io
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from flask import send_file
+    rows = query_db(f"""
+        SELECT u.team_name, p.name, a.price
+        FROM acquisitions a JOIN users u ON u.id=a.user_id JOIN players p ON p.id=a.player_id
+        ORDER BY u.team_name, {ROLE_ORDER_SQL}, a.price DESC, p.name
+    """)
+    by_team = {}
+    for r in rows:
+        by_team.setdefault(r['team_name'], []).append((r['name'], r['price']))
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'ROSE'
+    hdr_font = Font(bold=True, color='FFFFFF')
+    hdr_fill = PatternFill('solid', fgColor='2E7D32')
+    for i, (team, players) in enumerate(sorted(by_team.items())):
+        col = i * 3 + 1  # blocco di 3 colonne: nome, costo, spaziatore
+        h1 = ws.cell(row=1, column=col, value=team)
+        h2 = ws.cell(row=1, column=col + 1, value='costo')
+        for cell in (h1, h2):
+            cell.font = hdr_font; cell.fill = hdr_fill; cell.alignment = Alignment(horizontal='center')
+        rr = 2
+        for name, price in players:
+            ws.cell(row=rr, column=col, value=name)
+            ws.cell(row=rr, column=col + 1, value=price)
+            rr += 1
+        ws.cell(row=rr, column=col, value='totale').font = Font(bold=True)
+        ws.cell(row=rr, column=col + 1, value=sum(p for _, p in players)).font = Font(bold=True)
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 22
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col + 1)].width = 7
+    ws.freeze_panes = 'A2'
+    bio = io.BytesIO(); wb.save(bio); bio.seek(0)
+    return send_file(bio, as_attachment=True,
+                     download_name=f"rose_{datetime.now():%Y%m%d}.xlsx", mimetype=XLSX_MIME)
+
+
+@app.route('/admin/rose/import', methods=['POST'])
+@admin_required
+def import_rosters_preview():
+    """Step 1: legge il file, abbina i giocatori al listone e le squadre agli utenti, mostra l'anteprima."""
+    import json
+    f = request.files.get('file')
+    if not f or not f.filename:
+        flash('Seleziona il file Excel delle rose da importare.', 'warning')
+        return redirect(url_for('admin_acquisti'))
+    try:
+        teams = _parse_roster_blocks(f.read())
+    except Exception as e:
+        flash(f'File non leggibile: {e}', 'danger')
+        return redirect(url_for('admin_acquisti'))
+
+    # indice del listone: nome normalizzato -> lista di id (per rilevare ambiguità)
+    idx = {}
+    for p in query_db("SELECT id, name FROM players"):
+        idx.setdefault(_norm_name(p['name']), []).append(p['id'])
+
+    users = query_db("SELECT id, username, team_name FROM users WHERE is_admin=0 ORDER BY team_name")
+    by_team = {_norm_name(u['team_name']): u['id'] for u in users}
+    # suggerimenti per le rinomine indicate: squadra del file -> termine da cercare in username/team_name
+    hints = {'red cull salisbullo': 'michele', 'atletico gufo': 'mattia'}
+
+    def _preselect(team_name):
+        key = _norm_name(team_name)
+        if key in by_team:
+            return by_team[key]
+        term = hints.get(key)
+        if term:
+            for u in users:
+                if term in _norm_name(u['username']) or term in _norm_name(u['team_name']):
+                    return u['id']
+        return None
+
+    preview = []
+    for t in teams:
+        players = t['players']
+        if not players:
+            continue  # squadra vuota: salta (es. F.C. PokaVoja, Fantabirra United)
+        matched, unmatched, total = [], [], 0
+        for pl in players:
+            ids = idx.get(_norm_name(pl['name']), [])
+            total += pl['cost']
+            if len(ids) == 1:
+                matched.append({'name': pl['name'], 'cost': pl['cost'], 'pid': ids[0]})
+            else:
+                unmatched.append(pl['name'] + ('' if ids else '') + (' (ambiguo)' if len(ids) > 1 else ''))
+                matched.append({'name': pl['name'], 'cost': pl['cost'], 'pid': None})
+        preview.append({
+            'team': t['team'],
+            'preselect': _preselect(t['team']),
+            'players': matched,
+            'n_players': len(players),
+            'n_matched': sum(1 for m in matched if m['pid']),
+            'unmatched': unmatched,
+            'total_cost': total,
+        })
+
+    payload = json.dumps([{'team': p['team'], 'players': p['players']} for p in preview], ensure_ascii=False)
+    initial_budget = int(get_setting('initial_budget', '500'))
+    return render_template('admin/rose_import.html', preview=preview, users=users,
+                           payload=payload, initial_budget=initial_budget)
+
+
+@app.route('/admin/rose/import/apply', methods=['POST'])
+@admin_required
+def import_rosters_apply():
+    """Step 2: applica l'import. Sostituisce le rose delle squadre mappate e ricalcola il budget."""
+    import json
+    try:
+        teams = json.loads(request.form.get('payload', '[]'))
+    except Exception:
+        flash('Dati di import non validi. Riprova.', 'danger')
+        return redirect(url_for('admin_acquisti'))
+
+    initial_budget = int(get_setting('initial_budget', '500'))
+    season = get_setting('season_label', '')
+    session_name = f'Import {season}'.strip()
+    valid_pids = {r['id'] for r in query_db("SELECT id FROM players")}
+
+    db = get_db()
+    assigned = {}           # player_id -> team (per rilevare doppioni)
+    imported_teams = 0
+    imported_players = 0
+    skipped_dupes = []
+    skipped_teams = []
+    for i, t in enumerate(teams):
+        sel = request.form.get(f'user_{i}', '').strip()
+        if not sel or sel == 'skip':
+            skipped_teams.append(t.get('team', '?'))
+            continue
+        uid = int(sel)
+        rows = []
+        for pl in t.get('players', []):
+            pid = pl.get('pid')
+            if not pid or pid not in valid_pids:
+                continue
+            if pid in assigned:
+                skipped_dupes.append(f"{pl.get('name')} (già in {assigned[pid]})")
+                continue
+            assigned[pid] = t.get('team', '?')
+            rows.append((uid, pid, int(pl.get('cost') or 0), session_name))
+        if not rows:
+            skipped_teams.append(t.get('team', '?') + ' (0 giocatori abbinati)')
+            continue
+        # sostituisci la rosa dell'utente e ricalcola il budget
+        db.execute("DELETE FROM acquisitions WHERE user_id=?", [uid])
+        db.executemany("INSERT INTO acquisitions (user_id, player_id, price, session_name) VALUES (?,?,?,?)", rows)
+        spent = sum(r[2] for r in rows)
+        db.execute("UPDATE users SET budget=? WHERE id=?", [initial_budget - spent, uid])
+        imported_teams += 1
+        imported_players += len(rows)
+    db.commit()
+    db.close()
+
+    msg = f'Import completato: {imported_teams} squadre, {imported_players} giocatori. Budget ricalcolato (iniziale {initial_budget}).'
+    flash(msg, 'success')
+    if skipped_dupes:
+        flash('Doppioni saltati (giocatore già assegnato): ' + ', '.join(skipped_dupes), 'warning')
+    if skipped_teams:
+        flash('Squadre non importate: ' + ', '.join(skipped_teams), 'info')
+    return redirect(url_for('admin_acquisti'))
+
+
+@app.route('/admin/aste/clear-history', methods=['POST'])
+@admin_required
+def clear_auction_history():
+    """Cancella lo storico delle aste (sessioni, item, offerte, rinunce, fase liberi).
+    NON tocca rose (acquisitions), nomination, giocatori o utenti."""
+    db = get_db()
+    counts = {}
+    for tbl in ('bids', 'item_renounces', 'auction_items', 'auction_sessions', 'free_phase'):
+        try:
+            counts[tbl] = db.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+            db.execute(f"DELETE FROM {tbl}")
+        except Exception:
+            counts[tbl] = 0
+    db.commit()
+    db.close()
+    tot = sum(counts.values())
+    flash(f'Storico aste svuotato ({tot} record eliminati). Rose, nomination e listone restano intatti.', 'success')
+    return redirect(request.referrer or url_for('admin_acquisti'))
+
+
 @app.route('/nominations/toggle', methods=['POST'])
 @login_required
 def toggle_nomination():

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Importa rose — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+    <a href="{{ url_for('admin_acquisti') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0"><i class="bi bi-upload me-2 text-success"></i>Importa rose — anteprima</h4>
+  </div>
+
+  <div class="alert alert-warning small mb-4">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    Controlla gli abbinamenti qui sotto, poi conferma. L'import <strong>sostituisce la rosa attuale</strong> di ogni
+    squadra collegata a un manager e ne <strong>ricalcola il budget</strong> (iniziale {{ initial_budget }} − speso).
+    Le squadre lasciate su <em>«— non importare —»</em> vengono ignorate. I giocatori non abbinati al listone vengono saltati.
+  </div>
+
+  <form method="POST" action="{{ url_for('import_rosters_apply') }}"
+        onsubmit="return confirm('Confermi l\'import? Le rose delle squadre collegate verranno sostituite e i budget ricalcolati.')">
+    <input type="hidden" name="payload" value="{{ payload }}">
+
+    <div class="row g-3">
+      {% for t in preview %}
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-bold">{{ t.team }}</span>
+            <span class="badge bg-success">{{ t.n_matched }}/{{ t.n_players }} abbinati</span>
+            <span class="badge bg-secondary">{{ t.total_cost }} cr.</span>
+            {% if t.unmatched %}<span class="badge bg-danger">{{ t.unmatched|length }} non trovati</span>{% endif %}
+          </div>
+          <div class="card-body">
+            <label class="form-label small fw-semibold mb-1">Assegna al manager:</label>
+            <select name="user_{{ loop.index0 }}" class="form-select form-select-sm mb-2">
+              <option value="skip">— non importare —</option>
+              {% for u in users %}
+              <option value="{{ u.id }}" {% if t.preselect == u.id %}selected{% endif %}>
+                {{ u.team_name }} ({{ u.username }})
+              </option>
+              {% endfor %}
+            </select>
+            {% if not t.preselect %}
+            <div class="text-danger small mb-2"><i class="bi bi-info-circle me-1"></i>Nessun manager abbinato in automatico: scegli tu.</div>
+            {% endif %}
+            {% if t.unmatched %}
+            <div class="small text-muted">
+              <span class="fw-semibold text-danger">Non abbinati (saltati):</span>
+              {{ t.unmatched | join(', ') }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Conferma e importa</button>
+      <a href="{{ url_for('admin_acquisti') }}" class="btn btn-outline-secondary">Annulla</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

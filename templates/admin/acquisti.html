@@ -3,15 +3,59 @@
 {% block content %}
 <div class="container-fluid px-3 py-4">
 
-  <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
     <a href="{{ url_for('admin_auctions') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
     <h4 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-success"></i>Acquisti / Rose</h4>
-    {% if managers %}
-    <a href="{{ url_for('export_all_rosters_csv') }}" class="btn btn-outline-success btn-sm ms-auto"
-       title="Esporta tutte le rose in CSV (squadra,id,costo) - per Fantagazzetta">
-      <i class="bi bi-filetype-csv me-1"></i>Esporta rose (CSV)
-    </a>
-    {% endif %}
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+      <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal"
+              title="Importa le rose da un file Excel (formato a blocchi squadra/costo)">
+        <i class="bi bi-upload me-1"></i>Importa rose (Excel)
+      </button>
+      <a href="{{ url_for('export_rosters_xlsx') }}" class="btn btn-outline-success btn-sm"
+         title="Esporta tutte le rose in Excel (formato a blocchi)">
+        <i class="bi bi-file-earmark-excel me-1"></i>Esporta rose (Excel)
+      </a>
+      {% if managers %}
+      <a href="{{ url_for('export_all_rosters_csv') }}" class="btn btn-outline-success btn-sm"
+         title="Esporta tutte le rose in CSV (squadra,id,costo) - per Fantagazzetta">
+        <i class="bi bi-filetype-csv me-1"></i>CSV
+      </a>
+      {% endif %}
+      <form method="POST" action="{{ url_for('clear_auction_history') }}" class="d-inline"
+            onsubmit="return confirm('Svuotare tutto lo storico delle aste (sessioni, offerte, rinunce, fase liberi)? Le rose, le nomination e il listone NON vengono toccati.')">
+        <button type="submit" class="btn btn-outline-danger btn-sm"
+                title="Cancella lo storico delle aste per alleggerire l'app (non tocca le rose)">
+          <i class="bi bi-trash me-1"></i>Svuota storico aste
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: importa rose da Excel -->
+  <div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('import_rosters_preview') }}" enctype="multipart/form-data">
+          <div class="modal-header card-header-green text-white">
+            <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Importa rose da Excel</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <label class="form-label fw-semibold">File Excel delle rose</label>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            <div class="form-text">
+              Formato a blocchi: per ogni squadra una colonna con i nomi dei giocatori e una <code>costo</code>.
+              I giocatori vengono abbinati al <strong>listone</strong> per nome. Nel passo successivo vedrai
+              l'anteprima con gli abbinamenti squadra→manager prima di confermare.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-green"><i class="bi bi-arrow-right me-1"></i>Continua all'anteprima</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
   <p class="text-muted small mb-4">
     Annulla un'assegnazione errata: il giocatore torna <strong>libero</strong> e i crediti vengono
