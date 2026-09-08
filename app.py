@@ -1772,37 +1772,50 @@ def campionato():
         if not m['played']:
             continue
         played_matches.append(m)
-        per_round.setdefault(m['giornata'], []).append((m['home'], m['home_fp']))
-        per_round[m['giornata']].append((m['away'], m['away_fp']))
+        per_round.setdefault(m['giornata'], []).append((m['home'], m['home_g']))
+        per_round[m['giornata']].append((m['away'], m['away_g']))
         for team, own, gf, gs in [(m['home'], m['home_fp'], m['home_g'], m['away_g']),
                                   (m['away'], m['away_fp'], m['away_g'], m['home_g'])]:
             a = agg.setdefault(team, {'team': team, 'pg': 0, 'v': 0, 'n': 0, 'p': 0,
-                                      'fp': 0.0, 'gf': 0, 'gs': 0, 'pt': 0, 'best': None, 'worst': None})
+                                      'fp': 0.0, 'gf': 0, 'gs': 0, 'pt': 0, 'best': None, 'worst': None, 'band': 0.0})
             a['pg'] += 1; a['fp'] += own or 0; a['gf'] += gf or 0; a['gs'] += gs or 0
             if gf > gs: a['v'] += 1; a['pt'] += 3
             elif gf == gs: a['n'] += 1; a['pt'] += 1
             else: a['p'] += 1
             if a['best'] is None or (own or 0) > a['best']: a['best'] = own or 0
             if a['worst'] is None or (own or 0) < a['worst']: a['worst'] = own or 0
+            # fortuna "da fascia": i gol scattano ogni 6 fantapunti a partire da 66 (66,72,78,...).
+            # f = posizione dentro la fascia da 6; appena sopra soglia (f~0) sei fortunato (+0.5),
+            # appena sotto la soglia successiva (f~1) sei sfigato (-0.5).
+            s = own or 0
+            f = (s - (66 + 6 * ((s - 66) // 6))) / 6.0
+            a['band'] += 0.5 - f
 
     # classifica a fantapunti totali
     punti_totali = sorted(agg.values(), key=lambda x: -x['fp'])
     for a in punti_totali:
         a['media'] = round(a['fp'] / a['pg'], 2) if a['pg'] else 0
 
-    # classifica culo: punti reali vs punti "meritati" (tutti-contro-tutti a fantapunti, per giornata)
+    # classifica culo: punti reali vs punti "meritati" (tutti-contro-tutti sui GOL segnati,
+    # per giornata: nel regolamento è il gol a decidere il risultato, non i fantapunti grezzi.
+    # Squadre con gli stessi gol ottengono gli stessi punti meritati)
     expected = {t: 0.0 for t in agg}
     for g, lst in per_round.items():
         n = len(lst)
         if n < 2:
             continue
-        for team, fp in lst:
-            beat = sum(1 for t2, fp2 in lst if t2 != team and fp2 < fp)
-            tie = sum(1 for t2, fp2 in lst if t2 != team and abs(fp2 - fp) < 1e-9)
+        for team, gl in lst:
+            beat = sum(1 for t2, g2 in lst if t2 != team and (g2 or 0) < (gl or 0))
+            tie = sum(1 for t2, g2 in lst if t2 != team and (g2 or 0) == (gl or 0))
             expected[team] += 3.0 * beat / (n - 1) + 1.0 * tie / (n - 1)
-    culo = [{'team': t, 'reali': a['pt'], 'meritati': round(expected[t], 1),
-             'diff': round(a['pt'] - expected[t], 1)} for t, a in agg.items()]
-    culo.sort(key=lambda x: -x['diff'])
+    # culo = fortuna calendario (punti reali - meritati sui gol) + fortuna fasce (in gol)
+    culo = []
+    for t, a in agg.items():
+        cal = round(a['pt'] - expected[t], 1)
+        fasce = round(a['band'], 1)
+        culo.append({'team': t, 'reali': a['pt'], 'meritati': round(expected[t], 1),
+                     'cal': cal, 'fasce': fasce, 'tot': round(cal + fasce, 1)})
+    culo.sort(key=lambda x: -x['tot'])
 
     # curiosità
     records = None
