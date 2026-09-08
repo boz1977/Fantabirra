@@ -5,12 +5,51 @@
 
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div>
-      <h4 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Pronostici</h4>
-      <span class="text-muted small">La tua classifica finale prevista</span>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Pronostici
+        {% if locked %}<span class="badge bg-secondary ms-2"><i class="bi bi-lock-fill me-1"></i>Chiusi</span>
+        {% else %}<span class="badge bg-success ms-2"><i class="bi bi-unlock me-1"></i>Aperti</span>{% endif %}
+      </h4>
+      <span class="text-muted small">La classifica finale prevista di ognuno</span>
     </div>
+    {% if is_admin %}
+    <form method="POST" action="{{ url_for('toggle_pronostici_lock') }}"
+          onsubmit="return confirm('{% if locked %}Riaprire{% else %}Chiudere{% endif %} i pronostici per tutti i manager?')">
+      <button type="submit" class="btn btn-sm {% if locked %}btn-outline-success{% else %}btn-outline-danger{% endif %}">
+        <i class="bi bi-{% if locked %}unlock{% else %}lock{% endif %} me-1"></i>{% if locked %}Riapri pronostici{% else %}Chiudi pronostici{% endif %}
+      </button>
+    </form>
+    {% endif %}
   </div>
 
-  {% if not is_admin %}
+  {% if scoreboard %}
+  <!-- Pronostici vs classifica attuale -->
+  <div class="card mb-4">
+    <div class="card-header card-header-gold"><i class="bi bi-bullseye me-2"></i>Pronostici vs classifica attuale
+      <span class="small fw-normal text-muted ms-1">(chi ci sta prendendo di più)</span></div>
+    <div class="card-body p-0"><div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle small">
+        <thead class="table-light"><tr><th>#</th><th>Chi</th><th class="text-center">Posizioni azzeccate</th><th class="text-end">Scarto totale</th></tr></thead>
+        <tbody>
+        {% for e in scoreboard %}
+          <tr class="{% if e.claude %}table-dark-subtle{% endif %}">
+            <td class="fw-bold">{% if loop.first %}🏆{% else %}{{ loop.index }}{% endif %}</td>
+            <td class="fw-semibold">{% if e.claude %}<i class="bi bi-robot me-1"></i>{% endif %}{{ e.name }}</td>
+            <td class="text-center">{{ e.hits }} <span class="text-muted">/ {{ e.n }}</span></td>
+            <td class="text-end fw-bold">{{ e.err }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+    <div class="card-footer small text-muted py-1"><i class="bi bi-info-circle me-1"></i>Scarto = somma delle differenze di posizione rispetto alla classifica attuale. Meno è, meglio è.</div>
+  </div>
+  {% endif %}
+
+  {% if not is_admin and locked %}
+  <div class="alert alert-secondary"><i class="bi bi-lock-fill me-2"></i>I pronostici sono <strong>chiusi</strong>: il campionato è iniziato e non è più possibile modificarli. Qui sotto restano quelli inseriti.</div>
+  {% endif %}
+
+  {% if not is_admin and not locked %}
   <!-- Editor del proprio pronostico -->
   <div class="card mb-4">
     <div class="card-header card-header-green d-flex justify-content-between align-items-center">

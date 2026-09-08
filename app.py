@@ -1400,10 +1400,14 @@ def pronostici():
     uid = session['user_id']
     teams = query_db("SELECT id, team_name, short_name FROM users WHERE is_admin=0 ORDER BY team_name")
     valid_ids = {t['id'] for t in teams}
+    locked = get_setting('predictions_locked', '0') == '1'
 
     if request.method == 'POST':
         if session.get('is_admin'):
             flash("L'amministratore non fa pronostici.", 'warning')
+            return redirect(url_for('pronostici'))
+        if locked:
+            flash('I pronostici sono chiusi: non è più possibile modificarli.', 'warning')
             return redirect(url_for('pronostici'))
         order = request.form.getlist('order')
         db = get_db()
@@ -1458,9 +1462,58 @@ def pronostici():
         except Exception:
             claude = None
 
+    # ── Pronostici vs realtà: confronto con la classifica ufficiale importata ──
+    scoreboard = None
+    real = query_db("SELECT team_name, pos FROM champ_standings ORDER BY pos")
+    if real:
+        umap = {_norm_name(t['team_name']): t['id'] for t in teams}
+        real_pos = {}
+        for r in real:
+            u = umap.get(_norm_name(r['team_name']))
+            if u:
+                real_pos[u] = r['pos']
+        # posizione prevista per ogni autore
+        pred_pos = {}  # author_id -> {team_id: pos}
+        for r in query_db("SELECT user_id, predicted_user_id, position FROM predictions"):
+            pred_pos.setdefault(r['user_id'], {})[r['predicted_user_id']] = r['position']
+
+        def _score(pmap):
+            err = hits = n = 0
+            for tid, rp in real_pos.items():
+                if tid in pmap:
+                    n += 1
+                    d = abs(pmap[tid] - rp)
+                    err += d
+                    if d == 0:
+                        hits += 1
+            return err, hits, n
+
+        entries = []
+        aname = {t['id']: t['team_name'] for t in teams}
+        for aid, pmap in pred_pos.items():
+            if aid in aname:
+                err, hits, n = _score(pmap)
+                if n:
+                    entries.append({'name': aname[aid], 'err': err, 'hits': hits, 'n': n, 'claude': False})
+        if claude:
+            cmap = {}
+            try:
+                for i, s in enumerate(json.loads(raw).get('order', []), start=1):
+                    cmap[s['id']] = i
+            except Exception:
+                cmap = {}
+            if cmap:
+                err, hits, n = _score(cmap)
+                if n:
+                    entries.append({'name': 'Claude', 'err': err, 'hits': hits, 'n': n, 'claude': True})
+        entries.sort(key=lambda x: (x['err'], -x['hits']))
+        if entries:
+            scoreboard = entries
+
     return render_template('manager/pronostici.html',
         my_order=my_order, allpred=allpred, authors=authors, claude=claude,
-        is_admin=session.get('is_admin'), has_mine=bool(present))
+        is_admin=session.get('is_admin'), has_mine=bool(present),
+        locked=locked, scoreboard=scoreboard)
 
 
 @app.route('/admin/pronostici/export')
@@ -1532,6 +1585,16 @@ def genera_pronostico_claude():
     set_setting('claude_prediction',
                 json.dumps({'order': scored, 'ts': datetime.now().strftime('%Y-%m-%d %H:%M')}))
     flash('Pronostico di Claude generato dall\'analisi delle rose (somma quotazioni + qualità dei top player).', 'success')
+    return redirect(url_for('pronostici'))
+
+
+@app.route('/admin/pronostici/toggle-lock', methods=['POST'])
+@admin_required
+def toggle_pronostici_lock():
+    locked = get_setting('predictions_locked', '0') == '1'
+    set_setting('predictions_locked', '0' if locked else '1')
+    flash('Pronostici ' + ('riaperti: i manager possono modificarli.' if locked
+                           else 'chiusi: i manager non possono più modificarli.'), 'success')
     return redirect(url_for('pronostici'))
 
 
@@ -1763,10 +1826,37 @@ def campionato():
         giornate.setdefault(m['giornata'], []).append(m)
     giornate = sorted(giornate.items())
 
+    # andamento: posizione in classifica giornata per giornata (solo giornate giocate)
+    played_g = sorted({m['giornata'] for m in played_matches})
+    running = {t: {'pt': 0, 'dr': 0, 'fp': 0.0} for t in agg}
+    and_labels, andamento = [], {t: [] for t in agg}
+    for g in played_g:
+        for m in played_matches:
+            if m['giornata'] != g:
+                continue
+            for team, own, gf, gs in [(m['home'], m['home_fp'], m['home_g'], m['away_g']),
+                                      (m['away'], m['away_fp'], m['away_g'], m['home_g'])]:
+                r = running[team]
+                r['fp'] += own or 0; r['dr'] += (gf or 0) - (gs or 0)
+                if gf > gs: r['pt'] += 3
+                elif gf == gs: r['pt'] += 1
+        order = sorted(running.keys(), key=lambda t: (-running[t]['pt'], -running[t]['dr'], -running[t]['fp']))
+        and_labels.append(f'G{g}')
+        for pos, t in enumerate(order, start=1):
+            andamento[t].append(pos)
+    andamento_ds = [{'label': t, 'data': andamento[t]} for t in sorted(andamento)]
+
+    # dati per testa a testa (solo partite giocate)
+    t2t = [{'g': m['giornata'], 'home': m['home'], 'away': m['away'],
+            'hfp': m['home_fp'], 'afp': m['away_fp'], 'hg': m['home_g'], 'ag': m['away_g']}
+           for m in played_matches]
+    all_teams = sorted({m['home'] for m in matches} | {m['away'] for m in matches})
+
     return render_template('campionato.html',
         standings=standings, punti_totali=punti_totali, culo=culo, records=records,
         giornate=giornate, short=short, last_import=get_setting('champ_import_ts'),
-        has_data=bool(standings or matches), is_admin=session.get('is_admin'))
+        has_data=bool(standings or matches), is_admin=session.get('is_admin'),
+        and_labels=and_labels, andamento_ds=andamento_ds, t2t=t2t, all_teams=all_teams)
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────

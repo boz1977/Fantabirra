@@ -29,6 +29,8 @@
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-cl" type="button"><i class="bi bi-trophy me-1"></i>Classifica</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-culo" type="button">😈 Culo</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-fp" type="button"><i class="bi bi-star me-1"></i>Fantapunti</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-and" type="button"><i class="bi bi-graph-up me-1"></i>Andamento</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-h2h" type="button"><i class="bi bi-arrow-left-right me-1"></i>Testa a testa</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cal" type="button"><i class="bi bi-calendar3 me-1"></i>Calendario</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cur" type="button"><i class="bi bi-stars me-1"></i>Curiosità</button></li>
   </ul>
@@ -121,6 +123,42 @@
           </tbody>
         </table>
       </div></div></div>
+    </div>
+
+    <!-- ANDAMENTO -->
+    <div class="tab-pane fade" id="tab-and">
+      <p class="small text-muted"><i class="bi bi-graph-up me-1"></i><strong>Andamento</strong>: posizione in classifica giornata per giornata. Clicca una squadra nella legenda per mostrarla/nasconderla.</p>
+      {% if and_labels %}
+      <div class="card"><div class="card-body">
+        <div style="position:relative; height:min(70vh,520px)"><canvas id="andChart"></canvas></div>
+      </div></div>
+      {% else %}<div class="alert alert-info">Nessuna giornata giocata.</div>{% endif %}
+    </div>
+
+    <!-- TESTA A TESTA -->
+    <div class="tab-pane fade" id="tab-h2h">
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-6 col-md-4">
+          <label class="form-label small mb-1">Squadra A</label>
+          <select id="h2hA" class="form-select form-select-sm">
+            {% for t in all_teams %}<option value="{{ t }}" {% if loop.first %}selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="form-label small mb-1">Squadra B</label>
+          <select id="h2hB" class="form-select form-select-sm">
+            {% for t in all_teams %}<option value="{{ t }}" {% if loop.index==2 %}selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div id="h2hSummary" class="row g-2 mb-3"></div>
+      <div class="card"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle small" id="h2hTable">
+          <thead class="table-light"><tr><th>G</th><th class="text-end">Casa</th><th class="text-center">Ris.</th><th>Trasferta</th><th class="text-end">Fp</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div></div></div>
+      <div id="h2hEmpty" class="alert alert-info mt-2" hidden>Nessuna sfida giocata tra queste due squadre.</div>
     </div>
 
     <!-- CALENDARIO -->
@@ -232,4 +270,95 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const AND_LABELS = {{ and_labels|tojson }};
+const AND_DS = {{ andamento_ds|tojson }};
+const H2H = {{ t2t|tojson }};
+
+// ── Grafico andamento posizioni ──
+const PALETTE = ['#e6194B','#3cb44b','#4363d8','#f58231','#911eb4','#42d4f4',
+                 '#f032e6','#bfef45','#fabed4','#469990','#9A6324','#000075'];
+let andChart = null;
+function initAndChart() {
+  if (andChart || !window.Chart || !AND_LABELS.length) return;
+  const ctx = document.getElementById('andChart');
+  if (!ctx) return;
+  const nteams = AND_DS.length;
+  andChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: AND_LABELS,
+      datasets: AND_DS.map((d, i) => ({
+        label: d.label, data: d.data,
+        borderColor: PALETTE[i % PALETTE.length],
+        backgroundColor: PALETTE[i % PALETTE.length],
+        tension: 0.25, borderWidth: 2, pointRadius: 2, pointHoverRadius: 5
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false },
+      scales: {
+        y: { reverse: true, min: 1, max: nteams,
+             ticks: { stepSize: 1, precision: 0 },
+             title: { display: true, text: 'Posizione' } },
+        x: { title: { display: true, text: 'Giornata' } }
+      },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+    }
+  });
+}
+// inizializza quando il tab diventa visibile (il canvas nascosto ha dimensione 0)
+document.querySelector('[data-bs-target="#tab-and"]')?.addEventListener('shown.bs.tab', initAndChart);
+if (document.querySelector('#tab-and.active')) initAndChart();
+
+// ── Testa a testa ──
+const selA = document.getElementById('h2hA'), selB = document.getElementById('h2hB');
+function fmt(x){ return (Math.round(x*10)/10).toString(); }
+function renderH2H() {
+  if (!selA || !selB) return;
+  const A = selA.value, B = selB.value;
+  const tbody = document.querySelector('#h2hTable tbody');
+  const summary = document.getElementById('h2hSummary');
+  const empty = document.getElementById('h2hEmpty');
+  tbody.innerHTML = ''; summary.innerHTML = '';
+  if (A === B) { empty.hidden = false; empty.textContent = 'Scegli due squadre diverse.'; document.getElementById('h2hTable').hidden = true; return; }
+  const games = H2H.filter(m => (m.home===A&&m.away===B)||(m.home===B&&m.away===A));
+  document.getElementById('h2hTable').hidden = games.length === 0;
+  empty.hidden = games.length !== 0;
+  if (!games.length) { empty.textContent = 'Nessuna sfida giocata tra queste due squadre.'; return; }
+  let wA=0,wB=0,dr=0,fpA=0,fpB=0;
+  games.sort((a,b)=>a.g-b.g).forEach(m => {
+    const aHome = m.home===A;
+    const aFp = aHome? m.hfp : m.afp, bFp = aHome? m.afp : m.hfp;
+    const aG = aHome? m.hg : m.ag, bG = aHome? m.ag : m.hg;
+    fpA += aFp; fpB += bFp;
+    if (aG>bG) wA++; else if (bG>aG) wB++; else dr++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>G${m.g}</td><td class="text-end fw-semibold">${m.home}</td>`+
+      `<td class="text-center fw-bold">${m.hg}-${m.ag}</td>`+
+      `<td class="fw-semibold">${m.away}</td>`+
+      `<td class="text-end text-muted">${fmt(m.hfp)} - ${fmt(m.afp)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const card = (t,v,cls)=>`<div class="col-4"><div class="card text-center h-100"><div class="card-body py-2">
+    <div class="text-muted small">${t}</div><div class="fw-bold fs-5 ${cls||''}">${v}</div></div></div></div>`;
+  summary.innerHTML =
+    card(A, wA+' V', 'text-success') +
+    card('Pareggi', dr, 'text-muted') +
+    card(B, wB+' V', 'text-success') +
+    `<div class="col-12"><div class="card"><div class="card-body py-2 text-center small">
+      Fantapunti totali: <strong>${A} ${fmt(fpA)}</strong> — <strong>${B} ${fmt(fpB)}</strong></div></div></div>`;
+}
+selA?.addEventListener('change', renderH2H);
+selB?.addEventListener('change', renderH2H);
+document.querySelector('[data-bs-target="#tab-h2h"]')?.addEventListener('shown.bs.tab', renderH2H);
+renderH2H();
+</script>
+{% endif %}
 {% endblock %}
