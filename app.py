@@ -3099,19 +3099,6 @@ def apply_budget():
     return redirect(url_for('admin_settings'))
 
 
-@app.route('/classifica')
-@login_required
-def classifica():
-    users = query_db("""
-        SELECT u.id, u.team_name, u.budget,
-               COUNT(a.id) as players_won,
-               COALESCE(SUM(a.price),0) as spent
-        FROM users u
-        LEFT JOIN acquisitions a ON a.user_id=u.id
-        WHERE u.is_admin=0 GROUP BY u.id ORDER BY spent DESC, players_won DESC
-    """)
-    initial_budget = int(get_setting('initial_budget', '500'))
-    return render_template('classifica.html', users=users, initial_budget=initial_budget)
 
 
 # ── Storico / Albo d'Oro ────────────────────────────────────────────────────
