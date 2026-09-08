@@ -49,6 +49,7 @@
         {% if view_mode == 'full' %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_acquisti' %}active{% endif %}" href="{{ url_for('admin_acquisti') }}"><i class="bi bi-bag-check me-1"></i>Acquisti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'all_rosters' %}active{% endif %}" href="{{ url_for('all_rosters') }}"><i class="bi bi-people-fill me-1"></i>Rose</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'campionato' %}active{% endif %}" href="{{ url_for('campionato') }}"><i class="bi bi-calendar-check me-1"></i>Campionato</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people me-1"></i>Utenti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
@@ -79,8 +80,8 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'auctions' %}active{% endif %}" href="{{ url_for('auctions') }}"><i class="bi bi-hammer me-1"></i>Aste</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'my_team' %}active{% endif %}" href="{{ url_for('my_team') }}"><i class="bi bi-shield-fill me-1"></i>La Mia Squadra</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'all_rosters' %}active{% endif %}" href="{{ url_for('all_rosters') }}"><i class="bi bi-people-fill me-1"></i>Rose</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'campionato' %}active{% endif %}" href="{{ url_for('campionato') }}"><i class="bi bi-calendar-check me-1"></i>Campionato</a></li>
         {% if view_mode == 'full' %}
-          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'strategia' %}active{% endif %}" href="{{ url_for('strategia') }}"><i class="bi bi-bullseye me-1"></i>Strategia</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'classifica' %}active{% endif %}" href="{{ url_for('classifica') }}"><i class="bi bi-trophy me-1"></i>Classifica</a></li>
           <li class="nav-item dropdown">

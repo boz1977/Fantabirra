@@ -217,6 +217,14 @@ def init_db():
             active INTEGER DEFAULT 1,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS champ_standings (
+            pos INTEGER, team_name TEXT, g INTEGER, v INTEGER, n INTEGER, p INTEGER,
+            gf INTEGER, gs INTEGER, dr INTEGER, pt REAL, pt_totali REAL
+        );
+        CREATE TABLE IF NOT EXISTS champ_matches (
+            giornata INTEGER, home TEXT, away TEXT,
+            home_fp REAL, away_fp REAL, home_g INTEGER, away_g INTEGER, played INTEGER DEFAULT 0
+        );
         CREATE INDEX IF NOT EXISTS idx_nom_player ON nominations(player_id);
         CREATE INDEX IF NOT EXISTS idx_nom_user ON nominations(user_id);
         CREATE INDEX IF NOT EXISTS idx_acq_player ON acquisitions(player_id);
@@ -1572,112 +1580,193 @@ def edit_pronostico_claude():
     return render_template('admin/claude_pred_edit.html', order=order, stats=stats)
 
 
-# ── Strategia manager ────────────────────────────────────────────────────────
+# ── Campionato: import classifica/calendario da Fantacalcio + statistiche ──────
 
-@app.route('/strategia')
-@login_required
-def strategia():
-    if session.get('is_admin'):
-        return redirect(url_for('admin_dashboard'))
-    uid = session['user_id']
-    user = query_db("SELECT * FROM users WHERE id=?", [uid], one=True)
-
-    roles = ['P', 'D', 'C', 'A']
-    slots = {r: int(get_setting(f'slots_{r}', '0')) for r in roles}
-    plan_row = query_db("SELECT * FROM user_strategy WHERE user_id=?", [uid], one=True)
-    plan = {r: (plan_row[f'plan_{r}'] if plan_row else 0) for r in roles}
-
-    acq = query_db("""
-        SELECT p.role, COUNT(*) as n, COALESCE(SUM(a.price),0) as spent
-        FROM acquisitions a JOIN players p ON p.id=a.player_id
-        WHERE a.user_id=? GROUP BY p.role
-    """, [uid])
-    filled = {r: 0 for r in roles}
-    spent = {r: 0 for r in roles}
-    for a in acq:
-        filled[a['role']] = a['n']
-        spent[a['role']] = a['spent']
-
-    total_spent = sum(spent.values())
-    total_budget = user['budget'] + total_spent  # budget iniziale residuo + speso = iniziale
-    label = {'P': 'Portieri', 'D': 'Difensori', 'C': 'Centrocampisti', 'A': 'Attaccanti'}
-
-    reparti = []
-    for r in roles:
-        slots_left = max(slots[r] - filled[r], 0)
-        plan_left = max(plan[r] - spent[r], 0)
-        reparti.append({
-            'role': r, 'label': label[r], 'slots': slots[r], 'filled': filled[r],
-            'slots_left': slots_left, 'plan': plan[r], 'spent': spent[r],
-            'plan_left': plan_left,
-            'avg_left': round(plan_left / slots_left, 1) if slots_left else 0,
-        })
-
-    # nomination dell'utente con prezzo pianificato
-    targets = {t['player_id']: t['target_price'] for t in
-               query_db("SELECT player_id, target_price FROM player_targets WHERE user_id=?", [uid])}
-    noms = query_db("""
-        SELECT p.id, p.role, p.name, p.team, p.base_value
-        FROM nominations n JOIN players p ON p.id=n.player_id
-        WHERE n.user_id=? ORDER BY p.role, p.base_value DESC, p.name
-    """, [uid])
-    noms_by_role = {r: [] for r in roles}
-    target_tot = {r: 0 for r in roles}
-    for n in noms:
-        t = targets.get(n['id'], 0)
-        noms_by_role[n['role']].append({**dict(n), 'target': t})
-        target_tot[n['role']] += t
-
-    return render_template('manager/strategia.html',
-        user=user, reparti=reparti, total_budget=total_budget, total_spent=total_spent,
-        total_plan=sum(plan.values()), noms_by_role=noms_by_role, target_tot=target_tot,
-        label=label, roles=roles)
+def _parse_classifica(data):
+    """Legge il file 'Classifica' esportato da lega Fantacalcio (header con 'Pos')."""
+    import openpyxl, io
+    ws = openpyxl.load_workbook(io.BytesIO(data), data_only=True).active
+    def i(x):
+        try: return int(x)
+        except (ValueError, TypeError): return 0
+    def fl(x):
+        try: return float(x)
+        except (ValueError, TypeError): return 0.0
+    out, started = [], False
+    for row in ws.iter_rows(values_only=True):
+        if not started:
+            if row and isinstance(row[0], str) and row[0].strip().lower() == 'pos':
+                started = True
+            continue
+        if not row or row[0] is None:
+            continue
+        try:
+            pos = int(row[0])
+        except (ValueError, TypeError):
+            continue
+        out.append((pos, str(row[1]).strip(), i(row[3]), i(row[4]), i(row[5]), i(row[6]),
+                    i(row[7]), i(row[8]), i(row[9]), fl(row[10]), fl(row[11])))
+    return out
 
 
-@app.route('/strategia/budget', methods=['POST'])
-@login_required
-def save_strategy_budget():
-    if session.get('is_admin'):
-        return jsonify({'error': 'non disponibile'}), 403
-    uid = session['user_id']
-    vals = {}
-    for r in ['P', 'D', 'C', 'A']:
-        v = request.form.get(f'plan_{r}', '0').strip()
-        vals[r] = int(v) if v.isdigit() else 0
+def _parse_calendario(data):
+    """Legge il file 'Calendario': due giornate per banda, ogni partita è
+    casa | fp casa | fp trasferta | ospite | risultato (es. '2-3' o '-')."""
+    import openpyxl, io, re
+    grid = list(openpyxl.load_workbook(io.BytesIO(data), data_only=True).active.iter_rows(values_only=True))
+    def fl(x):
+        try: return float(x)
+        except (ValueError, TypeError): return 0.0
+    out = []
+    for r, row in enumerate(grid):
+        for cb in (0, 6):  # due blocchi affiancati
+            cell = row[cb] if cb < len(row) else None
+            if isinstance(cell, str) and 'giornata lega' in cell.lower():
+                mm = re.search(r'(\d+)', cell)
+                g = int(mm.group(1)) if mm else 0
+                rr = r + 1
+                while rr < len(grid):
+                    mr = grid[rr]
+                    home = mr[cb] if cb < len(mr) else None
+                    away = mr[cb + 3] if cb + 3 < len(mr) else None
+                    if not isinstance(home, str) or not home.strip() or 'giornata' in home.lower():
+                        break
+                    if not isinstance(away, str) or not away.strip():
+                        break
+                    res = mr[cb + 4] if cb + 4 < len(mr) else None
+                    hg = ag = None
+                    played = 0
+                    if isinstance(res, str) and re.match(r'\s*\d+\s*-\s*\d+', res):
+                        a, b = res.split('-', 1)
+                        try:
+                            hg, ag, played = int(a.strip()), int(b.strip()), 1
+                        except ValueError:
+                            pass
+                    out.append({'g': g, 'home': home.strip(), 'away': away.strip(),
+                                'hfp': fl(mr[cb + 1]), 'afp': fl(mr[cb + 2]),
+                                'hg': hg, 'ag': ag, 'played': played})
+                    rr += 1
+    return out
+
+
+@app.route('/admin/campionato/import', methods=['POST'])
+@admin_required
+def import_campionato():
+    fc = request.files.get('classifica')
+    fk = request.files.get('calendario')
+    if (not fc or not fc.filename) and (not fk or not fk.filename):
+        flash('Seleziona almeno un file (classifica o calendario).', 'warning')
+        return redirect(url_for('campionato'))
+    cmap = {_norm_name(u['team_name']): u['team_name']
+            for u in query_db("SELECT team_name FROM users WHERE is_admin=0")}
+    def canon(nm):
+        return cmap.get(_norm_name(nm), str(nm).strip())
     db = get_db()
-    db.execute("""
-        INSERT INTO user_strategy (user_id, plan_P, plan_D, plan_C, plan_A) VALUES (?,?,?,?,?)
-        ON CONFLICT(user_id) DO UPDATE SET plan_P=excluded.plan_P, plan_D=excluded.plan_D,
-            plan_C=excluded.plan_C, plan_A=excluded.plan_A
-    """, [uid, vals['P'], vals['D'], vals['C'], vals['A']])
-    db.commit()
-    db.close()
-    flash('Piano budget salvato.', 'success')
-    return redirect(url_for('strategia'))
+    msg = []
+    try:
+        if fc and fc.filename:
+            rows = _parse_classifica(fc.read())
+            db.execute("DELETE FROM champ_standings")
+            for r in rows:
+                r = list(r); r[1] = canon(r[1])
+                db.execute("""INSERT INTO champ_standings
+                    (pos,team_name,g,v,n,p,gf,gs,dr,pt,pt_totali) VALUES (?,?,?,?,?,?,?,?,?,?,?)""", r)
+            msg.append(f'{len(rows)} righe classifica')
+        if fk and fk.filename:
+            ms = _parse_calendario(fk.read())
+            db.execute("DELETE FROM champ_matches")
+            for m in ms:
+                db.execute("""INSERT INTO champ_matches
+                    (giornata,home,away,home_fp,away_fp,home_g,away_g,played) VALUES (?,?,?,?,?,?,?,?)""",
+                    [m['g'], canon(m['home']), canon(m['away']), m['hfp'], m['afp'], m['hg'], m['ag'], m['played']])
+            played = sum(1 for m in ms if m['played'])
+            msg.append(f'{len(ms)} partite ({played} giocate)')
+    except Exception as e:
+        db.close()
+        flash(f'Errore durante l\'import: {e}', 'danger')
+        return redirect(url_for('campionato'))
+    db.commit(); db.close()
+    set_setting('champ_import_ts', datetime.now().strftime('%Y-%m-%d %H:%M'))
+    flash('Import campionato: ' + ', '.join(msg) + '.', 'success')
+    return redirect(url_for('campionato'))
 
 
-@app.route('/strategia/target', methods=['POST'])
+@app.route('/campionato')
 @login_required
-def save_target():
-    if session.get('is_admin'):
-        return jsonify({'error': 'non disponibile'}), 403
-    uid = session['user_id']
-    pid = request.form.get('player_id', '')
-    price = request.form.get('target_price', '0').strip()
-    if not pid.isdigit():
-        return jsonify({'error': 'giocatore non valido'}), 400
-    price = int(price) if price.isdigit() else 0
-    db = get_db()
-    if price > 0:
-        db.execute("""
-            INSERT INTO player_targets (user_id, player_id, target_price) VALUES (?,?,?)
-            ON CONFLICT(user_id, player_id) DO UPDATE SET target_price=excluded.target_price
-        """, [uid, int(pid), price])
-    else:
-        db.execute("DELETE FROM player_targets WHERE user_id=? AND player_id=?", [uid, int(pid)])
-    db.commit()
-    db.close()
-    return jsonify({'success': True, 'target': price})
+def campionato():
+    standings = query_db("SELECT * FROM champ_standings ORDER BY pos")
+    matches = query_db("SELECT rowid, * FROM champ_matches ORDER BY giornata, rowid")
+    smap = {_norm_name(u['team_name']): (u['short_name'] or u['team_name'])
+            for u in query_db("SELECT team_name, short_name FROM users WHERE is_admin=0")}
+    def short(nm):
+        return smap.get(_norm_name(nm or ''), nm)
+
+    # aggregati dai match giocati
+    agg = {}
+    per_round = {}
+    played_matches = []
+    for m in matches:
+        if not m['played']:
+            continue
+        played_matches.append(m)
+        per_round.setdefault(m['giornata'], []).append((m['home'], m['home_fp']))
+        per_round[m['giornata']].append((m['away'], m['away_fp']))
+        for team, own, gf, gs in [(m['home'], m['home_fp'], m['home_g'], m['away_g']),
+                                  (m['away'], m['away_fp'], m['away_g'], m['home_g'])]:
+            a = agg.setdefault(team, {'team': team, 'pg': 0, 'v': 0, 'n': 0, 'p': 0,
+                                      'fp': 0.0, 'gf': 0, 'gs': 0, 'pt': 0, 'best': None, 'worst': None})
+            a['pg'] += 1; a['fp'] += own or 0; a['gf'] += gf or 0; a['gs'] += gs or 0
+            if gf > gs: a['v'] += 1; a['pt'] += 3
+            elif gf == gs: a['n'] += 1; a['pt'] += 1
+            else: a['p'] += 1
+            if a['best'] is None or (own or 0) > a['best']: a['best'] = own or 0
+            if a['worst'] is None or (own or 0) < a['worst']: a['worst'] = own or 0
+
+    # classifica a fantapunti totali
+    punti_totali = sorted(agg.values(), key=lambda x: -x['fp'])
+    for a in punti_totali:
+        a['media'] = round(a['fp'] / a['pg'], 2) if a['pg'] else 0
+
+    # classifica culo: punti reali vs punti "meritati" (tutti-contro-tutti a fantapunti, per giornata)
+    expected = {t: 0.0 for t in agg}
+    for g, lst in per_round.items():
+        n = len(lst)
+        if n < 2:
+            continue
+        for team, fp in lst:
+            beat = sum(1 for t2, fp2 in lst if t2 != team and fp2 < fp)
+            tie = sum(1 for t2, fp2 in lst if t2 != team and abs(fp2 - fp) < 1e-9)
+            expected[team] += 3.0 * beat / (n - 1) + 1.0 * tie / (n - 1)
+    culo = [{'team': t, 'reali': a['pt'], 'meritati': round(expected[t], 1),
+             'diff': round(a['pt'] - expected[t], 1)} for t, a in agg.items()]
+    culo.sort(key=lambda x: -x['diff'])
+
+    # curiosità
+    records = None
+    if played_matches:
+        perf = []  # (team, giornata, fp, gf, gs, avversario)
+        for m in played_matches:
+            perf.append((m['home'], m['giornata'], m['home_fp'], m['home_g'], m['away_g'], m['away']))
+            perf.append((m['away'], m['giornata'], m['away_fp'], m['away_g'], m['home_g'], m['home']))
+        wins = [x for x in perf if x[3] > x[4]]
+        losses = [x for x in perf if x[3] < x[4]]
+        records = {
+            'best': max(perf, key=lambda x: x[2]),
+            'worst': min(perf, key=lambda x: x[2]),
+            'lucky': min(wins, key=lambda x: x[2]) if wins else None,
+            'unlucky': max(losses, key=lambda x: x[2]) if losses else None,
+            'rout': max(played_matches, key=lambda m: abs((m['home_g'] or 0) - (m['away_g'] or 0))),
+        }
+
+    giornate = {}
+    for m in matches:
+        giornate.setdefault(m['giornata'], []).append(m)
+    giornate = sorted(giornate.items())
+
+    return render_template('campionato.html',
+        standings=standings, punti_totali=punti_totali, culo=culo, records=records,
+        giornate=giornate, short=short, last_import=get_setting('champ_import_ts'),
+        has_data=bool(standings or matches), is_admin=session.get('is_admin'))
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────

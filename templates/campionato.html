@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Campionato — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-success"></i>Campionato</h4>
+      <span class="text-muted small">
+        {% if last_import %}Ultimo import: {{ last_import }}{% else %}Nessun dato importato{% endif %}
+      </span>
+    </div>
+    {% if is_admin %}
+    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#impCampModal">
+      <i class="bi bi-upload me-1"></i>Importa classifica / calendario
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not has_data %}
+  <div class="card"><div class="card-body text-center text-muted py-5">
+    <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+    <h5>Nessun dato di campionato</h5>
+    <p>{% if is_admin %}Importa i file <strong>Classifica</strong> e <strong>Calendario</strong> esportati da lega Fantacalcio.{% else %}L'amministratore non ha ancora importato classifica e calendario.{% endif %}</p>
+  </div></div>
+  {% else %}
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-cl" type="button"><i class="bi bi-trophy me-1"></i>Classifica</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-culo" type="button">😈 Culo</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-fp" type="button"><i class="bi bi-star me-1"></i>Fantapunti</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cal" type="button"><i class="bi bi-calendar3 me-1"></i>Calendario</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cur" type="button"><i class="bi bi-stars me-1"></i>Curiosità</button></li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- CLASSIFICA UFFICIALE -->
+    <div class="tab-pane fade show active" id="tab-cl">
+      {% if standings %}
+      <div class="card"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle small">
+          <thead class="table-light"><tr>
+            <th>#</th><th>Squadra</th><th class="text-center">G</th><th class="text-center">V</th>
+            <th class="text-center">N</th><th class="text-center">P</th><th class="text-center">Gf</th>
+            <th class="text-center">Gs</th><th class="text-center">Dr</th><th class="text-end">Punti</th>
+            <th class="text-end">Fantapunti</th>
+          </tr></thead>
+          <tbody>
+          {% for s in standings %}
+            <tr>
+              <td class="fw-bold {% if s.pos<=3 %}text-success{% elif s.pos>=11 %}text-danger{% endif %}">{{ s.pos }}</td>
+              <td class="fw-semibold">{{ s.team_name }}</td>
+              <td class="text-center">{{ s.g }}</td><td class="text-center">{{ s.v }}</td>
+              <td class="text-center">{{ s.n }}</td><td class="text-center">{{ s.p }}</td>
+              <td class="text-center">{{ s.gf }}</td><td class="text-center">{{ s.gs }}</td>
+              <td class="text-center {% if s.dr>0 %}text-success{% elif s.dr<0 %}text-danger{% endif %}">{{ s.dr }}</td>
+              <td class="text-end fw-bold">{{ s.pt }}</td>
+              <td class="text-end text-muted">{{ s.pt_totali }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div></div></div>
+      {% else %}<div class="alert alert-info">Classifica non importata.</div>{% endif %}
+    </div>
+
+    <!-- CLASSIFICA CULO -->
+    <div class="tab-pane fade" id="tab-culo">
+      <p class="small text-muted">
+        😈 <strong>Classifica Culo</strong>: confronta i <strong>punti reali</strong> con i <strong>punti meritati</strong>
+        (calcolati come se ogni giornata ognuno giocasse contro tutti, in base ai fantapunti). Chi sta in alto ha
+        avuto <strong>più fortuna</strong> del dovuto; chi sta in basso è il più <strong>sfigato</strong>.
+      </p>
+      <div class="card"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle small">
+          <thead class="table-light"><tr>
+            <th>#</th><th>Squadra</th><th class="text-end">Punti reali</th>
+            <th class="text-end">Punti meritati</th><th class="text-end">Culo</th><th></th>
+          </tr></thead>
+          <tbody>
+          {% for c in culo %}
+            <tr>
+              <td class="fw-bold">{{ loop.index }}</td>
+              <td class="fw-semibold">{{ c.team }}</td>
+              <td class="text-end">{{ c.reali }}</td>
+              <td class="text-end text-muted">{{ c.meritati }}</td>
+              <td class="text-end fw-bold {% if c.diff>0 %}text-success{% elif c.diff<0 %}text-danger{% endif %}">
+                {% if c.diff>0 %}+{% endif %}{{ c.diff }}
+              </td>
+              <td>{% if loop.first and c.diff>0 %}😈{% elif loop.last and c.diff<0 %}😢{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div></div></div>
+    </div>
+
+    <!-- FANTAPUNTI -->
+    <div class="tab-pane fade" id="tab-fp">
+      <p class="small text-muted"><i class="bi bi-star me-1"></i><strong>Classifica a fantapunti</strong>: chi ha reso di più sul campo, a prescindere dagli scontri.</p>
+      <div class="card"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle small">
+          <thead class="table-light"><tr>
+            <th>#</th><th>Squadra</th><th class="text-center">Giornate</th>
+            <th class="text-end">Fantapunti tot.</th><th class="text-end">Media</th>
+            <th class="text-end">Miglior</th><th class="text-end">Peggior</th>
+          </tr></thead>
+          <tbody>
+          {% for a in punti_totali %}
+            <tr>
+              <td class="fw-bold">{{ loop.index }}</td>
+              <td class="fw-semibold">{{ a.team }}</td>
+              <td class="text-center">{{ a.pg }}</td>
+              <td class="text-end fw-bold">{{ '%.1f'|format(a.fp) }}</td>
+              <td class="text-end">{{ a.media }}</td>
+              <td class="text-end text-success">{{ a.best }}</td>
+              <td class="text-end text-danger">{{ a.worst }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div></div></div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div class="tab-pane fade" id="tab-cal">
+      {% for g, ms in giornate %}
+      <div class="card mb-2">
+        <div class="card-header py-1 fw-semibold small card-header-green">Giornata {{ g }}</div>
+        <div class="card-body p-0"><div class="table-responsive">
+          <table class="table table-sm mb-0 align-middle small">
+            <tbody>
+            {% for m in ms %}
+              <tr class="{% if not m.played %}text-muted{% endif %}">
+                <td class="text-end fw-semibold" style="width:38%">{{ m.home }}</td>
+                <td class="text-end" style="width:7%">{% if m.played %}{{ '%.1f'|format(m.home_fp) }}{% endif %}</td>
+                <td class="text-center fw-bold" style="width:10%">
+                  {% if m.played %}{{ m.home_g }}-{{ m.away_g }}{% else %}<span class="text-muted">vs</span>{% endif %}
+                </td>
+                <td style="width:7%">{% if m.played %}{{ '%.1f'|format(m.away_fp) }}{% endif %}</td>
+                <td class="fw-semibold" style="width:38%">{{ m.away }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- CURIOSITÀ -->
+    <div class="tab-pane fade" id="tab-cur">
+      {% if not records %}
+      <div class="alert alert-info">Ancora nessuna partita giocata.</div>
+      {% else %}
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">🏆 Miglior prestazione</div>
+            <div class="fw-bold fs-5">{{ '%.1f'|format(records.best[2]) }} fp</div>
+            <div>{{ records.best[0] }} <span class="text-muted small">(G{{ records.best[1] }})</span></div>
+          </div></div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">💩 Peggior prestazione</div>
+            <div class="fw-bold fs-5">{{ '%.1f'|format(records.worst[2]) }} fp</div>
+            <div>{{ records.worst[0] }} <span class="text-muted small">(G{{ records.worst[1] }})</span></div>
+          </div></div>
+        </div>
+        {% if records.lucky %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border-success"><div class="card-body">
+            <div class="text-muted small">😈 Vittoria più culo</div>
+            <div class="fw-bold fs-5">{{ '%.1f'|format(records.lucky[2]) }} fp</div>
+            <div>{{ records.lucky[0] }} <span class="text-muted small">ha vinto vs {{ records.lucky[5] }} (G{{ records.lucky[1] }})</span></div>
+          </div></div>
+        </div>
+        {% endif %}
+        {% if records.unlucky %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border-danger"><div class="card-body">
+            <div class="text-muted small">😢 Sconfitta più sfigata</div>
+            <div class="fw-bold fs-5">{{ '%.1f'|format(records.unlucky[2]) }} fp</div>
+            <div>{{ records.unlucky[0] }} <span class="text-muted small">ha perso vs {{ records.unlucky[5] }} (G{{ records.unlucky[1] }})</span></div>
+          </div></div>
+        </div>
+        {% endif %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">💥 Manita / goleada</div>
+            <div class="fw-bold fs-5">{{ records.rout.home_g }}-{{ records.rout.away_g }}</div>
+            <div class="small">{{ records.rout.home }} vs {{ records.rout.away }} <span class="text-muted">(G{{ records.rout.giornata }})</span></div>
+          </div></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endif %}
+
+  {% if is_admin %}
+  <!-- Modal import campionato -->
+  <div class="modal fade" id="impCampModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('import_campionato') }}" enctype="multipart/form-data">
+          <div class="modal-header card-header-green text-white">
+            <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Importa campionato</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <label class="form-label fw-semibold">File Classifica (.xlsx)</label>
+            <input type="file" name="classifica" class="form-control mb-3" accept=".xlsx,.xls">
+            <label class="form-label fw-semibold">File Calendario (.xlsx)</label>
+            <input type="file" name="calendario" class="form-control" accept=".xlsx,.xls">
+            <div class="form-text mt-2">
+              Esportali da lega Fantacalcio (Classifica e Calendario). Puoi caricarne anche uno solo.
+              Ri-caricando si aggiornano i dati.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="submit" class="btn btn-green"><i class="bi bi-upload me-1"></i>Importa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

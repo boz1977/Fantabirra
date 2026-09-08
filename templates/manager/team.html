@@ -12,7 +12,6 @@
       {% if total_players %}
       <a href="{{ url_for('export_team_csv') }}" class="btn btn-outline-success btn-sm" title="Esporta la rosa in CSV (squadra,id,costo)"><i class="bi bi-filetype-csv me-1"></i>Esporta CSV</a>
       {% endif %}
-      <a href="{{ url_for('strategia') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-bullseye me-1"></i>Strategia</a>
       <div class="fw-bold fs-5 text-success">{{ user.budget }} <small class="text-muted fw-normal fs-6">crediti rimasti</small></div>
     </div>
   </div>
