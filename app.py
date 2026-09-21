@@ -1814,7 +1814,32 @@ def campionato():
             'lucky': min(wins, key=lambda x: x[2]) if wins else None,
             'unlucky': max(losses, key=lambda x: x[2]) if losses else None,
             'rout': max(played_matches, key=lambda m: abs((m['home_g'] or 0) - (m['away_g'] or 0))),
+            'goals': max(played_matches, key=lambda m: (m['home_g'] or 0) + (m['away_g'] or 0)),
         }
+        # esito per squadra in ordine di giornata (V/N/P) per le strisce
+        seq = {}
+        for team, g, fp, gf, gs, opp in sorted(perf, key=lambda x: x[1]):
+            seq.setdefault(team, []).append('V' if gf > gs else ('N' if gf == gs else 'P'))
+        def _streak(res, ok):
+            best = cur = 0
+            for r in res:
+                cur = cur + 1 if r in ok else 0
+                best = max(best, cur)
+            return best
+        unbeaten = {t: _streak(r, 'VN') for t, r in seq.items()}
+        losing = {t: _streak(r, 'P') for t, r in seq.items()}
+        best_unb = max(unbeaten.items(), key=lambda x: x[1]) if unbeaten else None
+        worst_los = max(losing.items(), key=lambda x: x[1]) if losing else None
+        # regolarità: deviazione standard dei fantapunti (min giocate 2)
+        import statistics
+        fps = {}
+        for team, g, fp, gf, gs, opp in perf:
+            fps.setdefault(team, []).append(fp or 0)
+        devs = {t: statistics.pstdev(v) for t, v in fps.items() if len(v) >= 2}
+        records['streak_unb'] = best_unb if best_unb and best_unb[1] >= 2 else None
+        records['streak_los'] = worst_los if worst_los and worst_los[1] >= 2 else None
+        records['regular'] = min(devs.items(), key=lambda x: x[1]) if devs else None
+        records['volatile'] = max(devs.items(), key=lambda x: x[1]) if devs else None
 
     giornate = {}
     for m in matches:

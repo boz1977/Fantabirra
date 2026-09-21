@@ -234,6 +234,49 @@
             <div class="small">{{ records.rout.home }} vs {{ records.rout.away }} <span class="text-muted">(G{{ records.rout.giornata }})</span></div>
           </div></div>
         </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">⚽ Partita più spettacolare</div>
+            <div class="fw-bold fs-5">{{ records.goals.home_g }}-{{ records.goals.away_g }} <span class="text-muted fs-6">({{ records.goals.home_g + records.goals.away_g }} gol)</span></div>
+            <div class="small">{{ records.goals.home }} vs {{ records.goals.away }} <span class="text-muted">(G{{ records.goals.giornata }})</span></div>
+          </div></div>
+        </div>
+        {% if records.streak_unb %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border-success"><div class="card-body">
+            <div class="text-muted small">🔥 Miglior striscia (imbattibilità)</div>
+            <div class="fw-bold fs-5">{{ records.streak_unb[1] }} <span class="fs-6 text-muted">gare</span></div>
+            <div>{{ records.streak_unb[0] }}</div>
+          </div></div>
+        </div>
+        {% endif %}
+        {% if records.streak_los %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border-danger"><div class="card-body">
+            <div class="text-muted small">🥶 Peggior serie (sconfitte)</div>
+            <div class="fw-bold fs-5">{{ records.streak_los[1] }} <span class="fs-6 text-muted">ko di fila</span></div>
+            <div>{{ records.streak_los[0] }}</div>
+          </div></div>
+        </div>
+        {% endif %}
+        {% if records.regular %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">🎯 Mr. Regolarità</div>
+            <div class="fw-bold fs-5">±{{ '%.1f'|format(records.regular[1]) }} fp</div>
+            <div>{{ records.regular[0] }} <span class="text-muted small">più costante</span></div>
+          </div></div>
+        </div>
+        {% endif %}
+        {% if records.volatile %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">🎢 Il più altalenante</div>
+            <div class="fw-bold fs-5">±{{ '%.1f'|format(records.volatile[1]) }} fp</div>
+            <div>{{ records.volatile[0] }} <span class="text-muted small">più imprevedibile</span></div>
+          </div></div>
+        </div>
+        {% endif %}
       </div>
       {% endif %}
     </div>
