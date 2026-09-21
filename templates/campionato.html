@@ -70,22 +70,19 @@
     <!-- CLASSIFICA CULO -->
     <div class="tab-pane fade" id="tab-culo">
       <p class="small text-muted">
-        😈 <strong>Classifica Culo</strong> = somma di due fortune:
-        <br><strong>📅 Calendario</strong> (in punti): punti reali − punti meritati, dove i meritati sono un tutti-contro-tutti
-        <strong>sui gol</strong> di ogni giornata (a parità di gol, stesso merito — non contano i fantapunti in più).
-        <br><strong>🎲 Fasce</strong> (in gol): i gol scattano ogni 6 fantapunti (66, 72, 78…). Chi è spesso <strong>appena sopra</strong>
-        la soglia ha fatto gol "col culo" (+), chi è <strong>appena sotto</strong> (es. 71.5 → 1 gol invece di 2) è sfigato (−).
-        <br>Chi è in alto è il più fortunato 😈, chi è in basso il più sfigato 😢.
+        😈 <strong>Classifica Culo</strong> = <strong>Punti reali − Punti meritati</strong>. I meritati guardano lo
+        <strong>scarto di fantapunti contro l'avversario di giornata</strong>: se lo superi di tanto la vittoria è
+        meritata, se vinci (o pareggi) di un soffio hai avuto <strong>culo</strong> (una piccola variazione avrebbe
+        cambiato il risultato). Al contrario, se fai più punti dell'avversario ma pareggi/perdi per gli arrotondamenti,
+        è <strong>sfiga</strong>. Es.: vincere 1-0 con 66 vs 65 = tanto culo. Chi è in alto è il più fortunato 😈, in basso il più sfigato 😢.
       </p>
       <div class="card"><div class="card-body p-0"><div class="table-responsive">
         <table class="table table-hover table-sm mb-0 align-middle small">
           <thead class="table-light"><tr>
             <th>#</th><th>Squadra</th>
             <th class="text-end" title="Punti conquistati sul campo">Reali</th>
-            <th class="text-end" title="Punti meritati: tutti-contro-tutti sui gol">Meritati</th>
-            <th class="text-end" title="Fortuna calendario = Reali − Meritati (in punti)">📅 Cal.</th>
-            <th class="text-end" title="Fortuna fasce (in gol): + se spesso appena sopra la soglia del gol, − se appena sotto">🎲 Fasce</th>
-            <th class="text-end" title="Culo totale = Calendario + Fasce">😈 Tot.</th><th></th>
+            <th class="text-end" title="Punti meritati in base allo scarto di fantapunti sull'avversario di giornata">Meritati</th>
+            <th class="text-end" title="Culo = Reali − Meritati">😈 Culo</th><th></th>
           </tr></thead>
           <tbody>
           {% for c in culo %}
@@ -94,10 +91,8 @@
               <td class="fw-semibold">{{ c.team }}</td>
               <td class="text-end">{{ c.reali }}</td>
               <td class="text-end text-muted">{{ c.meritati }}</td>
-              <td class="text-end {% if c.cal>0 %}text-success{% elif c.cal<0 %}text-danger{% endif %}">{% if c.cal>0 %}+{% endif %}{{ c.cal }}</td>
-              <td class="text-end {% if c.fasce>0 %}text-success{% elif c.fasce<0 %}text-danger{% endif %}">{% if c.fasce>0 %}+{% endif %}{{ c.fasce }}</td>
-              <td class="text-end fw-bold {% if c.tot>0 %}text-success{% elif c.tot<0 %}text-danger{% endif %}">{% if c.tot>0 %}+{% endif %}{{ c.tot }}</td>
-              <td>{% if loop.first and c.tot>0 %}😈{% elif loop.last and c.tot<0 %}😢{% endif %}</td>
+              <td class="text-end fw-bold {% if c.diff>0 %}text-success{% elif c.diff<0 %}text-danger{% endif %}">{% if c.diff>0 %}+{% endif %}{{ c.diff }}</td>
+              <td>{% if loop.first and c.diff>0 %}😈{% elif loop.last and c.diff<0 %}😢{% endif %}</td>
             </tr>
           {% endfor %}
           </tbody>
