@@ -225,6 +225,15 @@ def init_db():
             giornata INTEGER, home TEXT, away TEXT,
             home_fp REAL, away_fp REAL, home_g INTEGER, away_g INTEGER, played INTEGER DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS repair_bonus (
+            user_id INTEGER NOT NULL,
+            g_from INTEGER NOT NULL,
+            g_to INTEGER NOT NULL,
+            gf INTEGER, gs INTEGER, bonus INTEGER NOT NULL,
+            applied_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, g_from, g_to),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
         CREATE INDEX IF NOT EXISTS idx_nom_player ON nominations(player_id);
         CREATE INDEX IF NOT EXISTS idx_nom_user ON nominations(user_id);
         CREATE INDEX IF NOT EXISTS idx_acq_player ON acquisitions(player_id);
@@ -255,6 +264,8 @@ def init_db():
         ('slots_D', '8'),
         ('slots_C', '8'),
         ('slots_A', '6'),
+        ('rip_from', '1'),
+        ('rip_to', '11'),
     ]
     for k, v in defaults:
         db.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", [k, v])
@@ -3040,6 +3051,7 @@ def reset_season():
     db.execute("DELETE FROM player_targets")
     db.execute("DELETE FROM user_strategy")
     db.execute("DELETE FROM free_phase")
+    db.execute("DELETE FROM repair_bonus")
     ib = int(get_setting('initial_budget', '500'))
     db.execute("UPDATE users SET budget=? WHERE is_admin=0", [ib])
     db.execute("INSERT OR REPLACE INTO settings VALUES ('nomination_open','0')")
@@ -3116,6 +3128,119 @@ def apply_budget():
         flash('Operazione annullata: ci sono già aste in corso o acquisti effettuati. '
               'I budget NON sono stati modificati.', 'warning')
     return redirect(url_for('admin_settings'))
+
+
+# ── Mercato di riparazione: bonus crediti ─────────────────────────────────────
+# Bonus = 2 per ogni gol fatto + 3 per ogni gol subito nelle giornate del girone concluso.
+
+BONUS_GF, BONUS_GS = 2, 3
+
+
+def _repair_range():
+    def i(x, d):
+        try: return int(x)
+        except (ValueError, TypeError): return d
+    g_from = i(request.values.get('da'), i(get_setting('rip_from', '1'), 1))
+    g_to = i(request.values.get('a'), i(get_setting('rip_to', '11'), 11))
+    return min(g_from, g_to), max(g_from, g_to)
+
+
+def _repair_bonus_rows(g_from, g_to):
+    """Gol fatti/subiti e bonus per manager nelle giornate g_from..g_to (da champ_matches)."""
+    users = query_db("SELECT id, team_name, budget FROM users WHERE is_admin=0 ORDER BY team_name")
+    umap = {_norm_name(u['team_name']): u['id'] for u in users}
+    tot = {u['id']: {'gf': 0, 'gs': 0, 'pg': 0} for u in users}
+    unknown = set()
+    rounds = {}  # giornata -> [partite totali, giocate]
+    for m in query_db("""SELECT giornata, home, away, home_g, away_g, played FROM champ_matches
+                         WHERE giornata BETWEEN ? AND ?""", [g_from, g_to]):
+        r = rounds.setdefault(m['giornata'], [0, 0])
+        r[0] += 1
+        if not m['played']:
+            continue
+        r[1] += 1
+        for team, gf, gs in [(m['home'], m['home_g'], m['away_g']), (m['away'], m['away_g'], m['home_g'])]:
+            uid = umap.get(_norm_name(team))
+            if uid is None:
+                unknown.add(team)
+                continue
+            t = tot[uid]
+            t['gf'] += gf or 0; t['gs'] += gs or 0; t['pg'] += 1
+    incomplete = [g for g in range(g_from, g_to + 1)
+                  if g not in rounds or rounds[g][1] < rounds[g][0]]
+
+    applied = {r['user_id']: r for r in query_db(
+        "SELECT * FROM repair_bonus WHERE g_from=? AND g_to=?", [g_from, g_to])}
+    rows = []
+    for u in users:
+        t = tot[u['id']]
+        a = applied.get(u['id'])
+        bonus = BONUS_GF * t['gf'] + BONUS_GS * t['gs']
+        rows.append({'id': u['id'], 'team_name': u['team_name'], 'budget': u['budget'],
+                     'pg': t['pg'], 'gf': t['gf'], 'gs': t['gs'], 'bonus': bonus,
+                     'applied': a['bonus'] if a else None,
+                     'applied_at': a['applied_at'] if a else None})
+    rows.sort(key=lambda r: -r['bonus'])
+    return rows, incomplete, sorted(unknown), bool(applied)
+
+
+@app.route('/admin/riparazione/bonus')
+@admin_required
+def repair_bonus():
+    g_from, g_to = _repair_range()
+    rows, incomplete, unknown, applied = _repair_bonus_rows(g_from, g_to)
+    history = query_db("""SELECT g_from, g_to, COUNT(*) n, SUM(bonus) tot, MAX(applied_at) ts
+                          FROM repair_bonus GROUP BY g_from, g_to ORDER BY ts DESC""")
+    return render_template('admin/repair_bonus.html',
+        rows=rows, g_from=g_from, g_to=g_to, incomplete=incomplete, unknown=unknown,
+        applied=applied, history=history, bonus_gf=BONUS_GF, bonus_gs=BONUS_GS,
+        last_import=get_setting('champ_import_ts'))
+
+
+@app.route('/admin/riparazione/bonus/apply', methods=['POST'])
+@admin_required
+def repair_bonus_apply():
+    g_from, g_to = _repair_range()
+    back = redirect(url_for('repair_bonus', da=g_from, a=g_to))
+    rows, incomplete, unknown, applied = _repair_bonus_rows(g_from, g_to)
+    if applied:
+        flash(f'Bonus G{g_from}–G{g_to} già applicato: annullalo prima di riapplicarlo.', 'warning')
+        return back
+    if incomplete:
+        flash('Giornate non complete nel calendario importato: ' + ', '.join(f'G{g}' for g in incomplete)
+              + '. Reimporta il calendario aggiornato da Campionato.', 'danger')
+        return back
+    db = get_db()
+    for r in rows:
+        db.execute("UPDATE users SET budget=budget+? WHERE id=?", [r['bonus'], r['id']])
+        db.execute("INSERT INTO repair_bonus (user_id,g_from,g_to,gf,gs,bonus) VALUES (?,?,?,?,?,?)",
+                   [r['id'], g_from, g_to, r['gf'], r['gs'], r['bonus']])
+    db.commit()
+    db.close()
+    set_setting('rip_from', g_from)
+    set_setting('rip_to', g_to)
+    flash(f'Bonus G{g_from}–G{g_to} applicato a {len(rows)} manager '
+          f'(totale {sum(r["bonus"] for r in rows)} crediti).', 'success')
+    return back
+
+
+@app.route('/admin/riparazione/bonus/revert', methods=['POST'])
+@admin_required
+def repair_bonus_revert():
+    g_from, g_to = _repair_range()
+    db = get_db()
+    rows = db.execute("SELECT user_id, bonus FROM repair_bonus WHERE g_from=? AND g_to=?",
+                      [g_from, g_to]).fetchall()
+    for r in rows:
+        db.execute("UPDATE users SET budget=budget-? WHERE id=?", [r['bonus'], r['user_id']])
+    db.execute("DELETE FROM repair_bonus WHERE g_from=? AND g_to=?", [g_from, g_to])
+    db.commit()
+    db.close()
+    if rows:
+        flash(f'Bonus G{g_from}–G{g_to} annullato: budget riportati ai valori precedenti.', 'success')
+    else:
+        flash('Nessun bonus da annullare per queste giornate.', 'info')
+    return redirect(url_for('repair_bonus', da=g_from, a=g_to))
 
 
 

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Bonus Riparazione — {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 py-4">
+
+  <h4 class="fw-bold mb-1"><i class="bi bi-tools me-2 text-success"></i>Mercato di Riparazione — Bonus Crediti</h4>
+  <p class="text-muted small mb-4">
+    Bonus = <strong>{{ bonus_gf }}</strong> × gol fatti + <strong>{{ bonus_gs }}</strong> × gol subiti
+    nelle giornate del girone concluso. Dati presi dal calendario importato in
+    <a href="{{ url_for('campionato') }}">Campionato</a>{% if last_import %} (ultimo import: {{ last_import }}){% endif %}.
+  </p>
+
+  <form method="GET" action="{{ url_for('repair_bonus') }}" class="d-flex align-items-end gap-2 flex-wrap mb-3">
+    <div>
+      <label class="form-label small fw-semibold mb-1">Dalla giornata</label>
+      <input type="number" name="da" value="{{ g_from }}" min="1" class="form-control form-control-sm" style="width:90px">
+    </div>
+    <div>
+      <label class="form-label small fw-semibold mb-1">Alla giornata</label>
+      <input type="number" name="a" value="{{ g_to }}" min="1" class="form-control form-control-sm" style="width:90px">
+    </div>
+    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat me-1"></i>Ricalcola</button>
+  </form>
+
+  {% if incomplete %}
+  <div class="alert alert-warning py-2 small">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    Giornate mancanti o non ancora giocate nel calendario importato:
+    <strong>{% for g in incomplete %}G{{ g }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>.
+    Il bonus non si può applicare finché non reimporti il calendario aggiornato.
+  </div>
+  {% endif %}
+  {% if unknown %}
+  <div class="alert alert-warning py-2 small">
+    <i class="bi bi-question-circle me-1"></i>
+    Squadre del calendario non associate a nessun manager (ignorate):
+    <strong>{{ unknown|join(', ') }}</strong>. Controlla i nomi squadra in <a href="{{ url_for('admin_users') }}">Utenti</a>.
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header card-header-green d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-coin me-2"></i>Giornate G{{ g_from }}–G{{ g_to }}</span>
+      {% if applied %}
+      <span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>Bonus già applicato</span>
+      {% endif %}
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small align-middle">
+          <thead>
+            <tr>
+              <th>Squadra</th>
+              <th class="text-end">PG</th>
+              <th class="text-end">Gol fatti</th>
+              <th class="text-end">Gol subiti</th>
+              <th class="text-end">Bonus</th>
+              <th class="text-end">Budget attuale</th>
+              <th class="text-end">{% if applied %}Budget prima{% else %}Nuovo budget{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td class="fw-semibold">{{ r.team_name }}</td>
+              <td class="text-end text-muted">{{ r.pg }}</td>
+              <td class="text-end">{{ r.gf }} <span class="text-muted">(+{{ r.gf * bonus_gf }})</span></td>
+              <td class="text-end">{{ r.gs }} <span class="text-muted">(+{{ r.gs * bonus_gs }})</span></td>
+              <td class="text-end fw-bold text-success">
+                +{{ r.applied if r.applied is not none else r.bonus }}
+                {% if r.applied is not none and r.applied != r.bonus %}
+                <i class="bi bi-exclamation-circle text-warning" title="Ricalcolato oggi: +{{ r.bonus }} (i dati del calendario sono cambiati)"></i>
+                {% endif %}
+              </td>
+              <td class="text-end">{{ r.budget }}</td>
+              <td class="text-end fw-bold">
+                {% if r.applied is not none %}{{ r.budget - r.applied }}{% else %}{{ r.budget + r.bonus }}{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      {% if not applied %}
+      <form method="POST" action="{{ url_for('repair_bonus_apply') }}"
+            onsubmit="return confirm('Aggiungere il bonus G{{ g_from }}–G{{ g_to }} al budget di tutti i manager?')">
+        <input type="hidden" name="da" value="{{ g_from }}"><input type="hidden" name="a" value="{{ g_to }}">
+        <button type="submit" class="btn btn-gold" {% if incomplete %}disabled{% endif %}>
+          <i class="bi bi-plus-circle me-1"></i>Applica bonus ai budget
+        </button>
+      </form>
+      {% else %}
+      <form method="POST" action="{{ url_for('repair_bonus_revert') }}"
+            onsubmit="return confirm('Annullare il bonus G{{ g_from }}–G{{ g_to }}? Verrà sottratto dal budget di tutti i manager.')">
+        <input type="hidden" name="da" value="{{ g_from }}"><input type="hidden" name="a" value="{{ g_to }}">
+        <button type="submit" class="btn btn-outline-danger">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Annulla bonus
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if history %}
+  <div class="card mt-4">
+    <div class="card-header card-header-gold"><i class="bi bi-clock-history me-2"></i>Bonus applicati</div>
+    <ul class="list-group list-group-flush small">
+      {% for h in history %}
+      <li class="list-group-item d-flex justify-content-between">
+        <a href="{{ url_for('repair_bonus', da=h.g_from, a=h.g_to) }}">Giornate G{{ h.g_from }}–G{{ h.g_to }}</a>
+        <span class="text-muted">{{ h.n }} manager · +{{ h.tot }} crediti totali · {{ h.ts[:16] }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

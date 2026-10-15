@@ -50,6 +50,7 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_acquisti' %}active{% endif %}" href="{{ url_for('admin_acquisti') }}"><i class="bi bi-bag-check me-1"></i>Acquisti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'all_rosters' %}active{% endif %}" href="{{ url_for('all_rosters') }}"><i class="bi bi-people-fill me-1"></i>Rose</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'campionato' %}active{% endif %}" href="{{ url_for('campionato') }}"><i class="bi bi-calendar-check me-1"></i>Campionato</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'repair_bonus' %}active{% endif %}" href="{{ url_for('repair_bonus') }}"><i class="bi bi-tools me-1"></i>Riparazione</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people me-1"></i>Utenti</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
