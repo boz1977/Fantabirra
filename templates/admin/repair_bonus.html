@@ -10,6 +10,17 @@
     <a href="{{ url_for('campionato') }}">Campionato</a>{% if last_import %} (ultimo import: {{ last_import }}){% endif %}.
   </p>
 
+  {% if not is_admin %}
+  <div class="alert {% if applied %}alert-success{% else %}alert-info{% endif %} py-2 small">
+    {% if applied %}
+    <i class="bi bi-check2-circle me-1"></i>Bonus G{{ g_from }}–G{{ g_to }} <strong>ufficiale</strong>: già aggiunto ai budget.
+    {% else %}
+    <i class="bi bi-hourglass-split me-1"></i><strong>Previsione</strong> sui risultati importati finora: il bonus diventa ufficiale quando l'admin lo applica ai budget.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if is_admin %}
   <form method="GET" action="{{ url_for('repair_bonus') }}" class="d-flex align-items-end gap-2 flex-wrap mb-3">
     <div>
       <label class="form-label small fw-semibold mb-1">Dalla giornata</label>
@@ -21,16 +32,17 @@
     </div>
     <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat me-1"></i>Ricalcola</button>
   </form>
+  {% endif %}
 
   {% if incomplete %}
   <div class="alert alert-warning py-2 small">
     <i class="bi bi-exclamation-triangle me-1"></i>
     Giornate mancanti o non ancora giocate nel calendario importato:
     <strong>{% for g in incomplete %}G{{ g }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>.
-    Il bonus non si può applicare finché non reimporti il calendario aggiornato.
+    {% if is_admin %}Il bonus non si può applicare finché non reimporti il calendario aggiornato.{% else %}I valori possono ancora cambiare.{% endif %}
   </div>
   {% endif %}
-  {% if unknown %}
+  {% if unknown and is_admin %}
   <div class="alert alert-warning py-2 small">
     <i class="bi bi-question-circle me-1"></i>
     Squadre del calendario non associate a nessun manager (ignorate):
@@ -61,7 +73,7 @@
           </thead>
           <tbody>
             {% for r in rows %}
-            <tr>
+            <tr {% if r.id == my_id %}class="table-success"{% endif %}>
               <td class="fw-semibold">{{ r.team_name }}</td>
               <td class="text-end text-muted">{{ r.pg }}</td>
               <td class="text-end">{{ r.gf }} <span class="text-muted">(+{{ r.gf * bonus_gf }})</span></td>
@@ -82,6 +94,7 @@
         </table>
       </div>
     </div>
+    {% if is_admin %}
     <div class="card-footer d-flex gap-2 flex-wrap">
       {% if not applied %}
       <form method="POST" action="{{ url_for('repair_bonus_apply') }}"
@@ -101,9 +114,10 @@
       </form>
       {% endif %}
     </div>
+    {% endif %}
   </div>
 
-  {% if history %}
+  {% if history and is_admin %}
   <div class="card mt-4">
     <div class="card-header card-header-gold"><i class="bi bi-clock-history me-2"></i>Bonus applicati</div>
     <ul class="list-group list-group-flush small">

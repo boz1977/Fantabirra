@@ -3184,17 +3184,24 @@ def _repair_bonus_rows(g_from, g_to):
     return rows, incomplete, sorted(unknown), bool(applied)
 
 
+@app.route('/riparazione')
 @app.route('/admin/riparazione/bonus')
-@admin_required
+@login_required
 def repair_bonus():
-    g_from, g_to = _repair_range()
+    # visibile a tutti in sola lettura; i manager vedono sempre le giornate impostate dall'admin
+    is_admin = bool(session.get('is_admin'))
+    if is_admin:
+        g_from, g_to = _repair_range()
+    else:
+        g_from, g_to = int(get_setting('rip_from', '1')), int(get_setting('rip_to', '11'))
     rows, incomplete, unknown, applied = _repair_bonus_rows(g_from, g_to)
     history = query_db("""SELECT g_from, g_to, COUNT(*) n, SUM(bonus) tot, MAX(applied_at) ts
                           FROM repair_bonus GROUP BY g_from, g_to ORDER BY ts DESC""")
     return render_template('admin/repair_bonus.html',
         rows=rows, g_from=g_from, g_to=g_to, incomplete=incomplete, unknown=unknown,
         applied=applied, history=history, bonus_gf=BONUS_GF, bonus_gs=BONUS_GS,
-        last_import=get_setting('champ_import_ts'))
+        last_import=get_setting('champ_import_ts'), is_admin=is_admin,
+        my_id=session.get('user_id'))
 
 
 @app.route('/admin/riparazione/bonus/apply', methods=['POST'])
