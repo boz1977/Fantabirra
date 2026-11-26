@@ -6,11 +6,23 @@
   <h4 class="fw-bold mb-4"><i class="bi bi-hammer me-2 text-warning"></i>Aste a Busta Chiusa</h4>
 
   <!-- Budget reminder -->
+  {% if repair %}
+  <div class="alert alert-info py-2 mb-4 d-flex align-items-center gap-3 flex-wrap">
+    <i class="bi bi-tools fs-5"></i>
+    <span>Budget: <strong>{{ user.budget }}</strong></span>
+    <span title="Quanto ti resta se vinci tutte le aste su cui hai offerto, dopo aver tagliato i giocatori che valgono di più">
+      Margine caso peggiore: <strong id="repairMargin">{{ repair.worst }}</strong></span>
+    <span>Acquisti: <strong>{{ repair.won }}/{{ repair.max_buy }}</strong></span>
+    {% if repair.to_cut %}<span class="text-danger">Tagli da fare: <strong>{{ repair.to_cut }}</strong></span>{% endif %}
+    <a href="{{ url_for('repair_hub') }}" class="ms-auto small">Tabellone e tagli</a>
+  </div>
+  {% else %}
   <div class="alert alert-info py-2 mb-4 d-flex align-items-center gap-2">
     <i class="bi bi-coin fs-5"></i>
     <span>Budget disponibile: <strong>{{ user.budget }} crediti</strong></span>
     <span class="ms-auto text-muted small">Le offerte sono segrete fino alla chiusura dell'asta</span>
   </div>
+  {% endif %}
 
   {% if fp.active %}
   {% if fp.is_my_turn %}
@@ -61,7 +73,13 @@
         <span class="fw-bold fs-5"><i class="bi bi-hammer me-2"></i>{{ s.name }}</span>
         <span class="badge bg-success ms-2">IN CORSO</span>
       </div>
+      {% if s.kind == 'repair' and s.starts_at and repair and repair.now < s.starts_at %}
+      <div class="text-white small">Offerte dal {{ s.starts_at[8:10] }}/{{ s.starts_at[5:7] }} alle {{ s.starts_at[11:16] }}</div>
+      {% elif s.kind == 'repair' and s.starts_at %}
+      <div class="text-white-50 small">Aperta il {{ s.starts_at[8:10] }}/{{ s.starts_at[5:7] }} alle {{ s.starts_at[11:16] }}</div>
+      {% else %}
       <div class="text-white-50 small">Aperta: {{ s.opened_at[:16] if s.opened_at else '' }}</div>
+      {% endif %}
     </div>
     <div class="card-body p-0">
       {% if not sd['items'] %}
@@ -71,6 +89,7 @@
         <table class="table table-hover mb-0 small align-middle">
           <thead>
             <tr>
+              {% if s.kind == 'repair' %}<th>Scadenza</th>{% endif %}
               <th>R</th><th>Giocatore</th><th>Squadra</th>
               <th class="text-end">Q.A. min.</th>
               <th class="text-end" style="width:200px">La tua offerta</th>
@@ -80,6 +99,10 @@
             {% for item in sd['items'] %}
             {% set min_req = item.min_bid if item.min_bid else (item.base_value if item.caller_id else item.base_value + 1) %}
             <tr id="item-row-{{ item.id }}" class="auct-row" data-team="{{ item.team|lower }}">
+              {% if s.kind == 'repair' %}
+              <td class="text-nowrap">{{ item.deadline[8:10] }}/{{ item.deadline[5:7] }} {{ item.deadline[11:16] }}
+                <div class="text-muted countdown" data-deadline="{{ item.deadline }}" style="font-size:.7rem"></div></td>
+              {% endif %}
               <td><span class="badge badge-role role-{{ item.role }}">{{ item.role }}</span></td>
               <td class="fw-semibold">{{ item.name }}
                 {% if item.min_bid %}<span class="badge bg-danger ms-1" title="Rilancio dopo pareggio">rilancio {{ item.min_bid }}+</span>{% endif %}
@@ -108,7 +131,7 @@
                   <div class="input-group input-group-sm bid-input-group" style="width:160px">
                     <input type="number" class="form-control bid-input"
                            id="bid-{{ item.id }}"
-                           min="{{ min_req }}" max="{{ user.budget }}"
+                           min="{{ min_req }}" {% if s.kind != 'repair' %}max="{{ user.budget }}"{% endif %}
                            value="{{ item.my_bid or '' }}"
                            placeholder="{{ min_req }}+"
                            data-item-id="{{ item.id }}"
@@ -244,6 +267,8 @@ async function submitBid(itemId, silent = false) {
   }
 
   const label = document.getElementById('bid-label-' + itemId);
+  const mg = document.getElementById('repairMargin');
+  if (mg && data.margin !== undefined) mg.textContent = data.margin;
   label.innerHTML = `<i class="bi bi-check-circle-fill me-1 text-success"></i><strong>${data.amount} cr.</strong>`;
   label.className = 'bid-submitted';
   // se avevo rinunciato, ripristina il bottone rinuncia
@@ -291,6 +316,30 @@ function showToast(msg, type = 'info') {
   setTimeout(() => div.remove(), 4000);
 }
 
+// ── Conto alla rovescia sulle aste di riparazione ──
+(function () {
+  const els = document.querySelectorAll('.countdown');
+  if (!els.length) return;
+  const parse = s => new Date(s.replace(' ', 'T'));
+  const offset = parse('{{ repair.now if repair else '' }}') - new Date();
+  let reloading = false;
+  function tick() {
+    const now = new Date(Date.now() + (isNaN(offset) ? 0 : offset));
+    els.forEach(el => {
+      const ms = parse(el.dataset.deadline) - now;
+      if (ms <= 0) {
+        el.textContent = 'in chiusura…';
+        if (!reloading) { reloading = true; setTimeout(() => location.reload(), 4000); }
+        return;
+      }
+      const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+      el.textContent = 'tra ' + (d ? d + 'g ' : '') + (h % 24 ? (h % 24) + 'h ' : '') + (m % 60) + 'm';
+    });
+  }
+  tick();
+  setInterval(tick, 30000);
+})();
+
 // ── Filtro per squadra (colonna SQUADRA) ──
 (function () {
   const sel = document.getElementById('teamFilter');
@@ -300,7 +349,7 @@ function showToast(msg, type = 'info') {
   const teams = new Map();
   rows.forEach(r => {
     const key = r.dataset.team || '';
-    const label = r.cells[2] ? r.cells[2].textContent.trim() : key;
+    const label = r.cells[r.cells.length - 3] ? r.cells[r.cells.length - 3].textContent.trim() : key;
     if (key && !teams.has(key)) teams.set(key, label);
   });
   [...teams.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([k, lbl]) => {

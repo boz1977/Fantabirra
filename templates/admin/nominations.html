@@ -35,9 +35,15 @@
         <i class="bi bi-file-earmark-arrow-up me-1"></i>Importa per Manager
       </button>
       {% if not nom_open %}
+      {% if repair_max %}
+      <a href="{{ url_for('repair_hub') }}" class="btn btn-gold">
+        <i class="bi bi-tools me-1"></i>Tabellone riparazione
+      </a>
+      {% else %}
       <a href="{{ url_for('create_auction') }}" class="btn btn-gold">
         <i class="bi bi-hammer me-1"></i>Crea Asta dalle Nomination
       </a>
+      {% endif %}
       {% endif %}
     </div>
   </div>
@@ -111,17 +117,17 @@
           <thead>
             <tr>
               <th>Squadra</th>
-              <th class="text-center">Tot.</th>
-              <th class="text-center"><span class="badge badge-role role-P">P</span> /{{ settings.max_nom_P }}</th>
-              <th class="text-center"><span class="badge badge-role role-D">D</span> /{{ settings.max_nom_D }}</th>
-              <th class="text-center"><span class="badge badge-role role-C">C</span> /{{ settings.max_nom_C }}</th>
-              <th class="text-center"><span class="badge badge-role role-A">A</span> /{{ settings.max_nom_A }}</th>
+              <th class="text-center">Tot.{% if repair_max %} /{{ repair_max }}{% endif %}</th>
+              <th class="text-center"><span class="badge badge-role role-P">P</span>{% if not repair_max %} /{{ settings.max_nom_P }}{% endif %}</th>
+              <th class="text-center"><span class="badge badge-role role-D">D</span>{% if not repair_max %} /{{ settings.max_nom_D }}{% endif %}</th>
+              <th class="text-center"><span class="badge badge-role role-C">C</span>{% if not repair_max %} /{{ settings.max_nom_C }}{% endif %}</th>
+              <th class="text-center"><span class="badge badge-role role-A">A</span>{% if not repair_max %} /{{ settings.max_nom_A }}{% endif %}</th>
               <th class="text-center">Azioni</th>
             </tr>
           </thead>
           <tbody>
             {% for u in users %}
-            {% set max_tot = settings.max_nom_P + settings.max_nom_D + settings.max_nom_C + settings.max_nom_A %}
+            {% set max_tot = repair_max or (settings.max_nom_P + settings.max_nom_D + settings.max_nom_C + settings.max_nom_A) %}
             <tr>
               <td class="fw-semibold">{{ u.team_name }}</td>
               <td class="text-center">

@@ -3,7 +3,8 @@
 {% block content %}
 <div class="container-fluid px-3 py-4">
 
-  <h4 class="fw-bold mb-1"><i class="bi bi-tools me-2 text-success"></i>Mercato di Riparazione — Bonus Crediti</h4>
+  <a href="{{ url_for('repair_hub') }}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Mercato di riparazione</a>
+  <h4 class="fw-bold mb-1 mt-1"><i class="bi bi-tools me-2 text-success"></i>Bonus Crediti</h4>
   <p class="text-muted small mb-4">
     Bonus = <strong>{{ bonus_gf }}</strong> × gol fatti + <strong>{{ bonus_gs }}</strong> × gol subiti
     nelle giornate del girone concluso. Dati presi dal calendario importato in

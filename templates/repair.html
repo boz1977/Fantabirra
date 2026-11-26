@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block title %}Riparazione — {{ league_name }}{% endblock %}
+{% block content %}
+{% set role_names = {'P': 'Portieri', 'D': 'Difensori', 'C': 'Centrocampisti', 'A': 'Attaccanti'} %}
+<div class="container-fluid px-3 py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0"><i class="bi bi-tools me-2 text-success"></i>Mercato di Riparazione</h4>
+    <div class="d-flex gap-2 align-items-center">
+      {% if mode %}<span class="badge bg-success fs-6">IN CORSO</span>{% else %}<span class="badge bg-secondary fs-6">NON ATTIVO</span>{% endif %}
+      <a href="{{ url_for('repair_bonus') }}" class="btn btn-sm btn-outline-success"><i class="bi bi-coin me-1"></i>Bonus crediti</a>
+    </div>
+  </div>
+
+  <p class="text-muted small mb-4">
+    {{ params.max_nom }} nomination libere (anche tutte dello stesso ruolo, solo giocatori svincolati), al massimo
+    {{ params.max_buy }} acquisti. Ogni giocatore ha la sua scadenza: puoi offrire fino a quel momento.
+    Puoi offrire anche oltre il budget, purché dopo i tagli tu resti a zero o sopra. Per ogni acquisto tagli un
+    giocatore dello stesso ruolo e recuperi la sua quotazione attuale.
+  </p>
+
+  {% if is_admin %}
+  <!-- ── Fasi del mercato (admin) ── -->
+  <div class="card mb-4">
+    <div class="card-header card-header-green"><i class="bi bi-list-ol me-2"></i>Fasi del mercato</div>
+    <ul class="list-group list-group-flush small">
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">1</span>
+        <div class="flex-grow-1"><strong>Avvio</strong> — archivia le nomination dell'asta precedente e attiva le regole della riparazione.</div>
+        {% if mode %}
+        <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Avviato</span>
+        {% else %}
+        <form method="POST" action="{{ url_for('repair_start') }}"
+              onsubmit="return confirm('Avviare il mercato di riparazione? Le nomination attuali verranno archiviate.')">
+          <button class="btn btn-sm btn-gold"><i class="bi bi-play-fill me-1"></i>Avvia mercato</button>
+        </form>
+        {% endif %}
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">2</span>
+        <div class="flex-grow-1"><strong>Bonus crediti</strong> — 2 per gol fatto, 3 per gol subito nel girone.</div>
+        {% if bonus_applied %}<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Applicato</span>{% endif %}
+        <a href="{{ url_for('repair_bonus') }}" class="btn btn-sm btn-outline-secondary">Apri</a>
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">3</span>
+        <div class="flex-grow-1"><strong>Listone aggiornato</strong> — carica il listone <em>completo</em> in modalità
+          <em>aggiorna</em>: le quotazioni nuove servono anche per i tagli. Si possono nominare solo gli svincolati.</div>
+        <a href="{{ url_for('admin_players') }}" class="btn btn-sm btn-outline-secondary">Giocatori</a>
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">4</span>
+        <div class="flex-grow-1"><strong>Nomination</strong> — {{ n_noms }} inserite finora.</div>
+        {% if nom_open %}<span class="badge bg-success">APERTE</span>{% else %}<span class="badge bg-secondary">CHIUSE</span>{% endif %}
+        <a href="{{ url_for('admin_nominations') }}" class="btn btn-sm btn-outline-secondary">Apri / chiudi</a>
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">5</span>
+        <div class="flex-grow-1"><strong>Tabellone aste</strong> — dal giocatore più nominato, una scadenza ogni {{ params.interval }} minuti.</div>
+        {% if sessions %}<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Creato</span>{% endif %}
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">6</span>
+        <div class="flex-grow-1"><strong>Aste</strong> — si chiudono da sole alla scadenza. Pareggi: monetina o rilancio dalla gestione asta.</div>
+        {% if board %}
+        <span>{{ counts.pending }} aperte · {{ counts.sold }} vendute · {{ counts.unsold }} invendute
+          {% if counts.tie %}· <strong class="text-danger">{{ counts.tie }} pareggi</strong>{% endif %}</span>
+        {% for s in sessions %}<a href="{{ url_for('manage_auction', session_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Gestione asta</a>{% endfor %}
+        {% endif %}
+      </li>
+      <li class="list-group-item d-flex align-items-center gap-3 flex-wrap">
+        <span class="fw-bold" style="width:22px">7</span>
+        <div class="flex-grow-1"><strong>Tagli e chiusura</strong> — ognuno taglia un giocatore per ogni acquisto, poi chiudi il mercato.</div>
+        {% if mode %}
+        <form method="POST" action="{{ url_for('repair_end') }}" class="d-flex gap-2 align-items-center"
+              onsubmit="return confirm('Chiudere il mercato di riparazione?')">
+          <label class="small text-muted"><input type="checkbox" name="force" value="1"> anche con tagli mancanti</label>
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-flag-fill me-1"></i>Chiudi mercato</button>
+        </form>
+        {% endif %}
+      </li>
+    </ul>
+  </div>
+
+  {% if mode %}
+  <!-- ── Parametri e anteprima tabellone (admin) ── -->
+  <div class="card mb-4">
+    <div class="card-header card-header-gold"><i class="bi bi-sliders me-2"></i>Parametri{% if not sessions %} e tabellone{% endif %}</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('repair_params_save') }}" class="row g-2 align-items-end small">
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Nomination max</label>
+          <input type="number" name="rip_max_nom" value="{{ params.max_nom }}" min="1" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Acquisti max</label>
+          <input type="number" name="rip_max_buy" value="{{ params.max_buy }}" min="1" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Scadenza ogni (min)</label>
+          <input type="number" name="rip_interval_min" value="{{ params.interval }}" min="1" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Aste per scadenza</label>
+          <input type="number" name="rip_per_slot" value="{{ params.per_slot }}" min="1" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Dalle ore</label>
+          <input type="time" name="rip_day_start" value="{{ params.day_start }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-semibold mb-1">Alle ore</label>
+          <input type="time" name="rip_day_end" value="{{ params.day_end }}" class="form-control form-control-sm">
+        </div>
+        {% if not sessions %}
+        <div class="col-12 col-md-4">
+          <label class="form-label fw-semibold mb-1">Partenza delle aste</label>
+          <input type="datetime-local" name="start" value="{{ start_val or '' }}" class="form-control form-control-sm">
+        </div>
+        {% endif %}
+        <div class="col-12 col-md-8 d-flex gap-2 flex-wrap">
+          <button class="btn btn-sm btn-outline-success"><i class="bi bi-save me-1"></i>Salva{% if not sessions %} e aggiorna anteprima{% endif %}</button>
+          {% if not sessions and preview %}
+          <button formaction="{{ url_for('repair_create_board') }}" class="btn btn-sm btn-gold"
+                  onclick="return confirm('Creare il tabellone con {{ preview|length }} aste? Le offerte si apriranno alla partenza.')">
+            <i class="bi bi-hammer me-1"></i>Crea tabellone ({{ preview|length }} aste)
+          </button>
+          {% endif %}
+        </div>
+      </form>
+      <div class="form-text">Le scadenze cadono solo tra le {{ params.day_start }} e le {{ params.day_end }}; fuori orario si riprende il giorno dopo.
+        Il primo giocatore scade un intervallo dopo la partenza.</div>
+
+      {% if not sessions %}
+        {% if nom_open %}
+        <div class="alert alert-warning small py-2 mt-3 mb-0"><i class="bi bi-lock me-1"></i>Chiudi le nomination per vedere l'anteprima del tabellone.</div>
+        {% elif not preview %}
+        <div class="alert alert-info small py-2 mt-3 mb-0">Nessun giocatore nominato.</div>
+        {% else %}
+        <div class="alert alert-info small py-2 mt-3">
+          Prima scadenza <strong>{{ preview[0].deadline[8:10] }}/{{ preview[0].deadline[5:7] }} {{ preview[0].deadline[11:16] }}</strong>,
+          ultima <strong>{{ preview[-1].deadline[8:10] }}/{{ preview[-1].deadline[5:7] }} {{ preview[-1].deadline[11:16] }}</strong>.
+          Se l'ultima arriva troppo tardi, riduci l'intervallo o aumenta le aste per scadenza.
+        </div>
+        <div class="table-responsive" style="max-height:420px">
+          <table class="table table-sm small mb-0 align-middle">
+            <thead><tr><th>#</th><th>Scadenza</th><th>R</th><th>Giocatore</th><th>Squadra</th><th class="text-end">Qt.</th><th class="text-end">Nom.</th></tr></thead>
+            <tbody>
+              {% for p in preview %}
+              <tr>
+                <td class="text-muted">{{ loop.index }}</td>
+                <td class="text-nowrap">{{ p.deadline[8:10] }}/{{ p.deadline[5:7] }} {{ p.deadline[11:16] }}</td>
+                <td><span class="badge badge-role role-{{ p.role }}">{{ p.role }}</span></td>
+                <td class="fw-semibold">{{ p.name }}</td>
+                <td class="text-muted">{{ p.team }}</td>
+                <td class="text-end">{{ p.base_value }}</td>
+                <td class="text-end"><span class="badge bg-secondary">{{ p.nom_count }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if summary %}
+  <div class="card mb-4">
+    <div class="card-header card-header-green"><i class="bi bi-people me-2"></i>Situazione manager</div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0 align-middle">
+        <thead><tr><th>Squadra</th><th class="text-end">Budget</th><th class="text-end">Acquisti</th>
+          <th>Tagli da fare</th><th class="text-end" title="Budget finale nel caso peggiore, dopo i tagli">Caso peggiore</th></tr></thead>
+        <tbody>
+          {% for u in summary %}
+          <tr>
+            <td class="fw-semibold">{{ u.team_name }}</td>
+            <td class="text-end {% if u.budget < 0 %}text-danger{% endif %}">{{ u.budget }}</td>
+            <td class="text-end">{{ u.won }}/{{ params.max_buy }}</td>
+            <td>{% for r, n in u.to_cut.items() %}<span class="badge badge-role role-{{ r }} me-1">{{ n }} {{ r }}</span>{% else %}<span class="text-muted">—</span>{% endfor %}</td>
+            <td class="text-end">{{ u.worst }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if me and mode %}
+  <!-- ── Il mio mercato (manager) ── -->
+  <div class="card mb-4">
+    <div class="card-header card-header-green"><i class="bi bi-person-badge me-2"></i>Il mio mercato</div>
+    <div class="card-body">
+      <div class="row g-3 text-center mb-2">
+        <div class="col-6 col-md-3"><div class="stat-card {% if me.st.budget < 0 %}red{% else %}green{% endif %}">
+          <div class="stat-value">{{ me.st.budget }}</div><div class="stat-label">Budget attuale</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card blue">
+          <div class="stat-value">{{ me.st.won_total }}/{{ params.max_buy }}</div><div class="stat-label">Acquisti</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card gold">
+          <div class="stat-value">{{ me.worst }}</div><div class="stat-label" title="Quanto ti resta se vinci tutte le aste su cui hai offerto, dopo aver tagliato i giocatori che valgono di più">Margine caso peggiore</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card {% if me.to_cut %}red{% else %}green{% endif %}">
+          <div class="stat-value">{{ me.to_cut }}</div><div class="stat-label">Tagli da fare</div></div></div>
+      </div>
+      {% if me.st.budget < 0 %}
+      <div class="alert alert-warning small py-2">Sei sotto zero: va bene durante le aste, ma con i tagli devi tornare almeno a zero.</div>
+      {% endif %}
+
+      {% if me.bought %}
+      <h6 class="fw-bold mt-3">Acquistati</h6>
+      <ul class="list-group list-group-flush small mb-2">
+        {% for b in me.bought %}
+        <li class="list-group-item d-flex align-items-center gap-2"><span class="badge badge-role role-{{ b.role }}">{{ b.role }}</span>
+          <span class="fw-semibold">{{ b.name }}</span><span class="text-muted">{{ b.team }}</span><span class="ms-auto fw-bold">{{ b.price }} cr.</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% for role, n in me.st.pending.items() if n %}
+      <form method="POST" action="{{ url_for('repair_cut') }}" class="d-flex gap-2 align-items-center flex-wrap border rounded p-2 mb-2">
+        <span class="badge badge-role role-{{ role }}">{{ role }}</span>
+        <span class="small fw-semibold">Devi tagliare {{ n }} giocator{{ 'i' if n > 1 else 'e' }} ({{ role_names[role] }})</span>
+        <select name="player_id" class="form-select form-select-sm" style="max-width:320px">
+          {% for p in me.roster if p.role == role %}
+          <option value="{{ p.id }}">{{ p.name }} ({{ p.team }}) — recuperi {{ p.base_value }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Tagliare il giocatore selezionato?')"><i class="bi bi-scissors me-1"></i>Taglia</button>
+      </form>
+      {% endfor %}
+
+      {% if me.cuts %}
+      <h6 class="fw-bold mt-3">Tagliati</h6>
+      <ul class="list-group list-group-flush small">
+        {% for c in me.cuts %}
+        <li class="list-group-item d-flex align-items-center gap-2"><span class="badge badge-role role-{{ c.role }}">{{ c.role }}</span>
+          <span class="fw-semibold">{{ c.name }}</span><span class="text-muted">{{ c.team }}</span>
+          <span class="ms-auto text-success">+{{ c.value }} cr.</span>
+          <form method="POST" action="{{ url_for('repair_uncut') }}" class="d-inline">
+            <input type="hidden" name="cut_id" value="{{ c.id }}">
+            <button class="btn btn-sm btn-link p-0 ms-2" title="Annulla taglio"><i class="bi bi-arrow-counterclockwise"></i></button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Tabellone aste (tutti) ── -->
+  {% if board %}
+  <div class="card mb-4">
+    <div class="card-header card-header-gold d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-calendar-event me-2"></i>Tabellone aste</span>
+      {% if starts_at and now < starts_at %}
+      <span class="small">Le offerte si aprono il {{ starts_at[8:10] }}/{{ starts_at[5:7] }} alle {{ starts_at[11:16] }}</span>
+      {% elif counts.pending and not is_admin %}
+      <a href="{{ url_for('auctions') }}" class="btn btn-sm btn-green text-white"><i class="bi bi-send me-1"></i>Vai alle offerte</a>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0 align-middle">
+        <thead><tr><th>Scadenza</th><th>R</th><th>Giocatore</th><th>Squadra</th><th class="text-end">Qt.</th>
+          <th class="text-end">Nom.</th>{% if not is_admin %}<th class="text-end">Tua offerta</th>{% endif %}<th>Esito</th></tr></thead>
+        <tbody>
+          {% for b in board %}
+          <tr class="{% if b.winner_id == my_id %}table-success{% elif b.my_nom %}table-warning{% endif %}">
+            <td class="text-nowrap">{{ b.deadline[8:10] }}/{{ b.deadline[5:7] }} {{ b.deadline[11:16] }}
+              {% if b.status == 'pending' %}<div class="text-muted countdown" data-deadline="{{ b.deadline }}" style="font-size:.7rem"></div>{% endif %}</td>
+            <td><span class="badge badge-role role-{{ b.role }}">{{ b.role }}</span></td>
+            <td class="fw-semibold">{{ b.name }}{% if b.min_bid %} <span class="badge bg-danger">rilancio {{ b.min_bid }}+</span>{% endif %}</td>
+            <td class="text-muted">{{ b.team }}</td>
+            <td class="text-end">{{ b.base_value }}</td>
+            <td class="text-end"><span class="badge bg-secondary">{{ b.nom_count }}</span></td>
+            {% if not is_admin %}<td class="text-end">{% if b.my_bid %}{{ b.my_bid }}{% elif b.my_nom %}<span class="text-muted">—</span>{% endif %}</td>{% endif %}
+            <td>
+              {% if b.status == 'pending' %}
+                <span class="badge bg-success">aperta</span>
+              {% elif b.status == 'sold' %}
+                <strong>{{ b.winner_name }}</strong> a {{ b.final_price }}
+              {% elif b.status == 'tie' %}
+                <span class="badge bg-danger">pareggio a {{ b.final_price }}</span>
+                {% if is_admin %}<a href="{{ url_for('manage_auction', session_id=b.session_id) }}" class="small ms-1">risolvi</a>{% endif %}
+              {% else %}
+                <span class="text-muted">invenduto</span>
+              {% endif %}
+              {% if b.bids %}
+              <div class="text-muted" style="font-size:.7rem">{% for x in b.bids %}{{ x.short_name or x.team_name }} {{ x.amount }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% elif not is_admin %}
+  <div class="card mb-4"><div class="card-body text-center text-muted py-4">
+    <i class="bi bi-hourglass-split fs-2 d-block mb-2"></i>
+    {% if mode %}Il tabellone delle aste sarà pubblicato dopo la chiusura delle nomination.{% else %}Il mercato di riparazione non è ancora iniziato.{% endif %}
+  </div></div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// conto alla rovescia sulle scadenze, allineato all'ora del server
+(function () {
+  const els = document.querySelectorAll('.countdown');
+  if (!els.length) return;
+  const parse = s => new Date(s.replace(' ', 'T'));
+  const offset = parse('{{ now }}') - new Date();
+  let reloading = false;
+  function tick() {
+    const now = new Date(Date.now() + offset);
+    els.forEach(el => {
+      const ms = parse(el.dataset.deadline) - now;
+      if (ms <= 0) {
+        el.textContent = 'in chiusura…';
+        if (!reloading) { reloading = true; setTimeout(() => location.reload(), 4000); }
+        return;
+      }
+      const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+      el.textContent = 'tra ' + (d ? d + 'g ' : '') + (h % 24 ? (h % 24) + 'h ' : '') + (m % 60) + 'm';
+    });
+  }
+  tick();
+  setInterval(tick, 30000);
+})();
+</script>
+{% endblock %}

@@ -27,6 +27,20 @@
     </div>
   </div>
 
+  {% if repair_max %}
+  <div class="row g-2 mb-3">
+    <div class="col-12 col-md-6">
+      <div class="card py-2 px-3 d-flex flex-row align-items-center gap-2">
+        <i class="bi bi-tools fs-4 text-success"></i>
+        <div>
+          <div class="fw-bold {% if my_noms|length >= repair_max %}text-danger{% else %}text-success{% endif %}"
+               id="counter-total">{{ my_noms|length }}/{{ repair_max }}</div>
+          <div class="text-muted" style="font-size:.75rem">Mercato di riparazione: nomination libere, di qualsiasi ruolo, solo svincolati</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
   <!-- Role counters -->
   <div class="row g-2 mb-3">
     {% for role, label in [('P','Portieri'),('D','Difensori'),('C','Centrocampisti'),('A','Attaccanti')] %}
@@ -49,6 +63,7 @@
     </div>
     {% endfor %}
   </div>
+  {% endif %}
 
   {% if nomination_open %}
   <div class="alert alert-info py-2 small d-flex align-items-center gap-2 mb-3">
@@ -153,7 +168,7 @@
                 {% elif in_sess %}
                   <span class="badge bg-warning text-dark" title="In asta">Asta</span>
                 {% elif nomination_open %}
-                  {% set role_full = nom_by_role.get(p.role, 0) >= settings['max_nom_' ~ p.role] %}
+                  {% set role_full = (my_noms|length >= repair_max) if repair_max else (nom_by_role.get(p.role, 0) >= settings['max_nom_' ~ p.role]) %}
                   <button class="btn btn-sm player-nom-btn {% if is_nom %}btn-success active{% else %}btn-outline-success{% endif %}"
                           data-pid="{{ p.id }}"
                           data-role="{{ p.role }}"
@@ -334,6 +349,8 @@
 {% block scripts %}
 <script>
 const nomByRole = {{ nom_by_role | tojson }};
+const repairMax = {{ repair_max | tojson }};
+let nomTotal = {{ my_noms|length }};
 const maxByRole = {
   P: {{ settings.max_nom_P }},
   D: {{ settings.max_nom_D }},
@@ -373,6 +390,7 @@ document.querySelectorAll('.player-nom-btn').forEach(btn => {
     // conteggi autorevoli dal server
     if (data.counts) {
       ['P','D','C','A'].forEach(r => { nomByRole[r] = data.counts[r] || 0; });
+      nomTotal = data.counts.total || 0;
     }
 
     updateCounters();
@@ -381,6 +399,15 @@ document.querySelectorAll('.player-nom-btn').forEach(btn => {
 });
 
 function updateCounters() {
+  if (repairMax) {
+    const el = document.getElementById('counter-total');
+    if (el) {
+      el.textContent = nomTotal + '/' + repairMax;
+      el.classList.toggle('text-danger', nomTotal >= repairMax);
+      el.classList.toggle('text-success', nomTotal < repairMax);
+    }
+    return;
+  }
   ['P','D','C','A'].forEach(role => {
     const cnt = nomByRole[role] || 0;
     const mx = maxByRole[role];
@@ -396,11 +423,11 @@ function updateCounters() {
 }
 
 function updateDisabledButtons(role) {
-  const full = (nomByRole[role] || 0) >= maxByRole[role];
+  const full = repairMax ? nomTotal >= repairMax : (nomByRole[role] || 0) >= maxByRole[role];
   document.querySelectorAll(`.player-nom-btn[data-role="${role}"]`).forEach(btn => {
     if (!btn.classList.contains('active')) {
       btn.disabled = full;
-      if (full) btn.title = `Limite raggiunto per il ruolo ${role}`;
+      if (full) btn.title = repairMax ? `Hai già fatto ${repairMax} nomination` : `Limite raggiunto per il ruolo ${role}`;
       else btn.title = '';
     }
   });

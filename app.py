@@ -234,6 +234,22 @@ def init_db():
             PRIMARY KEY (user_id, g_from, g_to),
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+        CREATE TABLE IF NOT EXISTS nominations_archive (
+            user_id INTEGER, player_id INTEGER, created_at TEXT,
+            label TEXT, archived_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS repair_cuts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            market_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            player_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            value INTEGER NOT NULL,
+            orig_price INTEGER, orig_session TEXT, orig_market INTEGER,
+            cut_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (player_id) REFERENCES players(id)
+        );
         CREATE INDEX IF NOT EXISTS idx_nom_player ON nominations(player_id);
         CREATE INDEX IF NOT EXISTS idx_nom_user ON nominations(user_id);
         CREATE INDEX IF NOT EXISTS idx_acq_player ON acquisitions(player_id);
@@ -266,6 +282,14 @@ def init_db():
         ('slots_A', '6'),
         ('rip_from', '1'),
         ('rip_to', '11'),
+        ('market_mode', 'main'),       # main | repair
+        ('rip_market_id', '0'),
+        ('rip_max_nom', '10'),
+        ('rip_max_buy', '5'),
+        ('rip_interval_min', '60'),     # minuti tra una scadenza e la successiva
+        ('rip_per_slot', '1'),          # aste che scadono a ogni scadenza
+        ('rip_day_start', '14:00'),
+        ('rip_day_end', '22:00'),
     ]
     for k, v in defaults:
         db.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", [k, v])
@@ -276,6 +300,19 @@ def init_db():
         db.execute("ALTER TABLE auction_items ADD COLUMN min_bid INTEGER")
     if 'caller_id' not in cols:
         db.execute("ALTER TABLE auction_items ADD COLUMN caller_id INTEGER")
+    if 'deadline' not in cols:
+        db.execute("ALTER TABLE auction_items ADD COLUMN deadline TEXT")  # ora locale 'YYYY-MM-DD HH:MM:SS'
+    scols = [r['name'] for r in db.execute("PRAGMA table_info(auction_sessions)").fetchall()]
+    if 'kind' not in scols:
+        db.execute("ALTER TABLE auction_sessions ADD COLUMN kind TEXT DEFAULT 'main'")
+    if 'market_id' not in scols:
+        db.execute("ALTER TABLE auction_sessions ADD COLUMN market_id INTEGER")
+    if 'starts_at' not in scols:
+        db.execute("ALTER TABLE auction_sessions ADD COLUMN starts_at TEXT")
+    acols = [r['name'] for r in db.execute("PRAGMA table_info(acquisitions)").fetchall()]
+    if 'market_id' not in acols:
+        db.execute("ALTER TABLE acquisitions ADD COLUMN market_id INTEGER")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_items_deadline ON auction_items(status, deadline)")
     fp_cols = [r['name'] for r in db.execute("PRAGMA table_info(free_phase)").fetchall()]
     if fp_cols and 'role' not in fp_cols:
         db.execute("ALTER TABLE free_phase ADD COLUMN role TEXT")
@@ -530,6 +567,7 @@ def nominations():
         free_count = len(free_players_rows)
 
     return render_template('manager/nominations.html',
+        repair_max=_repair_params()['max_nom'] if _repair_mode() else None,
         players=players, my_noms=my_noms, my_nom_ids=my_nom_ids,
         nom_by_role=nom_by_role, acquired_ids=acquired_ids,
         in_session_ids=in_session_ids, nomination_open=nomination_open,
@@ -553,8 +591,13 @@ def _incomplete_managers():
         WHERE u.is_admin=0 GROUP BY u.id ORDER BY u.team_name
     """)
     out = []
+    repair_max = _repair_params()['max_nom'] if _repair_mode() else None
     for r in rows:
         cnt = {'P': r['nP'] or 0, 'D': r['nD'] or 0, 'C': r['nC'] or 0, 'A': r['nA'] or 0}
+        if repair_max:
+            if sum(cnt.values()) < repair_max:
+                out.append({'team_name': r['team_name'], 'missing': f"{sum(cnt.values())}/{repair_max}"})
+            continue
         missing = [f"{role} {cnt[role]}/{mx[role]}" for role in ['P', 'D', 'C', 'A'] if cnt[role] < mx[role]]
         if missing:
             out.append({'team_name': r['team_name'], 'missing': ', '.join(missing)})
@@ -1036,14 +1079,22 @@ def toggle_nomination():
         execute_db("DELETE FROM nominations WHERE user_id=? AND player_id=?", [uid, pid])
         return jsonify({'action': 'removed', 'role': role, 'counts': role_counts()})
 
-    max_nom = int(get_setting(f'max_nom_{role}', '8'))
-    current = query_db("""
-        SELECT COUNT(*) as c FROM nominations n JOIN players p ON p.id=n.player_id
-        WHERE n.user_id=? AND p.role=?
-    """, [uid, role], one=True)['c']
+    if _repair_mode():
+        # riparazione: nomination libere senza distinzione di ruolo, solo giocatori svincolati
+        if query_db("SELECT 1 FROM acquisitions WHERE player_id=?", [pid], one=True):
+            return jsonify({'error': 'Puoi nominare solo giocatori svincolati.'}), 400
+        max_tot = _repair_params()['max_nom']
+        if role_counts()['total'] >= max_tot:
+            return jsonify({'error': f'Hai già fatto {max_tot} nomination.'}), 400
+    else:
+        max_nom = int(get_setting(f'max_nom_{role}', '8'))
+        current = query_db("""
+            SELECT COUNT(*) as c FROM nominations n JOIN players p ON p.id=n.player_id
+            WHERE n.user_id=? AND p.role=?
+        """, [uid, role], one=True)['c']
 
-    if current >= max_nom:
-        return jsonify({'error': f'Hai già raggiunto il limite di {max_nom} nomination per il ruolo {role}'}), 400
+        if current >= max_nom:
+            return jsonify({'error': f'Hai già raggiunto il limite di {max_nom} nomination per il ruolo {role}'}), 400
 
     execute_db("INSERT OR IGNORE INTO nominations (user_id, player_id) VALUES (?,?)", [uid, pid])
     return jsonify({'action': 'added', 'role': role, 'counts': role_counts()})
@@ -1082,7 +1133,10 @@ def import_nominations_from_file(file_storage, user_id):
     for p in players:
         by_name.setdefault(_normalize_name(p['name']), p)
 
+    repair = _repair_mode()
     max_by_role = {r: int(get_setting(f'max_nom_{r}', '99')) for r in ['P', 'D', 'C', 'A']}
+    max_tot = _repair_params()['max_nom'] if repair else None
+    acquired = {r['player_id'] for r in query_db("SELECT player_id FROM acquisitions")} if repair else set()
     cur_by_role = {}
     for r in query_db("""SELECT p.role, COUNT(*) c FROM nominations n JOIN players p ON p.id=n.player_id
                          WHERE n.user_id=? GROUP BY p.role""", [user_id]):
@@ -1101,7 +1155,14 @@ def import_nominations_from_file(file_storage, user_id):
             not_found.append(str(row[name_col]))
             continue
         role = player['role']
-        if cur_by_role.get(role, 0) >= max_by_role.get(role, 99):
+        if repair:
+            if player['id'] in acquired:
+                not_found.append(f"{row[name_col]} (non svincolato)")
+                continue
+            if sum(cur_by_role.values()) >= max_tot:
+                skipped_limit += 1
+                continue
+        elif cur_by_role.get(role, 0) >= max_by_role.get(role, 99):
             skipped_limit += 1
             continue
         cur = db.execute("INSERT OR IGNORE INTO nominations (user_id, player_id) VALUES (?,?)",
@@ -1175,7 +1236,7 @@ def auctions():
     sessions_data = []
     for s in active_sessions:
         items = query_db("""
-            SELECT ai.id, ai.player_id, ai.status, ai.min_bid, ai.caller_id,
+            SELECT ai.id, ai.player_id, ai.status, ai.min_bid, ai.caller_id, ai.deadline,
                    p.role, p.name, p.team, p.base_value,
                    uc.team_name as caller_name,
                    (SELECT COUNT(*) FROM nominations n WHERE n.player_id=p.id) as nom_count,
@@ -1186,7 +1247,8 @@ def auctions():
             LEFT JOIN bids b ON b.auction_item_id=ai.id AND b.user_id=?
             LEFT JOIN users uc ON uc.id=ai.caller_id
             WHERE ai.session_id=? AND ai.status='pending'
-            ORDER BY CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
+            ORDER BY ai.deadline,
+                     CASE p.role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
                      nom_count DESC, p.base_value DESC, p.name
         """, [uid, uid, uid, s['id']])
         sessions_data.append({'session': s, 'items': items})
@@ -1221,8 +1283,68 @@ def auctions():
             'signature': f"{ph['id']}:{ph['status']}:{ph['turn_index']}:{ph['current_session_id']}",
         }
 
+    repair = None
+    if _repair_mode() and any(sd['session']['kind'] == 'repair' for sd in sessions_data):
+        conn, _ = _read_conn()
+        mid, mx = _repair_market_id(), _repair_params()['max_buy']
+        st = _repair_state(conn, uid, mid)
+        repair = {'worst': _repair_worst_final(conn, uid, mid, mx), 'won': st['won_total'], 'max_buy': mx,
+                  'to_cut': sum(st['pending'].values()), 'now': now_str()}
     return render_template('manager/auctions.html',
-        user=user, sessions_data=sessions_data, past_data=past_data, fp=fp)
+        user=user, sessions_data=sessions_data, past_data=past_data, fp=fp, repair=repair)
+
+
+def _repair_time_error(item):
+    now = now_str()
+    if item['starts_at'] and now < item['starts_at']:
+        return f"Le aste partono il {item['starts_at'][8:10]}/{item['starts_at'][5:7]} alle {item['starts_at'][11:16]}."
+    if item['deadline'] and now >= item['deadline']:
+        return 'Asta scaduta.'
+    return None
+
+
+def _repair_place_bid(uid, item, amount):
+    """Offerta nel mercato di riparazione: si può superare il budget, purché nel caso peggiore,
+    dopo i tagli, si resti a zero o sopra."""
+    err = _repair_time_error(item)
+    if err:
+        return jsonify({'error': err}), 403
+    if not query_db("SELECT 1 FROM nominations WHERE player_id=? AND user_id=?",
+                    [item['player_id'], uid], one=True):
+        return jsonify({'error': 'Non puoi offrire su questo giocatore: non lo hai nominato.'}), 403
+    min_required = item['min_bid'] or item['base_value'] + 1
+    if amount < min_required:
+        return jsonify({'error': f'Offerta minima: {min_required} crediti'}), 400
+    mid, max_buy = item['market_id'], _repair_params()['max_buy']
+    conn, _ = _read_conn()
+    st = _repair_state(conn, uid, mid)
+    if st['won_total'] >= max_buy:
+        return jsonify({'error': f'Hai già fatto {max_buy} acquisti: non puoi più offrire.'}), 403
+    if len(st['values'][item['role']]) <= st['pending'][item['role']]:
+        return jsonify({'error': f'Non hai più giocatori da tagliare nel ruolo {item["role"]}.'}), 403
+    worst = _repair_worst_final(conn, uid, mid, max_buy, (item['id'], item['role'], amount))
+    if worst < 0:
+        lo, hi = min_required, amount - 1      # offerta massima ammessa (ricerca binaria)
+        best = None
+        while lo <= hi:
+            m = (lo + hi) // 2
+            if _repair_worst_final(conn, uid, mid, max_buy, (item['id'], item['role'], m)) >= 0:
+                best, lo = m, m + 1
+            else:
+                hi = m - 1
+        msg = f'Offerta troppo alta: nel caso peggiore, anche dopo i tagli, finiresti a {worst} crediti.'
+        msg += f' Puoi offrire al massimo {best}.' if best else ' Non puoi offrire su questo giocatore.'
+        return jsonify({'error': msg}), 400
+    db = get_db()
+    db.execute("""
+        INSERT INTO bids (auction_item_id, user_id, amount) VALUES (?,?,?)
+        ON CONFLICT(auction_item_id, user_id) DO UPDATE SET amount=excluded.amount, submitted_at=CURRENT_TIMESTAMP
+    """, [item['id'], uid, amount])
+    db.execute("DELETE FROM item_renounces WHERE item_id=? AND user_id=?", [item['id'], uid])
+    db.commit()
+    margin = _repair_worst_final(db, uid, mid, max_buy)
+    db.close()
+    return jsonify({'success': True, 'amount': amount, 'margin': margin})
 
 
 @app.route('/auctions/bid', methods=['POST'])
@@ -1239,7 +1361,7 @@ def place_bid():
     amount = int(amount)
 
     item = query_db("""
-        SELECT ai.*, s.status as sess_status, p.base_value, p.name, p.role
+        SELECT ai.*, s.status as sess_status, s.kind, s.market_id, s.starts_at, p.base_value, p.name, p.role
         FROM auction_items ai
         JOIN auction_sessions s ON s.id=ai.session_id
         JOIN players p ON p.id=ai.player_id
@@ -1250,6 +1372,8 @@ def place_bid():
         return jsonify({'error': 'Asta non trovata o già chiusa'}), 404
     if item['sess_status'] != 'bidding':
         return jsonify({'error': 'La fase di offerte è chiusa'}), 403
+    if item['kind'] == 'repair':
+        return _repair_place_bid(uid, item, amount)
     # Limite di reparto: non si può puntare su un ruolo già completato in rosa
     if not _can_take_role(uid, item['role']):
         return jsonify({'error': f'Hai già completato il reparto {item["role"]}: non puoi puntare.'}), 403
@@ -1301,7 +1425,8 @@ def renounce_bid():
     uid = session['user_id']
     item_id = int(request.form.get('auction_item_id', 0))
     item = query_db("""
-        SELECT ai.id, ai.player_id, ai.caller_id, ai.session_id, s.status as sess_status FROM auction_items ai
+        SELECT ai.id, ai.player_id, ai.caller_id, ai.session_id, ai.deadline, s.status as sess_status,
+               s.kind, s.starts_at FROM auction_items ai
         JOIN auction_sessions s ON s.id=ai.session_id
         WHERE ai.id=? AND ai.status='pending'
     """, [item_id], one=True)
@@ -1309,6 +1434,10 @@ def renounce_bid():
         return jsonify({'error': 'Asta non trovata o già chiusa'}), 404
     if item['sess_status'] != 'bidding':
         return jsonify({'error': 'La fase di offerte è chiusa'}), 403
+    if item['kind'] == 'repair':
+        err = _repair_time_error(item)
+        if err:
+            return jsonify({'error': err}), 403
     if not item['caller_id']:
         nominated = query_db("SELECT 1 FROM nominations WHERE player_id=? AND user_id=?",
                              [item['player_id'], uid], one=True)
@@ -2070,6 +2199,11 @@ def admin_players():
 @admin_required
 def load_players():
     import pandas as pd, io
+    if query_db("""SELECT 1 FROM auction_sessions WHERE kind='repair'
+                    AND status IN ('bidding','resolving')""", one=True):
+        flash('Aste di riparazione in corso: il listone non si può ricaricare fino alla fine '
+              '(le quotazioni servono per calcolare i tagli).', 'danger')
+        return redirect(url_for('admin_players'))
     f = request.files.get('file')
     # sorgente: file caricato dall'utente, altrimenti fallback al file in Documenti (se presente)
     if f and f.filename:
@@ -2210,6 +2344,7 @@ def admin_nominations():
     settings = {k: int(get_setting(k, v)) for k, v in
                 [('max_nom_P','5'),('max_nom_D','15'),('max_nom_C','15'),('max_nom_A','12')]}
     return render_template('admin/nominations.html',
+        repair_max=_repair_params()['max_nom'] if _repair_mode() else None,
         nominated=nominated, users=users, settings=settings, nom_open=nom_open, revealed=revealed)
 
 @app.route('/admin/nominations/toggle', methods=['POST'])
@@ -2444,6 +2579,10 @@ def reopen_auction(session_id):
 @app.route('/admin/auctions/<int:session_id>/close', methods=['POST'])
 @admin_required
 def close_auction(session_id):
+    s = query_db("SELECT kind FROM auction_sessions WHERE id=?", [session_id], one=True)
+    if s and s['kind'] == 'repair':
+        flash('Le aste di riparazione si chiudono da sole alla loro scadenza.', 'warning')
+        return redirect(url_for('repair_hub'))
     db = get_db()
     items = db.execute("""
         SELECT ai.*, p.base_value FROM auction_items ai JOIN players p ON p.id=ai.player_id
@@ -2528,7 +2667,7 @@ def _maybe_finalize_session(db, session_id):
 def coinflip_item(item_id):
     db = get_db()
     item = db.execute("""
-        SELECT ai.*, s.name as sess_name, p.name as player_name
+        SELECT ai.*, s.name as sess_name, s.kind, s.market_id, p.name as player_name
         FROM auction_items ai JOIN auction_sessions s ON s.id=ai.session_id
         JOIN players p ON p.id=ai.player_id WHERE ai.id=? AND ai.status='tie'
     """, [item_id]).fetchone()
@@ -2543,15 +2682,24 @@ def coinflip_item(item_id):
     """, [item_id, tie_amount]).fetchall()
 
     import random
+    if item['kind'] == 'repair':
+        # chi nel frattempo ha finito gli acquisti o i giocatori da tagliare non partecipa
+        role = db.execute("SELECT role FROM players WHERE id=?", [item['player_id']]).fetchone()['role']
+        mx = _repair_params()['max_buy']
+        bidders = [b for b in bidders if _repair_can_win(db, b['user_id'], role, item['market_id'], mx)] or bidders
     winner = random.choice(bidders)
     final_price = tie_amount + 1
 
-    db.execute("UPDATE auction_items SET status='sold', winner_id=?, final_price=? WHERE id=?",
-               [winner['user_id'], final_price, item_id])
-    db.execute("UPDATE users SET budget=budget-? WHERE id=?", [final_price, winner['user_id']])
-    db.execute("INSERT INTO acquisitions (user_id,player_id,price,session_name) VALUES (?,?,?,?)",
-               [winner['user_id'], item['player_id'], final_price, item['sess_name']])
-    _maybe_finalize_session(db, item['session_id'])
+    if item['kind'] == 'repair':
+        _repair_assign(db, item, winner['user_id'], final_price)
+        _repair_finalize_session(db, item['session_id'])
+    else:
+        db.execute("UPDATE auction_items SET status='sold', winner_id=?, final_price=? WHERE id=?",
+                   [winner['user_id'], final_price, item_id])
+        db.execute("UPDATE users SET budget=budget-? WHERE id=?", [final_price, winner['user_id']])
+        db.execute("INSERT INTO acquisitions (user_id,player_id,price,session_name) VALUES (?,?,?,?)",
+                   [winner['user_id'], item['player_id'], final_price, item['sess_name']])
+        _maybe_finalize_session(db, item['session_id'])
     db.commit()
     db.close()
     return jsonify({
@@ -2577,6 +2725,11 @@ def continue_item(item_id):
     # riapri il giocatore: i partecipanti dovranno rilanciare di almeno +1
     db.execute("UPDATE auction_items SET status='pending', min_bid=?, final_price=NULL, winner_id=NULL WHERE id=?",
                [new_min, item_id])
+    if item['deadline']:
+        # asta di riparazione: nuova scadenza a un intervallo da adesso
+        from datetime import timedelta
+        new_dl = now_local() + timedelta(minutes=_repair_params()['interval'])
+        db.execute("UPDATE auction_items SET deadline=? WHERE id=?", [new_dl.strftime(TS_FMT), item_id])
     db.execute("DELETE FROM bids WHERE auction_item_id=?", [item_id])
     db.execute("UPDATE auction_sessions SET status='bidding' WHERE id=?", [item['session_id']])
     db.commit()
@@ -3052,6 +3205,8 @@ def reset_season():
     db.execute("DELETE FROM user_strategy")
     db.execute("DELETE FROM free_phase")
     db.execute("DELETE FROM repair_bonus")
+    db.execute("DELETE FROM repair_cuts")
+    db.execute("INSERT OR REPLACE INTO settings VALUES ('market_mode','main')")
     ib = int(get_setting('initial_budget', '500'))
     db.execute("UPDATE users SET budget=? WHERE is_admin=0", [ib])
     db.execute("INSERT OR REPLACE INTO settings VALUES ('nomination_open','0')")
@@ -3184,7 +3339,7 @@ def _repair_bonus_rows(g_from, g_to):
     return rows, incomplete, sorted(unknown), bool(applied)
 
 
-@app.route('/riparazione')
+@app.route('/riparazione/bonus')
 @app.route('/admin/riparazione/bonus')
 @login_required
 def repair_bonus():
@@ -3250,6 +3405,516 @@ def repair_bonus_revert():
     return redirect(url_for('repair_bonus', da=g_from, a=g_to))
 
 
+# ── Mercato di riparazione: fasi, aste a scadenza, tagli ─────────────────────
+# Flusso: avvio mercato (archivia nomination) → listone aggiornato → nomination libere (max 10,
+# solo svincolati) → tabellone con una scadenza per giocatore → offerte fino alla scadenza →
+# chiusura automatica alla scadenza → tagli (stesso ruolo, si recupera la quotazione) → fine mercato.
+# Si può offrire oltre il budget: l'importante è che nel caso peggiore, dopo i tagli, resti >= 0.
+
+TS_FMT = '%Y-%m-%d %H:%M:%S'
+
+
+def now_local():
+    """Ora italiana senza fuso (il server PythonAnywhere è in UTC)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Europe/Rome')).replace(tzinfo=None)
+    except Exception:
+        return datetime.now()
+
+
+def now_str():
+    return now_local().strftime(TS_FMT)
+
+
+def _repair_mode():
+    return get_setting('market_mode', 'main') == 'repair'
+
+
+def _repair_market_id():
+    return int(get_setting('rip_market_id', '0') or 0)
+
+
+def _repair_params():
+    def i(k, d):
+        try: return max(1, int(get_setting(k, d)))
+        except (ValueError, TypeError): return int(d)
+    return {'max_nom': i('rip_max_nom', '10'), 'max_buy': i('rip_max_buy', '5'),
+            'interval': i('rip_interval_min', '60'), 'per_slot': i('rip_per_slot', '1'),
+            'day_start': get_setting('rip_day_start', '14:00'), 'day_end': get_setting('rip_day_end', '22:00')}
+
+
+def _hm(s, default):
+    try:
+        h, m = str(s).split(':')[:2]
+        return int(h), int(m)
+    except (ValueError, TypeError):
+        return default
+
+
+def _repair_schedule(start, n, interval, per_slot, day_start, day_end):
+    """Scadenze per n aste: dall'apertura, ogni `interval` minuti scadono `per_slot` aste,
+    solo nella fascia giornaliera day_start–day_end (poi si riprende il giorno dopo)."""
+    from datetime import timedelta
+    sh, sm = _hm(day_start, (14, 0))
+    eh, em = _hm(day_end, (22, 0))
+    step = timedelta(minutes=interval)
+    out, t = [], start
+    while len(out) < n:
+        t = t + step
+        day_open = t.replace(hour=sh, minute=sm, second=0, microsecond=0)
+        day_close = t.replace(hour=eh, minute=em, second=0, microsecond=0)
+        if t <= day_open:                    # prima dell'orario: prima scadenza del giorno
+            t = day_open + step
+        elif t > day_close:                  # oltre l'orario: si riprende il giorno dopo
+            t = day_open + timedelta(days=1) + step
+        day_close = t.replace(hour=eh, minute=em, second=0, microsecond=0)
+        if t > day_close:                    # fascia più corta dell'intervallo: una scadenza al giorno
+            t = day_close
+        for _ in range(per_slot):
+            if len(out) < n:
+                out.append(t)
+    return out
+
+
+def _repair_state(conn, uid, mid):
+    """Situazione di un manager nel mercato `mid`: budget, giocatori tagliabili, acquisti e tagli per ruolo."""
+    budget = conn.execute("SELECT budget FROM users WHERE id=?", [uid]).fetchone()['budget']
+    values = {r: [] for r in 'PDCA'}
+    for r in conn.execute("""SELECT p.role, p.base_value FROM acquisitions a JOIN players p ON p.id=a.player_id
+                             WHERE a.user_id=? AND (a.market_id IS NULL OR a.market_id!=?)
+                             ORDER BY p.base_value DESC""", [uid, mid]).fetchall():
+        values[r['role']].append(r['base_value'])
+    won = {r: 0 for r in 'PDCA'}
+    for r in conn.execute("""SELECT p.role, COUNT(*) c FROM acquisitions a JOIN players p ON p.id=a.player_id
+                             WHERE a.user_id=? AND a.market_id=? GROUP BY p.role""", [uid, mid]).fetchall():
+        won[r['role']] = r['c']
+    cuts = {r: 0 for r in 'PDCA'}
+    for r in conn.execute("SELECT role, COUNT(*) c FROM repair_cuts WHERE user_id=? AND market_id=? GROUP BY role",
+                          [uid, mid]).fetchall():
+        cuts[r['role']] = r['c']
+    pending = {r: max(0, won[r] - cuts[r]) for r in 'PDCA'}
+    return {'budget': budget, 'values': values, 'won': won, 'cuts': cuts, 'pending': pending,
+            'won_total': sum(won.values())}
+
+
+def _repair_can_win(conn, uid, role, mid, max_buy):
+    st = _repair_state(conn, uid, mid)
+    return st['won_total'] < max_buy and len(st['values'][role]) > st['pending'][role]
+
+
+def _repair_worst_final(conn, uid, mid, max_buy, override=None):
+    """Budget finale nel caso peggiore: il manager vince la combinazione più cara delle aste su cui
+    ha un'offerta aperta (al massimo i suoi acquisti residui) e taglia, per ogni ruolo, i giocatori
+    che valgono di più. override=(item_id, role, amount) simula una nuova offerta."""
+    st = _repair_state(conn, uid, mid)
+    reserved = sum(sum(st['values'][r][:st['pending'][r]]) for r in 'PDCA')
+    bids = {}
+    for r in conn.execute("""
+        SELECT ai.id, p.role, b.amount, ai.status, ai.final_price FROM bids b
+        JOIN auction_items ai ON ai.id=b.auction_item_id
+        JOIN auction_sessions s ON s.id=ai.session_id
+        JOIN players p ON p.id=ai.player_id
+        WHERE b.user_id=? AND s.kind='repair' AND s.market_id=?
+          AND (ai.status='pending' OR (ai.status='tie' AND b.amount=ai.final_price))""", [uid, mid]).fetchall():
+        # pareggio aperto: con la monetina si paga +1
+        bids[r['id']] = (r['role'], r['amount'] + 1 if r['status'] == 'tie' else r['amount'])
+    if override:
+        bids[override[0]] = (override[1], override[2])
+    remaining = max(0, max_buy - st['won_total'])
+    # per ogni ruolo: eccedenza (costo − recupero) vincendo le k offerte più alte
+    excess = {}
+    for role in 'PDCA':
+        amounts = sorted((a for rr, a in bids.values() if rr == role), reverse=True)
+        avail = st['values'][role][st['pending'][role]:]
+        ex, c, v = [0], 0, 0
+        for k in range(min(len(amounts), len(avail))):
+            c += amounts[k]; v += avail[k]
+            ex.append(c - v)
+        excess[role] = ex
+    best = [0] + [float('-inf')] * remaining   # best[t] = eccedenza massima con t vittorie
+    for role in 'PDCA':
+        new = list(best)
+        for t in range(remaining + 1):
+            if best[t] == float('-inf'):
+                continue
+            for k in range(1, len(excess[role])):
+                if t + k > remaining:
+                    break
+                new[t + k] = max(new[t + k], best[t] + excess[role][k])
+        best = new
+    return st['budget'] + reserved - max(best)
+
+
+def _repair_finalize_session(db, session_id):
+    left = db.execute("SELECT COUNT(*) c FROM auction_items WHERE session_id=? AND status IN ('pending','tie')",
+                      [session_id]).fetchone()['c']
+    if left == 0:
+        db.execute("UPDATE auction_sessions SET status='revealed', closed_at=CURRENT_TIMESTAMP WHERE id=?",
+                   [session_id])
+        return
+    ties = db.execute("SELECT COUNT(*) c FROM auction_items WHERE session_id=? AND status='tie'",
+                      [session_id]).fetchone()['c']
+    db.execute("UPDATE auction_sessions SET status=? WHERE id=?",
+               ['bidding' if left > ties else 'resolving', session_id])
+
+
+def _close_repair_item(db, item_id):
+    """Chiude un'asta di riparazione scaduta. Le offerte di chi ha già fatto tutti gli acquisti
+    o non ha più giocatori da tagliare in quel ruolo vengono ignorate."""
+    it = db.execute("""SELECT ai.*, p.base_value, p.role, s.name sess_name, s.market_id
+                       FROM auction_items ai JOIN players p ON p.id=ai.player_id
+                       JOIN auction_sessions s ON s.id=ai.session_id
+                       WHERE ai.id=? AND ai.status='pending'""", [item_id]).fetchone()
+    if not it:
+        return
+    mid, max_buy = it['market_id'], _repair_params()['max_buy']
+    bids = db.execute("""SELECT user_id, amount FROM bids WHERE auction_item_id=?
+                         ORDER BY amount DESC, submitted_at ASC""", [item_id]).fetchall()
+    valid = [b for b in bids if _repair_can_win(db, b['user_id'], it['role'], mid, max_buy)]
+    if not valid:
+        db.execute("UPDATE auction_items SET status='unsold' WHERE id=?", [item_id])
+    else:
+        top = valid[0]['amount']
+        tops = [b for b in valid if b['amount'] == top]
+        if len(tops) > 1:
+            db.execute("UPDATE auction_items SET status='tie', final_price=? WHERE id=?", [top, item_id])
+        else:
+            # unico offerente rimasto: si aggiudica a prezzo +1 (come all'asta iniziale)
+            price = it['base_value'] + 1 if len(valid) == 1 else top
+            _repair_assign(db, it, tops[0]['user_id'], price)
+    _repair_finalize_session(db, it['session_id'])
+
+
+def _repair_assign(db, it, uid, price):
+    db.execute("UPDATE auction_items SET status='sold', winner_id=?, final_price=? WHERE id=?",
+               [uid, price, it['id']])
+    db.execute("UPDATE users SET budget=budget-? WHERE id=?", [price, uid])
+    db.execute("INSERT INTO acquisitions (user_id,player_id,price,session_name,market_id) VALUES (?,?,?,?,?)",
+               [uid, it['player_id'], price, it['sess_name'], it['market_id']])
+
+
+def _repair_tick():
+    """Chiude le aste di riparazione scadute (non c'è un cron: lo fa la prima richiesta utile)."""
+    due = query_db("""SELECT ai.id FROM auction_items ai JOIN auction_sessions s ON s.id=ai.session_id
+                      WHERE s.kind='repair' AND ai.status='pending' AND ai.deadline IS NOT NULL
+                        AND ai.deadline<=? ORDER BY ai.deadline, ai.id""", [now_str()])
+    if not due:
+        return
+    db = get_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")   # una sola richiesta alla volta chiude le aste
+        for r in due:
+            _close_repair_item(db, r['id'])
+        db.commit()
+    finally:
+        db.close()
+
+
+@app.before_request
+def _before_repair_tick():
+    if request.endpoint in (None, 'static', 'service_worker'):
+        return
+    try:
+        _repair_tick()
+    except Exception as e:  # un errore di chiusura non deve mai bloccare la navigazione
+        app.logger.exception('repair tick: %s', e)
+
+
+def _repair_sessions(mid):
+    return query_db("SELECT * FROM auction_sessions WHERE kind='repair' AND market_id=? ORDER BY id", [mid])
+
+
+def _repair_candidates():
+    """Giocatori nominati ancora svincolati e non già in un tabellone, dal più nominato."""
+    return query_db("""
+        SELECT p.id, p.role, p.name, p.team, p.base_value, COUNT(n.id) nom_count
+        FROM players p JOIN nominations n ON n.player_id=p.id
+        WHERE p.id NOT IN (SELECT player_id FROM acquisitions)
+          AND p.id NOT IN (SELECT ai.player_id FROM auction_items ai JOIN auction_sessions s ON s.id=ai.session_id
+                           WHERE s.status IN ('pending','bidding','resolving'))
+        GROUP BY p.id ORDER BY nom_count DESC, p.base_value DESC, p.name""")
+
+
+def _next_weekday_at(weekday, hhmm):
+    """Prossimo giorno della settimana (0=lunedì) all'ora indicata, da adesso."""
+    from datetime import timedelta
+    h, m = _hm(hhmm, (14, 0))
+    now = now_local()
+    d = now + timedelta(days=(weekday - now.weekday()) % 7)
+    d = d.replace(hour=h, minute=m, second=0, microsecond=0)
+    return d if d > now else d + timedelta(days=7)
+
+
+def _parse_local(s):
+    for fmt in ('%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', TS_FMT):
+        try:
+            return datetime.strptime(str(s).strip(), fmt)
+        except ValueError:
+            continue
+    return None
+
+
+@app.route('/riparazione')
+@login_required
+def repair_hub():
+    is_admin = bool(session.get('is_admin'))
+    uid = session.get('user_id')
+    mid = _repair_market_id()
+    params = _repair_params()
+    mode = _repair_mode()
+    now = now_str()
+    sessions = _repair_sessions(mid) if mid else []
+    sids = [s['id'] for s in sessions]
+
+    # tabellone: tutte le aste del mercato in ordine di scadenza
+    board = []
+    if sids:
+        qm = ','.join('?' * len(sids))
+        rows = query_db(f"""
+            SELECT ai.id, ai.status, ai.deadline, ai.final_price, ai.min_bid, ai.player_id, ai.session_id,
+                   p.role, p.name, p.team, p.base_value, uw.team_name winner_name, ai.winner_id,
+                   (SELECT COUNT(*) FROM nominations n WHERE n.player_id=p.id) nom_count,
+                   EXISTS(SELECT 1 FROM nominations n WHERE n.player_id=p.id AND n.user_id=?) my_nom,
+                   (SELECT amount FROM bids b WHERE b.auction_item_id=ai.id AND b.user_id=?) my_bid
+            FROM auction_items ai JOIN players p ON p.id=ai.player_id
+            LEFT JOIN users uw ON uw.id=ai.winner_id
+            WHERE ai.session_id IN ({qm}) ORDER BY ai.deadline, ai.id""", [uid, uid] + sids)
+        bids_by = {}
+        closed_ids = [r['id'] for r in rows if r['status'] != 'pending']
+        if closed_ids:
+            qc = ','.join('?' * len(closed_ids))
+            for b in query_db(f"""SELECT b.auction_item_id iid, b.amount, u.short_name, u.team_name
+                                  FROM bids b JOIN users u ON u.id=b.user_id
+                                  WHERE b.auction_item_id IN ({qc}) ORDER BY b.amount DESC""", closed_ids):
+                bids_by.setdefault(b['iid'], []).append(b)
+        for r in rows:
+            d = dict(r)
+            d['bids'] = bids_by.get(r['id'], [])   # le offerte si vedono solo ad asta chiusa
+            board.append(d)
+    starts_at = min((s['starts_at'] for s in sessions if s['starts_at']), default=None)
+
+    # anteprima del tabellone per l'admin (nomination chiuse, nessun tabellone ancora)
+    preview, start_val = [], None
+    nom_open = get_setting('nomination_open', '0') == '1'
+    if is_admin and mode and not nom_open:
+        start_dt = _parse_local(request.args.get('start', '')) or _next_weekday_at(2, params['day_start'])
+        start_val = start_dt.strftime('%Y-%m-%dT%H:%M')
+        cands = _repair_candidates()
+        sched = _repair_schedule(start_dt, len(cands), params['interval'], params['per_slot'],
+                                 params['day_start'], params['day_end'])
+        preview = [dict(c, deadline=d.strftime(TS_FMT)) for c, d in zip(cands, sched)]
+
+    # situazione del manager collegato
+    me = None
+    if not is_admin and mid:
+        conn, _ = _read_conn()
+        st = _repair_state(conn, uid, mid)
+        worst = _repair_worst_final(conn, uid, mid, params['max_buy'])
+        roster = query_db("""SELECT p.id, p.role, p.name, p.team, p.base_value, a.price
+                             FROM acquisitions a JOIN players p ON p.id=a.player_id
+                             WHERE a.user_id=? AND (a.market_id IS NULL OR a.market_id!=?)
+                             ORDER BY p.base_value DESC, p.name""", [uid, mid])
+        bought = query_db("""SELECT p.role, p.name, p.team, a.price FROM acquisitions a JOIN players p ON p.id=a.player_id
+                             WHERE a.user_id=? AND a.market_id=? ORDER BY a.acquired_at""", [uid, mid])
+        cuts = query_db("""SELECT c.id, c.role, c.value, p.name, p.team FROM repair_cuts c
+                           JOIN players p ON p.id=c.player_id WHERE c.user_id=? AND c.market_id=?
+                           ORDER BY c.cut_at""", [uid, mid])
+        me = {'st': st, 'worst': worst, 'roster': roster, 'bought': bought, 'cuts': cuts,
+              'to_cut': sum(st['pending'].values())}
+
+    # riepilogo per l'admin: acquisti e tagli mancanti di ogni manager
+    summary = []
+    if is_admin and mid:
+        conn, _ = _read_conn()
+        for u in query_db("SELECT id, team_name, budget FROM users WHERE is_admin=0 ORDER BY team_name"):
+            st = _repair_state(conn, u['id'], mid)
+            summary.append({'team_name': u['team_name'], 'budget': u['budget'], 'won': st['won_total'],
+                            'to_cut': {r: n for r, n in st['pending'].items() if n},
+                            'worst': _repair_worst_final(conn, u['id'], mid, params['max_buy'])})
+
+    counts = {k: sum(1 for b in board if b['status'] == k) for k in ('pending', 'sold', 'tie', 'unsold')}
+    return render_template('repair.html',
+        is_admin=is_admin, mode=mode, mid=mid, params=params, now=now, board=board, counts=counts,
+        starts_at=starts_at, sessions=sessions, preview=preview, start_val=start_val, nom_open=nom_open,
+        revealed=get_setting('nominations_revealed', '0') == '1',
+        n_noms=query_db("SELECT COUNT(*) c FROM nominations", one=True)['c'],
+        bonus_applied=bool(query_db("SELECT 1 FROM repair_bonus WHERE g_from=? AND g_to=?",
+                                    [int(get_setting('rip_from', '1')), int(get_setting('rip_to', '11'))], one=True)),
+        me=me, summary=summary, my_id=uid)
+
+
+@app.route('/admin/riparazione/start', methods=['POST'])
+@admin_required
+def repair_start():
+    if _repair_mode():
+        flash('Il mercato di riparazione è già in corso.', 'warning')
+        return redirect(url_for('repair_hub'))
+    active = query_db("SELECT COUNT(*) c FROM auction_sessions WHERE status IN ('pending','bidding','resolving')",
+                      one=True)['c']
+    if active:
+        flash('Ci sono ancora aste aperte: chiudile prima di avviare il mercato di riparazione.', 'danger')
+        return redirect(url_for('repair_hub'))
+    mid = _repair_market_id() + 1
+    db = get_db()
+    # le nomination precedenti non vanno perse: si archiviano
+    db.execute("""INSERT INTO nominations_archive (user_id, player_id, created_at, label)
+                  SELECT user_id, player_id, created_at, ? FROM nominations""",
+               [f'prima della riparazione {mid}'])
+    db.execute("DELETE FROM nominations")
+    for k, v in [('market_mode', 'repair'), ('rip_market_id', str(mid)),
+                 ('nomination_open', '0'), ('nominations_revealed', '0')]:
+        db.execute("INSERT OR REPLACE INTO settings VALUES (?,?)", [k, v])
+    db.commit()
+    db.close()
+    flash('Mercato di riparazione avviato: nomination precedenti archiviate. '
+          'Ora carica il listone aggiornato e apri le nomination.', 'success')
+    return redirect(url_for('repair_hub'))
+
+
+@app.route('/admin/riparazione/params', methods=['POST'])
+@admin_required
+def repair_params_save():
+    for k in ['rip_max_nom', 'rip_max_buy', 'rip_interval_min', 'rip_per_slot']:
+        v = request.form.get(k, '').strip()
+        if v.isdigit() and int(v) > 0:
+            set_setting(k, v)
+    for k in ['rip_day_start', 'rip_day_end']:
+        v = request.form.get(k, '').strip()
+        if _hm(v, None):
+            set_setting(k, v)
+    flash('Parametri del mercato di riparazione salvati.', 'success')
+    return redirect(url_for('repair_hub', start=request.form.get('start', '')))
+
+
+@app.route('/admin/riparazione/tabellone', methods=['POST'])
+@admin_required
+def repair_create_board():
+    if not _repair_mode():
+        flash('Avvia prima il mercato di riparazione.', 'warning')
+        return redirect(url_for('repair_hub'))
+    if get_setting('nomination_open', '0') == '1':
+        flash('Chiudi prima le nomination.', 'warning')
+        return redirect(url_for('repair_hub'))
+    start = _parse_local(request.form.get('start', ''))
+    if not start:
+        flash('Data e ora di partenza non valide.', 'danger')
+        return redirect(url_for('repair_hub'))
+    cands = _repair_candidates()
+    if not cands:
+        flash('Nessun giocatore nominato da mettere all\'asta.', 'warning')
+        return redirect(url_for('repair_hub'))
+    p = _repair_params()
+    sched = _repair_schedule(start, len(cands), p['interval'], p['per_slot'], p['day_start'], p['day_end'])
+    mid = _repair_market_id()
+    db = get_db()
+    sid = db.execute("""INSERT INTO auction_sessions (name, created_by, status, opened_at, kind, market_id, starts_at)
+                        VALUES (?,?,'bidding',CURRENT_TIMESTAMP,'repair',?,?)""",
+                     [f'Riparazione {start.strftime("%d/%m")}', session['user_id'], mid,
+                      start.strftime(TS_FMT)]).lastrowid
+    for c, d in zip(cands, sched):
+        db.execute("INSERT INTO auction_items (session_id, player_id, deadline) VALUES (?,?,?)",
+                   [sid, c['id'], d.strftime(TS_FMT)])
+    db.execute("INSERT OR REPLACE INTO settings VALUES ('nominations_revealed','1')")
+    db.commit()
+    db.close()
+    flash(f'Tabellone creato: {len(cands)} aste, la prima scade il {sched[0].strftime("%d/%m alle %H:%M")}, '
+          f'l\'ultima il {sched[-1].strftime("%d/%m alle %H:%M")}.', 'success')
+    return redirect(url_for('repair_hub'))
+
+
+@app.route('/admin/riparazione/end', methods=['POST'])
+@admin_required
+def repair_end():
+    mid = _repair_market_id()
+    open_items = query_db("""SELECT COUNT(*) c FROM auction_items ai JOIN auction_sessions s ON s.id=ai.session_id
+                             WHERE s.kind='repair' AND s.market_id=? AND ai.status IN ('pending','tie')""",
+                          [mid], one=True)['c']
+    if open_items:
+        flash(f'Ci sono ancora {open_items} aste aperte o pareggi da risolvere.', 'danger')
+        return redirect(url_for('repair_hub'))
+    conn, _ = _read_conn()
+    missing = []
+    for u in query_db("SELECT id, team_name FROM users WHERE is_admin=0 ORDER BY team_name"):
+        n = sum(_repair_state(conn, u['id'], mid)['pending'].values())
+        if n:
+            missing.append(f"{u['team_name']} ({n})")
+    if missing and request.form.get('force') != '1':
+        flash('Tagli ancora da fare: ' + ', '.join(missing) + '.', 'danger')
+        return redirect(url_for('repair_hub'))
+    for k, v in [('market_mode', 'main'), ('nomination_open', '0')]:
+        set_setting(k, v)
+    flash('Mercato di riparazione chiuso. Ora puoi esportare le rose aggiornate.', 'success')
+    return redirect(url_for('repair_hub'))
+
+
+@app.route('/riparazione/taglia', methods=['POST'])
+@login_required
+def repair_cut():
+    if session.get('is_admin') or not _repair_mode():
+        flash('Tagli non disponibili.', 'warning')
+        return redirect(url_for('repair_hub'))
+    uid, mid = session['user_id'], _repair_market_id()
+    pid = request.form.get('player_id', '')
+    db = get_db()
+    acq = db.execute("""SELECT a.*, p.role, p.base_value, p.name FROM acquisitions a JOIN players p ON p.id=a.player_id
+                        WHERE a.user_id=? AND a.player_id=? AND (a.market_id IS NULL OR a.market_id!=?)""",
+                     [uid, int(pid) if pid.isdigit() else 0, mid]).fetchone()
+    if not acq:
+        db.close()
+        flash('Giocatore non trovato nella tua rosa.', 'danger')
+        return redirect(url_for('repair_hub'))
+    st = _repair_state(db, uid, mid)
+    if st['pending'][acq['role']] <= 0:
+        db.close()
+        flash(f'Non hai acquisti da compensare nel ruolo {acq["role"]}.', 'warning')
+        return redirect(url_for('repair_hub'))
+    db.execute("DELETE FROM acquisitions WHERE id=?", [acq['id']])
+    db.execute("UPDATE users SET budget=budget+? WHERE id=?", [acq['base_value'], uid])
+    db.execute("""INSERT INTO repair_cuts (market_id,user_id,player_id,role,value,orig_price,orig_session,orig_market)
+                  VALUES (?,?,?,?,?,?,?,?)""",
+               [mid, uid, acq['player_id'], acq['role'], acq['base_value'], acq['price'],
+                acq['session_name'], acq['market_id']])
+    worst = _repair_worst_final(db, uid, mid, _repair_params()['max_buy'])
+    if worst < 0:
+        db.rollback()
+        db.close()
+        flash(f'Taglio non possibile: con le tue offerte aperte, nel caso peggiore finiresti a {worst} crediti. '
+              'Taglia un giocatore che vale di più.', 'danger')
+        return redirect(url_for('repair_hub'))
+    db.commit()
+    db.close()
+    flash(f'{acq["name"]} tagliato: recuperi {acq["base_value"]} crediti.', 'success')
+    return redirect(url_for('repair_hub'))
+
+
+@app.route('/riparazione/annulla-taglio', methods=['POST'])
+@login_required
+def repair_uncut():
+    if session.get('is_admin') or not _repair_mode():
+        return redirect(url_for('repair_hub'))
+    uid, mid = session['user_id'], _repair_market_id()
+    cid = request.form.get('cut_id', '')
+    db = get_db()
+    c = db.execute("SELECT * FROM repair_cuts WHERE id=? AND user_id=? AND market_id=?",
+                   [int(cid) if cid.isdigit() else 0, uid, mid]).fetchone()
+    if not c or db.execute("SELECT 1 FROM acquisitions WHERE player_id=?", [c['player_id']]).fetchone():
+        db.close()
+        flash('Taglio non annullabile.', 'warning')
+        return redirect(url_for('repair_hub'))
+    db.execute("""INSERT INTO acquisitions (user_id,player_id,price,session_name,market_id) VALUES (?,?,?,?,?)""",
+               [uid, c['player_id'], c['orig_price'] or 0, c['orig_session'], c['orig_market']])
+    db.execute("UPDATE users SET budget=budget-? WHERE id=?", [c['value'], uid])
+    db.execute("DELETE FROM repair_cuts WHERE id=?", [c['id']])
+    if _repair_worst_final(db, uid, mid, _repair_params()['max_buy']) < 0:
+        db.rollback()
+        db.close()
+        flash('Non puoi annullare questo taglio: con le offerte aperte andresti sotto zero.', 'danger')
+        return redirect(url_for('repair_hub'))
+    db.commit()
+    db.close()
+    flash('Taglio annullato: il giocatore torna nella tua rosa.', 'success')
+    return redirect(url_for('repair_hub'))
 
 
 # ── Storico / Albo d'Oro ────────────────────────────────────────────────────
