@@ -286,13 +286,17 @@ def init_db():
         ('rip_market_id', '0'),
         ('rip_max_nom', '10'),
         ('rip_max_buy', '5'),
-        ('rip_interval_min', '60'),     # minuti tra una scadenza e la successiva
+        ('rip_interval_min', '120'),    # minuti tra una scadenza e la successiva
         ('rip_per_slot', '1'),          # aste che scadono a ogni scadenza
         ('rip_day_start', '14:00'),
         ('rip_day_end', '22:00'),
     ]
     for k, v in defaults:
         db.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", [k, v])
+    # scadenza aste di riparazione: il default è passato da 1 a 2 ore (una volta sola)
+    if not db.execute("SELECT 1 FROM settings WHERE key='rip_interval_v2'").fetchone():
+        db.execute("UPDATE settings SET value='120' WHERE key='rip_interval_min' AND value='60'")
+        db.execute("INSERT INTO settings VALUES ('rip_interval_v2','1')")
 
     # Migrazione: colonne min_bid (pareggi/rilancio) e caller_id (chiamata giocatori liberi)
     cols = [r['name'] for r in db.execute("PRAGMA table_info(auction_items)").fetchall()]
@@ -3440,7 +3444,7 @@ def _repair_params():
         try: return max(1, int(get_setting(k, d)))
         except (ValueError, TypeError): return int(d)
     return {'max_nom': i('rip_max_nom', '10'), 'max_buy': i('rip_max_buy', '5'),
-            'interval': i('rip_interval_min', '60'), 'per_slot': i('rip_per_slot', '1'),
+            'interval': i('rip_interval_min', '120'), 'per_slot': i('rip_per_slot', '1'),
             'day_start': get_setting('rip_day_start', '14:00'), 'day_end': get_setting('rip_day_end', '22:00')}
 
 

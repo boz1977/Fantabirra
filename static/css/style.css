@@ -26,6 +26,10 @@ body {
 .navbar-fantabirra .nav-link:hover,
 .navbar-fantabirra .nav-link.active { color: var(--gold) !important; }
 .navbar-fantabirra .badge-gold { background: var(--gold); color: #111; }
+/* il menu a tendina (Storico) va a capo come le altre voci, così resta allineato;
+   la freccia è nel testo, così non finisce da sola su una riga */
+.navbar-fantabirra .nav-link.dropdown-toggle { white-space: normal; }
+.navbar-fantabirra .nav-link.dropdown-toggle::after { display: none; }
 
 /* ── Sidebar (admin) ── */
 .sidebar { background: var(--sidebar-bg); min-height: calc(100vh - 60px); width: 220px; }

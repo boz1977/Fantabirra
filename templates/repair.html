@@ -82,10 +82,9 @@
     </ul>
   </div>
 
-  {% if mode %}
-  <!-- ── Parametri e anteprima tabellone (admin) ── -->
+  <!-- ── Parametri e anteprima tabellone (admin): i parametri si possono cambiare sempre ── -->
   <div class="card mb-4">
-    <div class="card-header card-header-gold"><i class="bi bi-sliders me-2"></i>Parametri{% if not sessions %} e tabellone{% endif %}</div>
+    <div class="card-header card-header-gold"><i class="bi bi-sliders me-2"></i>Parametri{% if mode and not sessions %} e tabellone{% endif %}</div>
     <div class="card-body">
       <form method="POST" action="{{ url_for('repair_params_save') }}" class="row g-2 align-items-end small">
         <div class="col-6 col-md-2">
@@ -112,14 +111,14 @@
           <label class="form-label fw-semibold mb-1">Alle ore</label>
           <input type="time" name="rip_day_end" value="{{ params.day_end }}" class="form-control form-control-sm">
         </div>
-        {% if not sessions %}
+        {% if mode and not sessions %}
         <div class="col-12 col-md-4">
           <label class="form-label fw-semibold mb-1">Partenza delle aste</label>
           <input type="datetime-local" name="start" value="{{ start_val or '' }}" class="form-control form-control-sm">
         </div>
         {% endif %}
         <div class="col-12 col-md-8 d-flex gap-2 flex-wrap">
-          <button class="btn btn-sm btn-outline-success"><i class="bi bi-save me-1"></i>Salva{% if not sessions %} e aggiorna anteprima{% endif %}</button>
+          <button class="btn btn-sm btn-outline-success"><i class="bi bi-save me-1"></i>Salva{% if mode and not sessions %} e aggiorna anteprima{% endif %}</button>
           {% if not sessions and preview %}
           <button formaction="{{ url_for('repair_create_board') }}" class="btn btn-sm btn-gold"
                   onclick="return confirm('Creare il tabellone con {{ preview|length }} aste? Le offerte si apriranno alla partenza.')">
@@ -131,7 +130,7 @@
       <div class="form-text">Le scadenze cadono solo tra le {{ params.day_start }} e le {{ params.day_end }}; fuori orario si riprende il giorno dopo.
         Il primo giocatore scade un intervallo dopo la partenza.</div>
 
-      {% if not sessions %}
+      {% if mode and not sessions %}
         {% if nom_open %}
         <div class="alert alert-warning small py-2 mt-3 mb-0"><i class="bi bi-lock me-1"></i>Chiudi le nomination per vedere l'anteprima del tabellone.</div>
         {% elif not preview %}
@@ -164,7 +163,6 @@
       {% endif %}
     </div>
   </div>
-  {% endif %}
 
   {% if summary %}
   <div class="card mb-4">

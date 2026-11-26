@@ -55,7 +55,7 @@
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'admin_players' %}active{% endif %}" href="{{ url_for('admin_players') }}"><i class="bi bi-person-badge me-1"></i>Giocatori</a></li>
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento','admin_storico','edit_standings','admin_regolamento','admin_curiosita'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i>Storico</a>
+            <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento','admin_storico','edit_standings','admin_regolamento','admin_curiosita'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i><span class="text-nowrap">Storico <i class="bi bi-caret-down-fill" style="font-size:.7em"></i></span></a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('storico') }}"><i class="bi bi-trophy-fill me-2"></i>Albo d'Oro</a></li>
               <li><a class="dropdown-item" href="{{ url_for('statistiche') }}"><i class="bi bi-bar-chart me-2"></i>Statistiche</a></li>
@@ -85,7 +85,7 @@
         {% if view_mode == 'full' %}
           <li class="nav-item"><a class="nav-link {% if request.endpoint == 'pronostici' %}active{% endif %}" href="{{ url_for('pronostici') }}"><i class="bi bi-graph-up-arrow me-1"></i>Pronostici</a></li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i>Storico</a>
+            <a class="nav-link dropdown-toggle {% if request.endpoint in ['storico','storico_stagione','statistiche','curiosita','regolamento'] %}active{% endif %}" href="#" data-bs-toggle="dropdown"><i class="bi bi-archive me-1"></i><span class="text-nowrap">Storico <i class="bi bi-caret-down-fill" style="font-size:.7em"></i></span></a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('storico') }}"><i class="bi bi-trophy-fill me-2"></i>Albo d'Oro</a></li>
               <li><a class="dropdown-item" href="{{ url_for('statistiche') }}"><i class="bi bi-bar-chart me-2"></i>Statistiche</a></li>
